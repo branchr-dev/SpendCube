@@ -201,3 +201,67 @@ STORY_COMPLETE: US-003
 [2026-04-10 00:58:32] [OK] Marked US-003 as passed
 [2026-04-10 00:58:32] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 00:58:32] [STEP] Committing changes...
+[2026-04-10 00:58:34] [INFO] Starting iteration 4
+[2026-04-10 00:58:34] [INFO] Processing story: US-004
+[2026-04-10 00:58:34] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement data quality diagnostics module
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/diagnostics/quality.py with all 9 diagnostic checks from the spec. Each check returns a value, status (GREEN/AMBER/RED), and threshold bands. Output as both a structured dict and a printable scorecard.
+
+## Acceptance Criteria
+- Edit file: src/diagnostics/quality.py — implement DataQualityDiagnostics class
+- __init__(self, transactions_df: pd.DataFrame, config): stores transactions
+- Implement run_all(self) -> dict[str, dict]: runs all 9 diagnostics, returns {check_name: {value, pct, status, green_threshold, amber_threshold, description, remediation}}
+- Implement all 9 checks as individual methods: check_missing_supplier_name() → pct rows where raw_supplier_name is null. GREEN<1%, AMBER 1-5%, RED>5%. check_uncategorised_spend() → pct spend (base_amount) where internal_category_l1 is null. GREEN<5%, AMBER 5-15%, RED>15%. check_unresolved_suppliers() → pct unique raw_supplier_names where canonical_supplier_id is null. GREEN<10%, AMBER 10-25%, RED>25%. check_missing_payment_terms() → pct spend where payment_terms_days is null. GREEN<10%, AMBER 10-30%, RED>30%. check_duplicate_invoice_risk() → pct rows where (invoice_number, base_amount) combination appears >1 time. GREEN<0.5%, AMBER 0.5-2%, RED>2%. check_negative_reversal_lines() → pct rows where base_amount < 0. INFO<3%, WARN 3-8%, ALERT>8%. check_weak_descriptions() → pct rows where raw_line_description is null OR len(words) < 5 OR raw_line_description.lower() in ('misc','miscellaneous','services','payment','invoice','charges'). GREEN<15%, AMBER 15-30%, RED>30%. check_missing_contract_linkage() → pct spend where po_number is null AND contract_id is null. GREEN<30%, AMBER 30-60%, RED>60%. check_missing_bu_cost_centre() → pct rows where business_unit is null AND cost_centre is null. GREEN<5%, AMBER 5-15%, RED>15%.
+- Implement generate_scorecard(self) -> str: returns formatted text scorecard with emoji indicators (✅ GREEN, ⚠️ AMBER, 🔴 RED)
+- Implement to_dataframe(self) -> pd.DataFrame: returns diagnostics as DataFrame for dashboard use
+- Implement export_json(self, path: str = 'data/output/quality_scorecard.json') -> str: saves scorecard to JSON
+- CLI: python src/diagnostics/quality.py --db data/db/spend_cube.db — runs all checks, prints scorecard
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement data quality diagnostics module`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 01:00:27] [OK] Story US-004 completed!
+[2026-04-10 01:00:27] [OK] Marked US-004 as passed
+[2026-04-10 01:00:27] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 01:00:27] [STEP] Committing changes...

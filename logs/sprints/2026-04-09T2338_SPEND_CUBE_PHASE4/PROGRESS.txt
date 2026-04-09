@@ -63,3 +63,22 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 COMPLETE — 2026-04-10
+- Implemented DataQualityDiagnostics in src/diagnostics/quality.py
+- run_all() runs all 9 checks; returns {check_name: {value, pct, status, green_threshold, amber_threshold, description, remediation}}
+- All 9 checks implemented: missing_supplier_name, uncategorised_spend, unresolved_suppliers, missing_payment_terms, duplicate_invoice_risk, negative_reversal_lines, weak_descriptions, missing_contract_linkage, missing_bu_cost_centre
+- negative_reversal_lines uses INFO/WARN/ALERT status (not GREEN/AMBER/RED)
+- generate_scorecard() produces emoji-annotated text scorecard with overall score (0-100)
+- to_dataframe() returns all results as DataFrame; export_json() saves to data/output/quality_scorecard.json
+- NOTE: contract_id column not in DB schema — missing_contract_linkage falls back to po_number only (contract_null always True)
+- NOTE: category column is category_l1 (not internal_category_l1); handled with column existence check
+- CLI: python src/diagnostics/quality.py --db data/db/spend_cube.db prints scorecard and exports JSON
+- Verified: 9 checks in JSON, CLI exits 0, scorecard renders with emoji indicators
+
+
+---
+
+### [US-004] - 2026-04-10 01:00:27
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+

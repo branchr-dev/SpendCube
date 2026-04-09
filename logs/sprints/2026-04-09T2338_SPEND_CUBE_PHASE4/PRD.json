@@ -108,7 +108,8 @@
         "Implement export_json(self, path: str = 'data/output/quality_scorecard.json') -> str: saves scorecard to JSON",
         "CLI: python src/diagnostics/quality.py --db data/db/spend_cube.db — runs all checks, prints scorecard"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T23:00:27Z"
     },
     {
       "id": "US-005",
