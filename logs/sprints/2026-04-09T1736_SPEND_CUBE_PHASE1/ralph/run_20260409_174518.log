@@ -324,3 +324,65 @@ STORY_COMPLETE: US-005
 [2026-04-09 17:56:08] [OK] Marked US-005 as passed
 [2026-04-09 17:56:08] [INFO] Logged progress for US-005: PASSED
 [2026-04-09 17:56:08] [STEP] Committing changes...
+[2026-04-09 17:56:10] [INFO] Starting iteration 6
+[2026-04-09 17:56:10] [INFO] Processing story: US-006
+[2026-04-09 17:56:10] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Implement structured logging utility
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/utils/logging.py providing a consistent logging setup across all modules. Must support human-readable and JSON format controlled by config.
+
+## Acceptance Criteria
+- Edit file: src/utils/logging.py — implement get_logger(name: str, level: str = 'INFO', json_format: bool = False) -> logging.Logger
+- When json_format=False: format '[HH:MM:SS] [LEVEL] [name] message' using StreamHandler to stdout
+- When json_format=True: emit each log line as a single JSON object with fields: timestamp (ISO), level, logger, message. Use a custom Formatter subclass.
+- Implement log_llm_call(logger: logging.Logger, prompt: str, response: str, model: str, tokens_used: int = 0, cost_usd: float = 0.0) -> None that logs at INFO level with json extra fields: llm_call=True, model, tokens_used, cost_usd, prompt_preview (first 100 chars of prompt)
+- Implement get_logger_from_config(name: str, config) -> logging.Logger that reads level and json_format from config object
+- CLI: python src/utils/logging.py — demonstrates INFO, WARNING, ERROR in both formats
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Implement structured logging utility`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-09 17:57:49] [OK] Story US-006 completed!
+[2026-04-09 17:57:49] [OK] Marked US-006 as passed
+[2026-04-09 17:57:49] [INFO] Logged progress for US-006: PASSED
+[2026-04-09 17:57:49] [STEP] Committing changes...

@@ -107,3 +107,24 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+## US-006 COMPLETE - 2026-04-09
+- Implemented src/utils/logging.py with get_logger(), log_llm_call(), get_logger_from_config()
+- get_logger: StreamHandler to stdout; human format '[HH:MM:SS] [LEVEL] [name] message'; JSON format via _JsonFormatter subclass emitting ISO timestamp + level + logger + message + extra fields
+- log_llm_call: logs at INFO with extra fields llm_call=True, model, tokens_used, cost_usd, prompt_preview (first 100 chars)
+- get_logger_from_config: reads config.logging.level and config.logging.json_format; supports both attribute-access and dict-style config objects
+- CLI demo exercises all three functions in both formats; verified output matches spec
+- Note: file named logging.py shadows stdlib — fixed via sys.path manipulation before import
+
+---
+
+### [US-006] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-006] - 2026-04-09 17:57:49
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
