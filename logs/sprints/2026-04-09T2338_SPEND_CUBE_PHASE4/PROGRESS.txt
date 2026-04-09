@@ -22,3 +22,13 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+## US-002 COMPLETE — 2026-04-10
+- Implemented CubeMetrics in src/cube/metrics.py
+- compute_all() returns flat dict: total_spend, total_suppliers, total_invoices, avg_transaction_size, contract_coverage_pct, maverick_spend_pct, tail_spend_pct, tail_supplier_count, weighted_avg_payment_terms, pct_missing_payment_terms, hhi, top_10_supplier_pct, pareto_80_supplier_count, working_capital_opportunity, data_quality_score
+- working_capital_opportunity() method accepts target_days/wacc params; top-50 suppliers by spend
+- data_quality_score gracefully returns None if diagnostics module not yet implemented (US-004)
+- Maverick spend: po_number is null AND is_on_contract != 1; is_on_contract column may not exist in current DB
+- NOTE: is_on_contract column not present in Phase 1-3 DB schema — contract_coverage_pct will be 0.0% until schema updated
+- NOTE: 2 null po_number rows in test data are intercompany/tax lines (excluded from addressable) → maverick = 0%
+- CLI: python3 src/cube/metrics.py --db data/db/spend_cube.db prints formatted KPI table
+
