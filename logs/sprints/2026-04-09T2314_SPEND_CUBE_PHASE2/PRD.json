@@ -182,7 +182,8 @@
         "Run: pytest tests/test_supplier_harmonisation.py -v — all tests pass",
         "Run: pytest tests/test_supplier_harmonisation.py --cov=src/suppliers --cov-report=term-missing — coverage >= 70% on src/suppliers/"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:09:30Z"
     },
     {
       "id": "US-009",

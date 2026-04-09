@@ -454,3 +454,67 @@ STORY_COMPLETE: US-007
 [2026-04-09 23:46:44] [OK] Marked US-007 as passed
 [2026-04-09 23:46:44] [INFO] Logged progress for US-007: PASSED
 [2026-04-09 23:46:44] [STEP] Committing changes...
+[2026-04-09 23:46:46] [INFO] Starting iteration 8
+[2026-04-09 23:46:46] [INFO] Processing story: US-008
+[2026-04-09 23:46:46] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Write Phase 2 unit tests
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write comprehensive unit tests for all supplier harmonisation modules in tests/test_supplier_harmonisation.py. Tests must cover the core validation gate: Acme x3 and Sodexo x2 correctly merged. Minimum 12 tests, all passing.
+
+## Acceptance Criteria
+- Edit file: tests/test_supplier_harmonisation.py — write minimum 12 test functions
+- Test normaliser: test_normalise_acme_pty_ltd, test_normalise_acme_pty_limited, test_normalise_acme_pl (all three must produce identical output), test_normalise_sodexo_australia, test_normalise_sodexo_aust_pl (both must produce identical output), test_normalise_none_returns_empty, test_normalise_strips_ta_prefix
+- Test deterministic matcher: test_exact_name_match_returns_high_confidence, test_exact_vendor_id_match_returns_099, test_no_match_returns_none
+- Test fuzzy matcher: test_fuzzy_composite_score_acme_variants_above_88, test_fuzzy_below_threshold_returns_none
+- Test harmoniser integration: test_harmonise_sample_data_merges_acme_to_one_canonical, test_harmonise_sample_data_merges_sodexo_to_one_canonical, test_harmonise_is_idempotent (run twice, supplier_master row count unchanged)
+- Use the in_memory_engine fixture from tests/conftest.py (created in Phase 1). Add a sample_suppliers_df fixture returning a DataFrame of the 10 sample rows' supplier fields.
+- Run: pytest tests/test_supplier_harmonisation.py -v — all tests pass
+- Run: pytest tests/test_supplier_harmonisation.py --cov=src/suppliers --cov-report=term-missing — coverage >= 70% on src/suppliers/
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Write Phase 2 unit tests`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-10 00:09:30] [OK] Story US-008 completed!
+[2026-04-10 00:09:30] [OK] Marked US-008 as passed
+[2026-04-10 00:09:30] [INFO] Logged progress for US-008: PASSED
+[2026-04-10 00:09:30] [STEP] Committing changes...
