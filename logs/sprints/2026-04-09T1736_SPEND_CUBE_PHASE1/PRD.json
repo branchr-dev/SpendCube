@@ -245,7 +245,8 @@
         "CCY: 90% AUD, 5% USD, 3% EUR, 2% other — with messiness=0 all CCY fields filled, at messiness=0.3 ~10% missing",
         "Run: python src/utils/generate_test_data.py --rows 1000 --seed 42 --output /tmp/test_gen.csv && python -c \"import pandas as pd; df=pd.read_csv('/tmp/test_gen.csv'); print(len(df), 'rows,', df.columns.tolist())\" — should print '1000 rows' and correct column list"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:14:07Z"
     },
     {
       "id": "US-013",

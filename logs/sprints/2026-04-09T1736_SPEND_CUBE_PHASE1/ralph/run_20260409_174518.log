@@ -707,3 +707,71 @@ STORY_COMPLETE: US-011
 [2026-04-09 18:11:27] [OK] Marked US-011 as passed
 [2026-04-09 18:11:27] [INFO] Logged progress for US-011: PASSED
 [2026-04-09 18:11:27] [STEP] Committing changes...
+[2026-04-09 18:11:29] [INFO] Starting iteration 12
+[2026-04-09 18:11:29] [INFO] Processing story: US-012
+[2026-04-09 18:11:29] [STEP] Spawning Claude with prompt for US-012
+--- PROMPT FOR US-012 ---
+You are working on story US-012: Implement synthetic test data generator
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/utils/generate_test_data.py to produce realistic messy procurement CSVs for development, testing, and demos. This is critical infrastructure for all subsequent phases. Output format must match data/input/sample.csv.
+
+## Acceptance Criteria
+- Edit file: src/utils/generate_test_data.py — implement generate_test_data(rows, suppliers, categories, messiness, duplicate_supplier_rate, credit_note_rate, intercompany_rate, seed) -> pd.DataFrame and a CLI wrapper
+- CLI: python src/utils/generate_test_data.py --rows 1000 --suppliers 100 --messiness 0.3 --seed 42 --output data/input/test_1k.csv
+- Arguments: --rows (default 10000), --suppliers (default 500), --categories (default 50), --messiness (float 0.0-1.0, default 0.3), --duplicate_supplier_rate (default 0.15), --credit_note_rate (default 0.05), --intercompany_rate (default 0.03), --output (default data/input/test_data.csv), --seed (int, default 42)
+- Output CSV columns: VENDOR_NAME, VENDOR_NUM, INV_NO, INV_DATE, LINE_DESC, AMT, CCY, GL_CODE, COST_CTR, PAY_TERMS, PO_NUM, BUS_UNIT, SITE
+- Supplier names: generate base names using Faker (company names), then create variants based on duplicate_supplier_rate — same base name with different legal suffixes/abbreviations/capitalisation
+- Date formats: at messiness=0.0 all dates are YYYY-MM-DD; at messiness=1.0 dates are randomly DD/MM/YYYY, YYYY-MM-DD, DD-Mon-YYYY in ~equal proportions
+- Missing fields: apply missing rates controlled by messiness — at messiness=0.3, ~30% PO_NUM missing, ~20% COST_CTR missing, ~10% PAY_TERMS missing
+- Credit notes: credit_note_rate fraction of rows have negative AMT and INV_NO starting with 'CN-'
+- Intercompany rows: intercompany_rate fraction have VENDOR_NAME = 'INTERCOMPANY - [DEPT]'
+- GL codes: generate from realistic ranges (6420000-6429999 for office, 6510000-6519999 for facilities, 6300000-6309999 for logistics, 6440000-6449999 for IT). At messiness>0.3, some GL codes have leading zeros stripped.
+- CCY: 90% AUD, 5% USD, 3% EUR, 2% other — with messiness=0 all CCY fields filled, at messiness=0.3 ~10% missing
+- Run: python src/utils/generate_test_data.py --rows 1000 --seed 42 --output /tmp/test_gen.csv && python -c "import pandas as pd; df=pd.read_csv('/tmp/test_gen.csv'); print(len(df), 'rows,', df.columns.tolist())" — should print '1000 rows' and correct column list
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-012
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-012: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-012 - Implement synthetic test data generator`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-012 ---
+STORY_COMPLETE: US-012
+--- END OUTPUT ---
+[2026-04-09 18:14:07] [OK] Story US-012 completed!
+[2026-04-09 18:14:07] [OK] Marked US-012 as passed
+[2026-04-09 18:14:07] [INFO] Logged progress for US-012: PASSED
+[2026-04-09 18:14:07] [STEP] Committing changes...
