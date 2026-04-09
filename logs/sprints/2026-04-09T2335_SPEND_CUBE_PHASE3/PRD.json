@@ -161,7 +161,8 @@
         "Verify: python src/categorisation/categoriser.py --db data/db/spend_cube.db exits 0 and prints pass-by-pass summary",
         "Run the full pipeline sequence to confirm end-to-end works: python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db && python src/suppliers/harmoniser.py --db data/db/spend_cube.db && python src/categorisation/categoriser.py --db data/db/spend_cube.db"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:38:27Z"
     },
     {
       "id": "US-008",

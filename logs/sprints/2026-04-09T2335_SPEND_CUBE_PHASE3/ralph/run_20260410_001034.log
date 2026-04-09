@@ -388,3 +388,66 @@ STORY_COMPLETE: US-006
 [2026-04-10 00:31:12] [OK] Marked US-006 as passed
 [2026-04-10 00:31:12] [INFO] Logged progress for US-006: PASSED
 [2026-04-10 00:31:12] [STEP] Committing changes...
+[2026-04-10 00:31:14] [INFO] Starting iteration 7
+[2026-04-10 00:31:14] [INFO] Processing story: US-007
+[2026-04-10 00:31:14] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Integrate categoriser with Makefile and validate against sample data
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Wire the categoriser into the Makefile categorise target and run end-to-end on sample data to verify the Phase 3 validation gate: 80%+ of sample transactions at HIGH or MEDIUM confidence.
+
+## Acceptance Criteria
+- Edit file: Makefile — update categorise target to: python src/categorisation/categoriser.py --db data/db/spend_cube.db
+- End-to-end validation: ensure data/db/spend_cube.db has transactions from ingest + harmonise (from Phase 1/2). Run python src/categorisation/categoriser.py --db data/db/spend_cube.db on the 10-row sample data.
+- Verify categorisation results for sample data: 'Office supplies - toner cartridges HP' classified as Office Supplies (any pass), 'Catering - Q1 events' classified as Facilities/Catering (any pass), 'Staff canteen March' classified as Facilities/Catering (any pass), 'International freight - Shanghai to Melb' classified as Logistics/Freight (any pass), 'Mobile fleet - Feb 2024' classified as IT/Telecoms (any pass), 'Ad hoc signage for conference' classified as Marketing (any pass)
+- Verify: out of 10 sample rows, at least 8 (80%) have category_confidence >= 0.60 (MEDIUM or HIGH). Note: TAX-ADJ-001 (GST adjustment) and INTERCOMPANY rows are legitimately hard to categorise.
+- Verify: review queue contains ≤ 2 rows from sample data
+- Verify: python src/categorisation/categoriser.py --db data/db/spend_cube.db exits 0 and prints pass-by-pass summary
+- Run the full pipeline sequence to confirm end-to-end works: python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db && python src/suppliers/harmoniser.py --db data/db/spend_cube.db && python src/categorisation/categoriser.py --db data/db/spend_cube.db
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Integrate categoriser with Makefile and validate against sample data`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-04-10 00:38:27] [OK] Story US-007 completed!
+[2026-04-10 00:38:27] [OK] Marked US-007 as passed
+[2026-04-10 00:38:27] [INFO] Logged progress for US-007: PASSED
+[2026-04-10 00:38:27] [STEP] Committing changes...
