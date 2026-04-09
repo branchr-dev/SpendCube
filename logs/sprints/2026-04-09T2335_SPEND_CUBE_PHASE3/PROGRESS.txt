@@ -148,3 +148,25 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+## US-008 COMPLETE — 2026-04-10
+- Wrote 25 unit tests in tests/test_categorisation.py (target: ≥12)
+- All 25 tests pass; src/categorisation coverage = 70% (target: ≥70%)
+- DeterministicCategoriser: 8 tests covering GL exact match, GL prefix fallback (6420999→6420), supplier mapping (Telstra→IT/Telecoms, DHL→Logistics), keyword rules (toner/catering/freight/mobile fleet), and apply_overrides (match on supplier_id, no-match passthrough)
+- EmbeddingCategoriser: 3 tests — 7-tuple shape, unavailable passthrough (mock _SENTENCE_TRANSFORMERS_AVAILABLE=False), empty description → EMBEDDING_REJECT
+- LLMCategoriser: 5 tests — dry_run method=DRY_RUN, dry_run no API calls, classify_dataframe dry_run, live path mocked (confidence capped at 0.70), live empty items, no-client graceful skip
+- SpendCategoriser: 5 tests — 80% confidence gate on sample.csv (GL codes alone achieve 100%), review queue sorted by base_amount desc, update_transactions_in_db (count, no-tid-column, NaN-tid), apply_feedback inserts overrides
+- categorised_sample_df fixture: runs full Ingestor.ingest_to_db + SpendCategoriser.categorise on sample.csv via in_memory_engine
+- Key patch pattern for sentence-transformers: patch("src.categorisation.embedding_classifier._SENTENCE_TRANSFORMERS_AVAILABLE", False) before instantiation
+- LLM live path tested by setting llm_categoriser._client = MagicMock() and passing a mock_config with dry_run=False to classify_batch
+
+### [US-008] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
+
+---
+
+### [US-008] - 2026-04-10 00:49:09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+

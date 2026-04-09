@@ -451,3 +451,67 @@ STORY_COMPLETE: US-007
 [2026-04-10 00:38:27] [OK] Marked US-007 as passed
 [2026-04-10 00:38:27] [INFO] Logged progress for US-007: PASSED
 [2026-04-10 00:38:27] [STEP] Committing changes...
+[2026-04-10 00:38:29] [INFO] Starting iteration 8
+[2026-04-10 00:38:29] [INFO] Processing story: US-008
+[2026-04-10 00:38:29] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Write Phase 3 unit tests
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write comprehensive unit tests for all categorisation modules in tests/test_categorisation.py. Minimum 12 tests covering all 3 deterministic passes, embedding classifier, LLM dry-run mode, and the orchestrator. All tests must pass.
+
+## Acceptance Criteria
+- Edit file: tests/test_categorisation.py — write minimum 12 test functions
+- Test DeterministicCategoriser: test_gl_mapping_6420_returns_office_supplies, test_gl_mapping_prefix_fallback (6420100 matches GL prefix 6420), test_supplier_mapping_telstra_returns_it_telecoms, test_supplier_mapping_dhl_returns_logistics, test_keyword_toner_returns_office_supplies, test_keyword_catering_returns_facilities, test_keyword_freight_returns_logistics, test_keyword_mobile_fleet_returns_it
+- Test EmbeddingCategoriser: test_embedding_classify_returns_tuple_of_correct_shape, test_embedding_unavailable_returns_passthrough (mock ImportError)
+- Test LLMCategoriser: test_dry_run_returns_empty_classifications (all items get method=DRY_RUN), test_dry_run_makes_no_api_calls
+- Test SpendCategoriser orchestrator: test_categorise_sample_data_80pct_medium_or_high_confidence, test_review_queue_sorted_by_spend_desc
+- Use in_memory_engine fixture from tests/conftest.py. Add a categorised_sample_df fixture that runs the full ingestion + harmonise + categorise pipeline on sample.csv.
+- Run: pytest tests/test_categorisation.py -v — all tests pass
+- Run: pytest tests/test_categorisation.py --cov=src/categorisation --cov-report=term-missing — coverage >= 70% on src/categorisation/
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Write Phase 3 unit tests`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-10 00:49:09] [OK] Story US-008 completed!
+[2026-04-10 00:49:09] [OK] Marked US-008 as passed
+[2026-04-10 00:49:09] [INFO] Logged progress for US-008: PASSED
+[2026-04-10 00:49:09] [STEP] Committing changes...

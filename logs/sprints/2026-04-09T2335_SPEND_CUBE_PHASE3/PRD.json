@@ -178,7 +178,8 @@
         "Run: pytest tests/test_categorisation.py -v — all tests pass",
         "Run: pytest tests/test_categorisation.py --cov=src/categorisation --cov-report=term-missing — coverage >= 70% on src/categorisation/"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:49:09Z"
     },
     {
       "id": "US-009",
