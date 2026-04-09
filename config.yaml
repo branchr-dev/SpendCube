@@ -1,0 +1,62 @@
+paths:
+  data_dir: data
+  input_dir: data/input
+  output_dir: data/output
+  db_path: data/db/spend_cube.db
+  reference_dir: data/reference
+
+llm:
+  model: claude-sonnet-4-20250514
+  batch_size: 20
+  dry_run: true
+  max_cost_usd: 10.0
+  api_key_env: ANTHROPIC_API_KEY
+
+supplier_matching:
+  fuzzy_auto_threshold: 88
+  fuzzy_review_threshold: 70
+  embedding_auto_threshold: 0.90
+  embedding_review_threshold: 0.80
+  corroboration_same_city: 5
+  corroboration_same_postcode: 8
+  corroboration_same_abn: 20
+
+categorisation:
+  confidence_high: 0.85
+  confidence_medium: 0.60
+  embedding_threshold: 0.80
+  llm_fallback_threshold: 0.60
+
+spend_cube:
+  base_currency: AUD
+  tail_spend_supplier_pct: 0.80
+  tail_spend_value_pct: 0.20
+
+recommendations:
+  consolidation_threshold: 5
+  consolidation_saving_pct: 0.08
+  target_payment_days: 45
+  wacc: 0.08
+  min_wc_opportunity: 10000
+  tail_spend_alert_pct: 0.05
+  maverick_alert_pct: 0.15
+
+logging:
+  level: INFO
+  json_format: false
+
+column_mappings:
+  DEFAULT:
+    VENDOR_NAME: raw_supplier_name
+    VENDOR_NUM: raw_supplier_id
+    INV_NO: invoice_number
+    INV_DATE: invoice_date
+    LINE_DESC: raw_line_description
+    AMT: original_amount
+    CCY: original_currency
+    GL_CODE: gl_account
+    COST_CTR: cost_centre
+    PAY_TERMS: raw_payment_terms
+    PO_NUM: po_number
+    BUS_UNIT: business_unit
+    SITE: plant_site
