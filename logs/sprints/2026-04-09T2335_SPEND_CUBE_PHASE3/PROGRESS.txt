@@ -170,3 +170,25 @@ Story completed successfully by Ralph loop iteration 8
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+## US-009 COMPLETE — 2026-04-10
+- Added '## Phase 3: Spend Categorisation' section to CLAUDE.md documenting:
+  - 6-pass pipeline table (overrides → GL → supplier → keyword → embedding → LLM)
+  - Confidence caps per method: MANUAL=1.0, GL/supplier=0.85-0.95, keyword=0.75-0.85, embedding=sim*0.9, LLM capped at 0.70
+  - Review queue threshold (confidence < 0.60), sorted by abs(base_amount) descending
+  - llm_fallback_threshold=0.60 trigger condition (dry_run=false AND below threshold after pass 4)
+  - category_overrides table as feedback mechanism (apply_feedback())
+- Updated Phase Status table: Phase 3 now marked **Complete**
+- Updated Running the Pipeline: added 3-stage pipeline sequence (make ingest && make harmonise && make categorise)
+- Verified: CLAUDE.md contains both 'DETERMINISTIC_GL' and 'llm_fallback_threshold'
+
+### [US-009] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+
+
+---
+
+### [US-009] - 2026-04-10 00:50:11
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+

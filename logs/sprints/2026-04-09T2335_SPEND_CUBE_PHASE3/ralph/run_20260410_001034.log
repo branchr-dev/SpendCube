@@ -515,3 +515,63 @@ STORY_COMPLETE: US-008
 [2026-04-10 00:49:09] [OK] Marked US-008 as passed
 [2026-04-10 00:49:09] [INFO] Logged progress for US-008: PASSED
 [2026-04-10 00:49:09] [STEP] Committing changes...
+[2026-04-10 00:49:11] [INFO] Starting iteration 9
+[2026-04-10 00:49:11] [INFO] Processing story: US-009
+[2026-04-10 00:49:11] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Update CLAUDE.md with Phase 3 patterns
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md to document the categorisation pipeline architecture, pass order, confidence rules, and LLM usage policy for future Claude sessions.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — add section '## Phase 3: Spend Categorisation' documenting: 6-pass order (overrides → GL → supplier → keyword → embedding → LLM), confidence caps per method (MANUAL=1.0, GL/supplier=0.85-0.95, keyword=0.75-0.85, embedding=similarity*0.9, LLM max=0.70), review queue threshold (confidence < 0.60), LLM only invoked when dry_run=false and item below llm_fallback_threshold=0.60 after pass 4, category_overrides table as feedback mechanism
+- Update '## Phase Status': Phase 1 Complete, Phase 2 Complete, Phase 3 Complete, Phases 4-6 Planned
+- Update '## Running the Pipeline' section to show full 3-stage pipeline: make ingest && make harmonise && make categorise
+- Verify: CLAUDE.md contains 'DETERMINISTIC_GL' and 'llm_fallback_threshold'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Update CLAUDE.md with Phase 3 patterns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-04-10 00:50:11] [OK] Story US-009 completed!
+[2026-04-10 00:50:11] [OK] Marked US-009 as passed
+[2026-04-10 00:50:11] [INFO] Logged progress for US-009: PASSED
+[2026-04-10 00:50:11] [STEP] Committing changes...

@@ -191,7 +191,8 @@
         "Update '## Running the Pipeline' section to show full 3-stage pipeline: make ingest && make harmonise && make categorise",
         "Verify: CLAUDE.md contains 'DETERMINISTIC_GL' and 'llm_fallback_threshold'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:50:11Z"
     }
   ],
   "verification": {
