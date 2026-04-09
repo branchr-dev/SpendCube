@@ -22,7 +22,7 @@ categorise:
 
 build-cube:
 	@echo "Running build-cube"
-	python src/cube/builder.py
+	python src/cube/builder.py --db data/db/spend_cube.db
 
 serve-dashboard:
 	@echo "Running serve-dashboard"
@@ -34,4 +34,4 @@ run-tests:
 
 export:
 	@echo "Running export"
-	python src/cube/exporter.py
+	python src/cube/exporter.py --db data/db/spend_cube.db --format parquet
