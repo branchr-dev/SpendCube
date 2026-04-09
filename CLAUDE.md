@@ -108,6 +108,53 @@ Phase 3 implements a 6-pass hybrid categorisation pipeline in `src/categorisatio
 
 **Idempotency** — running categoriser twice on the same transactions skips rows already classified at >= MEDIUM confidence (0.60) unless `--force` is passed.
 
+## Phase 4: Spend Cube and Diagnostics
+
+Phase 4 builds a multi-dimensional spend cube from the categorised transactions table and runs 9 data quality diagnostics checks. Outputs are written to `data/output/` as Parquet files.
+
+### Cube Architecture
+
+The cube is built from the `transactions` table (post-Phase 3 categorisation). `SpendCubeBuilder` in `src/cube/builder.py` produces 6 output DataFrames, each saved as a separate Parquet file:
+
+| DataFrame | Parquet file | Description |
+|-----------|-------------|-------------|
+| `transactions` | `transactions.parquet` | Full transaction-level detail with all canonical fields |
+| `by_supplier` | `by_supplier.parquet` | Aggregated spend, transaction count, and avg payment terms per canonical supplier |
+| `by_category` | `by_category.parquet` | Spend and count aggregated by UNSPSC category (L1–L4) |
+| `by_bu` | `by_bu.parquet` | Spend aggregated by business unit / cost centre |
+| `by_month` | `by_month.parquet` | Monthly spend trend with rolling 3-month average |
+| `by_payment_terms` | `by_payment_terms.parquet` | Spend segmented by payment terms bucket (0–30, 31–60, 61–90, 90+) |
+
+### Key Metrics Definitions
+
+**`tail_spend`** — suppliers in the bottom 80% by transaction count that collectively contribute ≤ 20% of total spend. Identified by sorting all suppliers by transaction count ascending and finding the cutoff where cumulative spend share crosses 20%. Tail suppliers are flagged `is_tail_spend = True` in `by_supplier.parquet`.
+
+**`maverick`** — a transaction is maverick if it has no associated PO number (`po_number IS NULL`) AND the supplier is not flagged as on-contract (`is_on_contract = False`). Maverick spend percentage = `maverick_amount / total_spend`. Stored as `is_maverick` boolean on the transaction row.
+
+**Payment terms buckets** — `payment_terms_days` is binned into: `0-30`, `31-60`, `61-90`, `90+`. The `by_payment_terms` cube exposes working capital opportunity by showing spend concentration in early buckets.
+
+### Data Quality Diagnostics
+
+`DataQualityDiagnostics` in `src/cube/diagnostics.py` runs 9 checks and assigns GREEN/AMBER/RED bands:
+
+| Check | GREEN | AMBER | RED |
+|-------|-------|-------|-----|
+| `missing_supplier` | < 1% rows | 1–5% | > 5% |
+| `missing_category` | < 5% rows | 5–15% | > 15% |
+| `missing_gl_account` | < 2% rows | 2–10% | > 10% |
+| `missing_cost_centre` | < 10% rows | 10–25% | > 25% |
+| `low_confidence_category` | < 10% rows below 0.60 | 10–25% | > 25% |
+| `low_confidence_supplier` | < 5% rows below 0.60 | 5–15% | > 15% |
+| `duplicate_transactions` | 0 duplicates | 1–5 | > 5 |
+| `maverick_spend` | < 10% spend | 10–25% | > 25% |
+| `tail_spend_ratio` | < 30% suppliers tail | 30–50% | > 50% |
+
+Diagnostics output is written to `data/output/diagnostics.json` and also returned as a `DiagnosticsReport` dataclass.
+
+### Idempotency
+
+`make build-cube` is safe to re-run. Parquet files are overwritten on each run. No state is mutated in the SQLite database by Phase 4.
+
 ## Phase Status
 
 | Phase | Description | Status |
@@ -115,11 +162,11 @@ Phase 3 implements a 6-pass hybrid categorisation pipeline in `src/categorisatio
 | **Phase 1** | Foundation: ingestion pipeline, canonical schema, SQLite, reference data, unit tests | **Complete** |
 | **Phase 2** | Supplier harmonisation (name normalisation, fuzzy + embedding matching, parent mapping) | **Complete** |
 | **Phase 3** | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | **Complete** |
-| Phase 4 | Spend cube construction + data quality diagnostics | Planned |
+| **Phase 4** | Spend cube construction + data quality diagnostics | **Complete** |
 | Phase 5 | Streamlit dashboards (overview, category, supplier, payment terms, quality) | Planned |
 | Phase 6 | Recommendation engine + review workstation | Planned |
 
-Each phase is a separate Ralph sprint. Do not implement Phase 3+ logic in Phase 1–2 modules — use `# TODO: Phase N` comments as placeholders where needed.
+Each phase is a separate Ralph sprint. Do not implement Phase 5+ logic in Phase 1–4 modules — use `# TODO: Phase N` comments as placeholders where needed.
 
 ## Running the Pipeline
 
@@ -140,9 +187,9 @@ For development, the typical Phase 1 loop is:
 make generate-test-data && make ingest && make run-tests
 ```
 
-For the full 3-phase pipeline (ingest → harmonise → categorise):
+For the full 4-phase pipeline (ingest → harmonise → categorise → cube):
 ```bash
-make ingest && make harmonise && make categorise
+make ingest && make harmonise && make categorise && make build-cube && make export
 ```
 
 ## Reference Data
