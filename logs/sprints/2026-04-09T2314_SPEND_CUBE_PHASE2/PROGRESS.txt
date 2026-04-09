@@ -93,3 +93,30 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+---
+
+## US-004 COMPLETE — 2026-04-09
+Implemented src/suppliers/parent_mapper.py — ParentMapper (Stage 5, LLM parent enrichment).
+
+### Key design decisions
+- **Client only initialised when not dry_run**: avoids import errors for projects without anthropic package
+  and prevents accidental API calls. Import is deferred inside __init__ to the live path only.
+- **Batch size from config.llm.batch_size**: default 20 per spec. Loop slices supplier_names in groups.
+- **Confidence hard-capped at 0.50**: min(raw_confidence, 0.50) applied per item, regardless of LLM output.
+  LLM results always go to human review — never auto-accepted.
+- **JSON parsing is robust**: strips markdown code fences (``` blocks) before json.loads(). Returns
+  LLM_PARSE_ERROR method for unparseable responses, LLM_ERROR for API errors.
+- **Lookup by supplier_name within parsed response**: builds dict keyed by supplier_name to handle
+  responses where order differs from input, or where some names are absent.
+- **log_llm_call() called per batch**: logs prompt_preview, model, tokens_used as structured metadata.
+- **DRY RUN path**: single log line 'DRY RUN: skipping parent company LLM enrichment', returns list
+  of dicts with parent_company_name=None, confidence=0.0, method='DRY_RUN'.
+
+### CLI verified
+Running python3 src/suppliers/parent_mapper.py with dry_run=True prints DRY RUN message and returns
+5 null-parent results with method=DRY_RUN. Exits 0.
+
+### [US-004] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
