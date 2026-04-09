@@ -577,6 +577,11 @@ if __name__ == "__main__":
         help="Path to SQLite database (default: data/db/spend_cube.db)",
     )
     parser.add_argument(
+        "--input",
+        default=None,
+        help="Optional CSV/Excel path — if provided, ingests first then harmonises",
+    )
+    parser.add_argument(
         "--config",
         default="config.yaml",
         help="Path to config.yaml (default: config.yaml)",
@@ -590,6 +595,13 @@ if __name__ == "__main__":
     engine = get_engine(args.db)
     init_db(engine)
 
+    if args.input:
+        from src.ingestion.ingest import Ingestor
+        print(f"Ingesting {args.input} into {args.db} ...")
+        ingestor = Ingestor(config)
+        count = ingestor.ingest_to_db(args.input, engine)
+        print(f"  {count} rows written\n")
+
     transactions_df = get_transactions(engine)
 
     if transactions_df.empty:
@@ -601,6 +613,33 @@ if __name__ == "__main__":
 
     harmoniser = SupplierHarmoniser(config, engine)
     supplier_master_df, match_log_df = harmoniser.harmonise(transactions_df)
+
+    # Update canonical supplier columns on transactions in DB
+    if not match_log_df.empty:
+        enriched_df = harmoniser.update_transactions(transactions_df, match_log_df)
+        # Map enriched DataFrame columns → transactions table columns
+        col_map = {
+            "canonical_supplier_id": "canonical_supplier_id",
+            "canonical_supplier_name": "canonical_supplier_name",
+            "supplier_match_confidence": "canonical_supplier_confidence",
+            "parent_company_id": "parent_company_id",
+            "parent_company_name": "parent_company_name",
+        }
+        db_col_names = [c.name for c in transactions_table.columns]
+        update_cols = [
+            (src, dst)
+            for src, dst in col_map.items()
+            if src in enriched_df.columns and dst in db_col_names
+        ]
+        if update_cols and "transaction_id" in enriched_df.columns:
+            with engine.begin() as conn:
+                for _, row in enriched_df.iterrows():
+                    vals = {dst: row.get(src) for src, dst in update_cols}
+                    conn.execute(
+                        transactions_table.update()
+                        .where(transactions_table.c.transaction_id == row["transaction_id"])
+                        .values(**vals)
+                    )
 
     # Summary
     unique_raw = len(match_log_df) if not match_log_df.empty else 0

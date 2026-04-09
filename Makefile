@@ -14,7 +14,7 @@ ingest:
 
 harmonise:
 	@echo "Running harmonise"
-	python src/suppliers/harmoniser.py
+	python src/suppliers/harmoniser.py --db data/db/spend_cube.db
 
 categorise:
 	@echo "Running categorise"

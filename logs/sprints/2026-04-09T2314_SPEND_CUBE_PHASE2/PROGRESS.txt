@@ -192,3 +192,29 @@ Story completed successfully by Ralph loop iteration 6
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+---
+
+## US-007 COMPLETE — 2026-04-09
+Integrated harmoniser with Makefile and verified end-to-end pipeline.
+
+### Changes made
+- **Makefile**: updated `harmonise` target to `python src/suppliers/harmoniser.py --db data/db/spend_cube.db`
+- **harmoniser.py CLI**: added `--input` argument — if provided, ingests CSV first then harmonises; if not, harmonises existing DB transactions. Also added post-harmonisation `update_transactions` call that writes canonical supplier columns back to the transactions table in DB.
+
+### Key design decisions
+- **Column mapping for DB write**: transactions table uses `canonical_supplier_confidence` not `supplier_match_confidence`. Added explicit `col_map` to translate enriched DataFrame columns to DB column names before UPDATE.
+- **Row-by-row UPDATE via SQLAlchemy Core**: update_transactions returns a DataFrame; CLI iterates rows and issues per-row UPDATE using transaction_id as key. Matches Phase 1 pattern of using SQLAlchemy Core (not ORM).
+- **`--input` path uses Ingestor.ingest_to_db()**: same function used by ingest.py CLI, deferred import inside the CLI block to avoid circular import risk.
+
+### End-to-end verification
+- `python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db` → 10 rows
+- `python src/suppliers/harmoniser.py --db data/db/spend_cube.db` → exits 0, 5 canonical suppliers
+- supplier_master: 5 entries (Acme Pty Ltd, Bhp Billiton Ltd, Dhl Express, Intercompany - Legal, Sodexo Australia Pty Ltd) ✓
+- supplier_match_log: 9 entries (one per unique raw supplier name) ✓
+- transactions: all 3 Acme rows → canonical_supplier_id=822b33ad87c1 ✓
+- Note: sample.csv has no Telstra row — acceptance criteria's Telstra mention does not match actual data; all other criteria pass.
+
+### [US-007] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+
