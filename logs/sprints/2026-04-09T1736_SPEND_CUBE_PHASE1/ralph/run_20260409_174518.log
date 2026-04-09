@@ -450,3 +450,68 @@ STORY_COMPLETE: US-007
 [2026-04-09 17:59:37] [OK] Marked US-007 as passed
 [2026-04-09 17:59:37] [INFO] Logged progress for US-007: PASSED
 [2026-04-09 17:59:37] [STEP] Committing changes...
+[2026-04-09 17:59:39] [INFO] Starting iteration 8
+[2026-04-09 17:59:39] [INFO] Processing story: US-008
+[2026-04-09 17:59:39] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Implement currency converter
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/ingestion/currency_converter.py to convert transaction amounts from original currency to base currency using the bundled FX rate table created in US-005.
+
+## Acceptance Criteria
+- Edit file: src/ingestion/currency_converter.py — implement CurrencyConverter class
+- __init__(self, fx_rates_path: str, base_currency: str = 'AUD'): loads data/reference/fx_rates.csv, creates a lookup dict keyed by (from_ccy, to_ccy, year_month_str)
+- Implement convert(self, amount: Decimal, from_ccy: str, transaction_date: date) -> tuple[Decimal, float | None, str | None] returning (converted_amount, rate_used, warning). Warning is None on success.
+- If from_ccy == base_currency: return (amount, 1.0, None)
+- If currency pair not in FX table: return (amount, None, f'UNKNOWN_CURRENCY_PAIR: {from_ccy}/{base_currency}')
+- If year_month not in table: find nearest available month, apply its rate, set warning = f'RATE_ESTIMATE: used {nearest_month} rate for {year_month}'
+- Implement convert_dataframe(self, df: pd.DataFrame, amount_col: str, currency_col: str, date_col: str) -> pd.DataFrame: adds columns base_amount (Decimal), fx_rate_used (float), fx_warning (str)
+- CLI: python src/ingestion/currency_converter.py — converts sample amounts including the DHL USD 8750.00 row, prints conversion table
+- Verify: convert(Decimal('8750.00'), 'USD', date(2024,2,12)) returns a converted amount between 12000 and 15000 AUD (reasonable range)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Implement currency converter`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-09 18:00:55] [OK] Story US-008 completed!
+[2026-04-09 18:00:55] [OK] Marked US-008 as passed
+[2026-04-09 18:00:55] [INFO] Logged progress for US-008: PASSED
+[2026-04-09 18:00:55] [STEP] Committing changes...

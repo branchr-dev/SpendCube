@@ -151,3 +151,26 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+## US-008 COMPLETE - 2026-04-09
+- Implemented CurrencyConverter class in src/ingestion/currency_converter.py
+- __init__ loads fx_rates.csv via csv.DictReader into dict keyed by (from_ccy, to_ccy, year_month)
+- Also builds _pair_months dict for nearest-month lookup
+- convert(): handles same-currency (1.0), unknown pair (UNKNOWN_CURRENCY_PAIR warning), exact month match, and nearest-month fallback (RATE_ESTIMATE warning)
+- convert_dataframe(): iterates rows, calls convert(), appends base_amount (Decimal), fx_rate_used (float), fx_warning (str) columns
+- CLI prints conversion table for 7 sample rows including DHL USD 8750.00
+- Verification: 8750.00 USD 2024-02 → 13229.51 AUD (rate 1.511944) — within 12000-15000 range
+- Note: Decimal precision maintained via Decimal(str(rate)) * amount to avoid float imprecision
+
+---
+
+### [US-008] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
+---
+
+### [US-008] - 2026-04-09 18:00:55
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+

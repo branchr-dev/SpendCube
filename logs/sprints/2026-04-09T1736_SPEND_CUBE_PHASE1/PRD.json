@@ -173,7 +173,8 @@
         "CLI: python src/ingestion/currency_converter.py — converts sample amounts including the DHL USD 8750.00 row, prints conversion table",
         "Verify: convert(Decimal('8750.00'), 'USD', date(2024,2,12)) returns a converted amount between 12000 and 15000 AUD (reasonable range)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:00:55Z"
     },
     {
       "id": "US-009",
