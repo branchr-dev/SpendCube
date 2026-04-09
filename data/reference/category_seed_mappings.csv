@@ -1,0 +1,214 @@
+mapping_type,source_value,internal_category_l1,internal_category_l2,internal_category_l3,unspsc_segment_code,confidence
+SUPPLIER,Telstra,IT,Telecommunications,Mobile Fleet,43,0.95
+SUPPLIER,Optus,IT,Telecommunications,Mobile Fleet,43,0.95
+SUPPLIER,Vodafone,IT,Telecommunications,Mobile Fleet,43,0.90
+SUPPLIER,TPG Telecom,IT,Telecommunications,Fixed Line,43,0.90
+SUPPLIER,Vocus,IT,Telecommunications,Fixed Line,43,0.88
+SUPPLIER,Microsoft,IT,Software,Productivity Software,43,0.97
+SUPPLIER,Adobe,IT,Software,Creative Software,43,0.97
+SUPPLIER,Salesforce,IT,Software,CRM Software,43,0.95
+SUPPLIER,SAP,IT,Software,ERP Software,43,0.95
+SUPPLIER,Oracle,IT,Software,Database Software,43,0.93
+SUPPLIER,AWS,IT,Cloud Services,Infrastructure,43,0.95
+SUPPLIER,Amazon Web Services,IT,Cloud Services,Infrastructure,43,0.95
+SUPPLIER,Google Cloud,IT,Cloud Services,Infrastructure,43,0.93
+SUPPLIER,Microsoft Azure,IT,Cloud Services,Infrastructure,43,0.93
+SUPPLIER,Dell,IT,Hardware,Computers,43,0.95
+SUPPLIER,HP,IT,Hardware,Computers,43,0.93
+SUPPLIER,Lenovo,IT,Hardware,Computers,43,0.93
+SUPPLIER,Apple,IT,Hardware,Mobile Devices,43,0.93
+SUPPLIER,Cisco,IT,Network Equipment,Switches and Routers,43,0.95
+SUPPLIER,DHL,Logistics,Freight,International Freight,78,0.97
+SUPPLIER,FedEx,Logistics,Freight,International Freight,78,0.97
+SUPPLIER,TNT,Logistics,Freight,International Freight,78,0.95
+SUPPLIER,UPS,Logistics,Freight,International Freight,78,0.95
+SUPPLIER,Australia Post,Logistics,Freight,Domestic Mail,78,0.95
+SUPPLIER,StarTrack,Logistics,Freight,Domestic Freight,78,0.95
+SUPPLIER,Toll Group,Logistics,Freight,Domestic Freight,78,0.93
+SUPPLIER,Linfox,Logistics,Warehousing,Contract Logistics,78,0.93
+SUPPLIER,Mainfreight,Logistics,Freight,Domestic Freight,78,0.90
+SUPPLIER,DB Schenker,Logistics,Freight,International Freight,78,0.90
+SUPPLIER,Sodexo,Facilities,Catering,Staff Catering,50,0.97
+SUPPLIER,Compass Group,Facilities,Catering,Staff Catering,50,0.97
+SUPPLIER,Spotless,Facilities,Cleaning,Commercial Cleaning,76,0.93
+SUPPLIER,ISS Facility Services,Facilities,Cleaning,Commercial Cleaning,76,0.95
+SUPPLIER,Broadspectrum,Facilities,Maintenance,Building Maintenance,72,0.90
+SUPPLIER,Programmed,Facilities,Maintenance,Building Maintenance,72,0.88
+SUPPLIER,CBRE,Facilities,Property,Property Management,72,0.90
+SUPPLIER,JLL,Facilities,Property,Property Management,72,0.90
+SUPPLIER,Cushman & Wakefield,Facilities,Property,Property Management,72,0.88
+SUPPLIER,Officeworks,Office Supplies,Stationery,General Stationery,44,0.97
+SUPPLIER,Staples,Office Supplies,Stationery,General Stationery,44,0.97
+SUPPLIER,OfficeMax,Office Supplies,Stationery,General Stationery,44,0.95
+SUPPLIER,Cartridge World,Office Supplies,Print Consumables,Toner and Ink,44,0.95
+SUPPLIER,Fuji Xerox,Office Supplies,Print Equipment,Printers,44,0.93
+SUPPLIER,Konica Minolta,Office Supplies,Print Equipment,Copiers,44,0.93
+SUPPLIER,Deloitte,Professional Services,Consulting,Management Consulting,80,0.95
+SUPPLIER,KPMG,Professional Services,Consulting,Management Consulting,80,0.95
+SUPPLIER,PwC,Professional Services,Consulting,Management Consulting,80,0.95
+SUPPLIER,EY,Professional Services,Consulting,Management Consulting,80,0.95
+SUPPLIER,McKinsey,Professional Services,Consulting,Strategy Consulting,80,0.97
+SUPPLIER,BCG,Professional Services,Consulting,Strategy Consulting,80,0.97
+SUPPLIER,Allens,Professional Services,Legal,Corporate Law,80,0.95
+SUPPLIER,King & Wood Mallesons,Professional Services,Legal,Corporate Law,80,0.95
+SUPPLIER,Herbert Smith Freehills,Professional Services,Legal,Corporate Law,80,0.95
+SUPPLIER,Clayton Utz,Professional Services,Legal,Corporate Law,80,0.93
+SUPPLIER,Hays,Professional Services,Recruitment,Temporary Staffing,80,0.95
+SUPPLIER,Michael Page,Professional Services,Recruitment,Permanent Recruitment,80,0.95
+SUPPLIER,Robert Half,Professional Services,Recruitment,Professional Staffing,80,0.93
+SUPPLIER,Manpower,Professional Services,Recruitment,Temporary Staffing,80,0.93
+SUPPLIER,Adecco,Professional Services,Recruitment,Temporary Staffing,80,0.93
+SUPPLIER,Aurecon,Professional Services,Engineering,Civil Engineering,81,0.95
+SUPPLIER,AECOM,Professional Services,Engineering,Engineering Consulting,81,0.95
+SUPPLIER,Jacobs,Professional Services,Engineering,Engineering Consulting,81,0.93
+SUPPLIER,GHD,Professional Services,Engineering,Engineering Consulting,81,0.93
+SUPPLIER,Arup,Professional Services,Engineering,Structural Engineering,81,0.93
+SUPPLIER,BlueScope Steel,Manufacturing,Raw Materials,Steel Products,73,0.95
+SUPPLIER,Dulux,Manufacturing,Raw Materials,Paints and Coatings,73,0.88
+SUPPLIER,3M,Manufacturing,Industrial Products,Safety Products,73,0.90
+SUPPLIER,Brady,Manufacturing,Industrial Products,Labelling,73,0.88
+GL,6420,Office Supplies,Stationery,,44,0.90
+GL,6421,Office Supplies,Print Consumables,,44,0.90
+GL,6422,Office Supplies,Print Equipment,,44,0.88
+GL,6300,Logistics,Freight,,78,0.90
+GL,6301,Logistics,Freight,International Freight,78,0.90
+GL,6302,Logistics,Warehousing,,78,0.88
+GL,6440,IT,Telecommunications,,43,0.90
+GL,6441,IT,Telecommunications,Mobile Fleet,43,0.92
+GL,6442,IT,Software,,43,0.90
+GL,6443,IT,Hardware,,43,0.88
+GL,6444,IT,Cloud Services,,43,0.88
+GL,6510,Facilities,Building Services,,72,0.88
+GL,6511,Facilities,Cleaning,,76,0.90
+GL,6512,Facilities,Catering,,50,0.90
+GL,6513,Facilities,Maintenance,,72,0.88
+GL,6514,Facilities,Property,,72,0.85
+GL,6600,Professional Services,Consulting,,80,0.85
+GL,6601,Professional Services,Legal,,80,0.88
+GL,6602,Professional Services,Audit and Accounting,,80,0.88
+GL,6603,Professional Services,Recruitment,,80,0.88
+GL,6700,Engineering,Engineering Consulting,,81,0.85
+GL,6800,Manufacturing,Raw Materials,,73,0.85
+GL,6420100,Office Supplies,Stationery,,44,0.92
+GL,6420200,Office Supplies,Print Consumables,,44,0.92
+GL,6440100,IT,Telecommunications,Mobile Fleet,43,0.92
+GL,6440200,IT,Software,Licensing,43,0.92
+GL,6510100,Facilities,Building Services,Electrical,72,0.90
+GL,6510200,Facilities,Building Services,HVAC,72,0.90
+GL,7000,Capital Expenditure,IT,Computer Equipment,43,0.80
+GL,7100,Capital Expenditure,Facilities,Fit-out,72,0.80
+GL,5500,Human Resources,Training,,80,0.82
+GL,5501,Human Resources,Recruitment,,80,0.85
+GL,5502,Human Resources,Travel and Accommodation,,78,0.85
+GL,5600,Marketing,Advertising,,55,0.82
+GL,5601,Marketing,Publishing,,55,0.85
+KEYWORD,toner,Office Supplies,Print Consumables,,44,0.92
+KEYWORD,ink cartridge,Office Supplies,Print Consumables,,44,0.92
+KEYWORD,paper,Office Supplies,Stationery,,44,0.85
+KEYWORD,stationery,Office Supplies,Stationery,,44,0.90
+KEYWORD,printer,Office Supplies,Print Equipment,,44,0.88
+KEYWORD,copier,Office Supplies,Print Equipment,,44,0.88
+KEYWORD,catering,Facilities,Catering,,50,0.88
+KEYWORD,coffee,Facilities,Catering,Beverages,50,0.88
+KEYWORD,cleaning,Facilities,Cleaning,,76,0.88
+KEYWORD,cleaning services,Facilities,Cleaning,Commercial Cleaning,76,0.90
+KEYWORD,freight,Logistics,Freight,,78,0.90
+KEYWORD,courier,Logistics,Freight,,78,0.90
+KEYWORD,postage,Logistics,Freight,Domestic Mail,78,0.88
+KEYWORD,shipping,Logistics,Freight,,78,0.88
+KEYWORD,airfare,Logistics,Travel,Air Travel,78,0.92
+KEYWORD,airline,Logistics,Travel,Air Travel,78,0.90
+KEYWORD,hotel,Logistics,Travel,Accommodation,78,0.88
+KEYWORD,accommodation,Logistics,Travel,Accommodation,78,0.90
+KEYWORD,car hire,Logistics,Travel,Car Rental,78,0.88
+KEYWORD,fuel,Logistics,Travel,Fuel,78,0.85
+KEYWORD,software licence,IT,Software,,43,0.90
+KEYWORD,software subscription,IT,Software,,43,0.90
+KEYWORD,cloud,IT,Cloud Services,,43,0.88
+KEYWORD,mobile phone,IT,Telecommunications,Mobile Fleet,43,0.92
+KEYWORD,internet,IT,Telecommunications,Fixed Line,43,0.88
+KEYWORD,laptop,IT,Hardware,Computers,43,0.90
+KEYWORD,computer,IT,Hardware,Computers,43,0.90
+KEYWORD,server,IT,Hardware,Servers,43,0.90
+KEYWORD,network,IT,Network Equipment,,43,0.85
+KEYWORD,consulting,Professional Services,Consulting,,80,0.80
+KEYWORD,legal fees,Professional Services,Legal,,80,0.88
+KEYWORD,audit,Professional Services,Audit and Accounting,,80,0.88
+KEYWORD,recruitment,Professional Services,Recruitment,,80,0.88
+KEYWORD,training,Professional Services,Training,,80,0.82
+KEYWORD,maintenance,Facilities,Maintenance,,72,0.80
+KEYWORD,repair,Facilities,Maintenance,,72,0.78
+KEYWORD,plumbing,Facilities,Maintenance,Plumbing,72,0.88
+KEYWORD,electrical,Facilities,Maintenance,Electrical,72,0.88
+KEYWORD,safety,Manufacturing,Safety,PPE,53,0.80
+KEYWORD,uniform,Manufacturing,Safety,Uniforms,53,0.88
+KEYWORD,PPE,Manufacturing,Safety,PPE,53,0.90
+KEYWORD,gloves,Manufacturing,Safety,PPE,53,0.85
+KEYWORD,hard hat,Manufacturing,Safety,PPE,53,0.90
+KEYWORD,waste,Facilities,Cleaning,Waste Management,76,0.85
+KEYWORD,chemicals,Facilities,Cleaning,Cleaning Chemicals,76,0.82
+KEYWORD,medical,Pharma,Medical Supplies,,51,0.75
+KEYWORD,pharmaceutical,Pharma,Drugs,,51,0.88
+KEYWORD,food,Facilities,Catering,,50,0.80
+KEYWORD,beverage,Facilities,Catering,Beverages,50,0.82
+KEYWORD,publication,Marketing,Publishing,,55,0.82
+KEYWORD,subscription,IT,Software,,43,0.72
+KEYWORD,engineering,Professional Services,Engineering,,81,0.78
+KEYWORD,testing,Professional Services,Engineering,Testing,81,0.78
+KEYWORD,calibration,Professional Services,Engineering,Calibration,81,0.85
+KEYWORD,rent,Facilities,Property,Rent,72,0.90
+KEYWORD,lease,Facilities,Property,Lease,72,0.88
+KEYWORD,insurance,Professional Services,Insurance,,80,0.85
+KEYWORD,advertising,Marketing,Advertising,,55,0.82
+KEYWORD,marketing,Marketing,Marketing Services,,55,0.80
+KEYWORD,construction,Facilities,Construction,,72,0.85
+KEYWORD,fit-out,Facilities,Construction,Fit-out,72,0.88
+KEYWORD,landscaping,Facilities,Grounds,Landscaping,72,0.88
+KEYWORD,gardening,Facilities,Grounds,Landscaping,72,0.85
+KEYWORD,manufacturing,Manufacturing,Production,,73,0.78
+KEYWORD,fabrication,Manufacturing,Production,Fabrication,73,0.85
+KEYWORD,welding,Manufacturing,Production,Fabrication,73,0.85
+SUPPLIER,Qantas,Logistics,Travel,Air Travel,78,0.95
+SUPPLIER,Virgin Australia,Logistics,Travel,Air Travel,78,0.95
+SUPPLIER,Jetstar,Logistics,Travel,Air Travel,78,0.93
+SUPPLIER,Flight Centre,Logistics,Travel,Travel Management,78,0.90
+SUPPLIER,Corporate Travel Management,Logistics,Travel,Travel Management,78,0.90
+SUPPLIER,Marriott,Logistics,Travel,Accommodation,78,0.92
+SUPPLIER,Hilton,Logistics,Travel,Accommodation,78,0.92
+SUPPLIER,Accor Hotels,Logistics,Travel,Accommodation,78,0.92
+SUPPLIER,Avis,Logistics,Travel,Car Rental,78,0.90
+SUPPLIER,Hertz,Logistics,Travel,Car Rental,78,0.90
+SUPPLIER,Uber,Logistics,Travel,Ground Transport,78,0.88
+SUPPLIER,Thales,Manufacturing,Defence,Electronics,73,0.85
+SUPPLIER,Caterpillar,Manufacturing,Heavy Equipment,Machinery,73,0.90
+SUPPLIER,Komatsu,Manufacturing,Heavy Equipment,Machinery,73,0.90
+SUPPLIER,Schneider Electric,IT,Energy Management,Power Systems,43,0.88
+SUPPLIER,Johnson Controls,Facilities,Building Automation,BMS,72,0.88
+SUPPLIER,Siemens,Facilities,Building Automation,BMS,72,0.88
+SUPPLIER,Honeywell,Facilities,Building Automation,BMS,72,0.85
+SUPPLIER,Bunnings,Facilities,Maintenance,Hardware,72,0.85
+SUPPLIER,Grainger,Facilities,Maintenance,MRO Supplies,72,0.85
+SUPPLIER,Blackwoods,Manufacturing,Safety,PPE,53,0.88
+SUPPLIER,Protector Alsafe,Manufacturing,Safety,PPE,53,0.88
+GL,6450,Facilities,Grounds,Landscaping,72,0.85
+GL,6460,Facilities,Security,Guard Services,80,0.85
+GL,6470,Facilities,Waste Management,,76,0.85
+GL,6480,Office Supplies,Furniture,,44,0.85
+GL,6490,Facilities,Catering,Beverages,50,0.88
+GL,6620,Professional Services,Insurance,,80,0.82
+GL,6630,Professional Services,Training,,80,0.82
+GL,5503,Human Resources,Benefits,,80,0.80
+GL,5510,Logistics,Travel,Air Travel,78,0.88
+GL,5511,Logistics,Travel,Accommodation,78,0.88
+GL,5512,Logistics,Travel,Ground Transport,78,0.85
+KEYWORD,video conference,IT,Telecommunications,Video Conferencing,43,0.90
+KEYWORD,managed services,IT,Managed Services,,43,0.85
+KEYWORD,helpdesk,IT,Support Services,,43,0.88
+KEYWORD,security guard,Facilities,Security,Guard Services,80,0.90
+KEYWORD,CCTV,Facilities,Security,Surveillance,80,0.88
+KEYWORD,waste disposal,Facilities,Waste Management,,76,0.88
+KEYWORD,rubbish,Facilities,Waste Management,,76,0.85
+KEYWORD,recycling,Facilities,Waste Management,Recycling,76,0.85
+KEYWORD,furniture,Office Supplies,Furniture,,44,0.85
+KEYWORD,desk,Office Supplies,Furniture,Desks,44,0.85
+KEYWORD,chair,Office Supplies,Furniture,Chairs,44,0.85
