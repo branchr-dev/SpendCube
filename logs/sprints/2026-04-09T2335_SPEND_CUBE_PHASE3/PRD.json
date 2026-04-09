@@ -110,7 +110,8 @@
         "If sentence-transformers unavailable: log warning, return all rows as unclassified (pass-through to LLM)",
         "CLI: python src/categorisation/embedding_classifier.py — encodes sample descriptions, prints top-3 category matches with similarity scores for each"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:24:27Z"
     },
     {
       "id": "US-005",

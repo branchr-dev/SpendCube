@@ -196,3 +196,66 @@ STORY_COMPLETE: US-003
 [2026-04-10 00:21:21] [OK] Marked US-003 as passed
 [2026-04-10 00:21:21] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 00:21:21] [STEP] Committing changes...
+[2026-04-10 00:21:23] [INFO] Starting iteration 4
+[2026-04-10 00:21:23] [INFO] Processing story: US-004
+[2026-04-10 00:21:23] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement embedding-based category classifier
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/categorisation/embedding_classifier.py as Pass 4: encode transaction descriptions with sentence-transformers and compare against category description embeddings. Only invoked for transactions not classified by passes 1-3.
+
+## Acceptance Criteria
+- Edit file: src/categorisation/embedding_classifier.py — implement EmbeddingCategoriser class
+- __init__(self, hierarchy_path: str, model_name: str = 'all-MiniLM-L6-v2', cache_path: str = 'data/cache/category_embeddings.pkl', config=None): loads internal_category_hierarchy.csv, builds category descriptions by concatenating l1_name + ' ' + l2_name + ' ' + l3_name for each unique L2. Loads or computes embeddings for all category descriptions, caches to data/cache/category_embeddings.pkl.
+- Implement classify(self, description: str, config) -> tuple[str | None, str | None, str | None, str | None, float, str, str]: encodes description, computes cosine similarity against all category embeddings. Returns (l1, l2, l3, unspsc_segment, confidence, method, evidence). If top similarity >= config.categorisation.embedding_threshold (0.80): confidence = top_similarity * 0.9, method='EMBEDDING'. If top-2 similarities within 0.05 of each other AND both above 0.70: flag as ambiguous → confidence = top_similarity * 0.75 (pushes toward review queue). Below threshold → (None, None, None, None, top_similarity, 'EMBEDDING_REJECT', evidence).
+- Implement classify_batch(self, df: pd.DataFrame, config) -> tuple[pd.DataFrame, pd.DataFrame]: batch version. Returns (classified_df, unclassified_df) where unclassified = rows where confidence < config.categorisation.confidence_medium.
+- evidence string: f'cosine={top_similarity:.3f} top_category={best_category} second={second_similarity:.3f}'
+- If sentence-transformers unavailable: log warning, return all rows as unclassified (pass-through to LLM)
+- CLI: python src/categorisation/embedding_classifier.py — encodes sample descriptions, prints top-3 category matches with similarity scores for each
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement embedding-based category classifier`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 00:24:27] [OK] Story US-004 completed!
+[2026-04-10 00:24:27] [OK] Marked US-004 as passed
+[2026-04-10 00:24:27] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 00:24:27] [STEP] Committing changes...

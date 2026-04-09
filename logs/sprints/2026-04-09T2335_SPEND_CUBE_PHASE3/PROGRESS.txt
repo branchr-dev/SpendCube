@@ -57,3 +57,27 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 COMPLETE — 2026-04-10
+- Implemented EmbeddingCategoriser in src/categorisation/embedding_classifier.py
+- Hierarchy loaded at __init__; 40 L2-level category descriptions built by grouping hierarchy rows on l2_code/l2_name and joining all L3 names (richer semantic content for embedding)
+- Embedding cache uses dict with {"descriptions": [...], "embeddings": ndarray} — cache invalidated automatically if descriptions change
+- classify() logic: top similarity ≥ 0.80 → conf=sim*0.9 (EMBEDDING); ambiguous (top-2 within 0.05 AND both >0.70) → conf=sim*0.75; below threshold → EMBEDDING_REJECT
+- classify_batch() splits on confidence_medium (0.60); also writes category_evidence column if present
+- sentence-transformers unavailable → graceful passthrough (all rows returned as unclassified)
+- CLI: top-3 matches per description, followed by classify() result
+- Sample results: "Office supplies - toner cartridges HP" → Office Supplies/Print Consumables (0.803); "Management consulting" → Professional Services/Consulting (0.810)
+- Most descriptions score below 0.80 threshold (correct — they should fall through to LLM); only very direct matches exceed threshold
+- category_embeddings.pkl cached at data/cache/category_embeddings.pkl after first run
+- sentence-transformers installed system-wide via pip3 --break-system-packages
+
+### [US-004] - 2026-04-10 00:24:00
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
+
+---
+
+### [US-004] - 2026-04-10 00:24:27
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
