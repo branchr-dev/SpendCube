@@ -51,18 +51,45 @@ The LLM (Claude via Anthropic API) is used **only** for:
 
 The LLM is **not** used for: date parsing, currency conversion, column mapping, deduplication, or any task solvable deterministically.
 
+## Phase 2: Supplier Harmonisation
+
+Phase 2 implements a 5-stage supplier harmonisation pipeline in `src/suppliers/`. Each stage processes only the suppliers not resolved by earlier stages.
+
+**Pipeline order (strict):** normalise → deterministic → fuzzy → embedding → LLM
+
+| Stage | Module | Description |
+|-------|--------|-------------|
+| 1. Normalise | `normaliser.py` | Lowercase, strip legal suffixes, expand abbreviations, strip T/A prefixes, collapse whitespace. Runs on every supplier name before any matching. |
+| 2. Deterministic | `matcher.py` | Exact match on normalised name (confidence 0.95) or exact vendor ID (confidence 0.99). |
+| 3. Fuzzy | `matcher.py` | rapidfuzz composite: `token_sort_ratio * 0.40 + token_set_ratio * 0.40 + partial_ratio * 0.20`. Corroboration boosts (city, postcode, ABN) added as flat points. Auto-accept threshold: 88; review threshold: 70. |
+| 4. Embedding | `embeddings.py` | sentence-transformers `all-MiniLM-L6-v2`, cosine similarity on normalised names. Embeddings cached to `data/cache/supplier_embeddings.pkl`. Auto threshold: 0.90; review threshold: 0.80. |
+| 5. LLM | `parent_mapper.py` | Parent company identification only. Batches 20 suppliers per call. Only runs when `config.llm.dry_run = false`. |
+
+**`canonical_supplier_id` generation** — SHA256 of the normalised supplier name, first 12 hex characters. Example: `hashlib.sha256(normalised_name.encode()).hexdigest()[:12]`. IDs are stable and reproducible across pipeline runs (not random UUIDs).
+
+**Confidence bands** — `ConfidenceBand.get_band(score)` in `src/models/schema.py`:
+- `HIGH`: score >= 0.85
+- `MEDIUM`: score >= 0.60
+- `LOW`: score < 0.60
+
+**Review queue** — any raw supplier with `supplier_match_confidence < 0.60` is written to `supplier_match_log` with `review_status = PENDING`. These require human review before downstream use.
+
+**LLM parent enrichment** — results are always capped at confidence 0.50 (LOW band), never auto-accepted. Always goes to the review queue regardless of LLM output confidence. Only runs when `dry_run = false`.
+
+**Idempotency** — the harmoniser checks `canonical_supplier_id` against the existing `supplier_master` before inserting. Running twice on the same input leaves row counts unchanged.
+
 ## Phase Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| **Phase 1** | Foundation: ingestion pipeline, canonical schema, SQLite, reference data, unit tests | **Active** |
-| Phase 2 | Supplier harmonisation (name normalisation, fuzzy + embedding matching, parent mapping) | Planned |
+| **Phase 1** | Foundation: ingestion pipeline, canonical schema, SQLite, reference data, unit tests | **Complete** |
+| **Phase 2** | Supplier harmonisation (name normalisation, fuzzy + embedding matching, parent mapping) | **Complete** |
 | Phase 3 | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | Planned |
 | Phase 4 | Spend cube construction + data quality diagnostics | Planned |
 | Phase 5 | Streamlit dashboards (overview, category, supplier, payment terms, quality) | Planned |
 | Phase 6 | Recommendation engine + review workstation | Planned |
 
-Each phase is a separate Ralph sprint. Do not implement Phase 2+ logic in Phase 1 modules — use `# TODO: Phase N` comments as placeholders where needed.
+Each phase is a separate Ralph sprint. Do not implement Phase 3+ logic in Phase 1–2 modules — use `# TODO: Phase N` comments as placeholders where needed.
 
 ## Running the Pipeline
 
