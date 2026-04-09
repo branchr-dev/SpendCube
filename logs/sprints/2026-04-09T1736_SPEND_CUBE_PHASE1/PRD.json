@@ -192,7 +192,8 @@
         "clean() method applies all detections and adds columns: document_type, payment_terms_days, is_credit_note, is_intercompany, is_tax_line, is_freight_line",
         "CLI: python src/ingestion/cleaner.py — loads sample data, runs clean(), prints before/after for key fields"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:03:15Z"
     },
     {
       "id": "US-010",
