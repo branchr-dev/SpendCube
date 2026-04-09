@@ -198,3 +198,67 @@ STORY_COMPLETE: US-003
 [2026-04-09 17:49:47] [OK] Marked US-003 as passed
 [2026-04-09 17:49:47] [INFO] Logged progress for US-003: PASSED
 [2026-04-09 17:49:47] [STEP] Committing changes...
+[2026-04-09 17:49:49] [INFO] Starting iteration 4
+[2026-04-09 17:49:49] [INFO] Processing story: US-004
+[2026-04-09 17:49:49] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement SQLite database setup with SQLAlchemy Core
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/models/database.py defining all SQLite tables using SQLAlchemy Core (not ORM) and providing helper functions for database operations. Schema must be Postgres-compatible — no SQLite-specific types.
+
+## Acceptance Criteria
+- Edit file: src/models/database.py — define metadata = MetaData() and SQLAlchemy Table objects for: transactions_table (all canonical CanonicalTransaction fields as columns; raw_data as TEXT; use TEXT for strings, FLOAT for floats, INTEGER for ints, TEXT for dates stored as ISO strings), supplier_master_table (canonical_supplier_id TEXT PRIMARY KEY, canonical_name TEXT, parent_company_id TEXT, parent_name TEXT, country TEXT, identifiers TEXT, created_at TEXT, updated_at TEXT), supplier_match_log_table (id TEXT PRIMARY KEY, raw_supplier_name TEXT, raw_supplier_id TEXT, canonical_supplier_id TEXT, match_method TEXT, confidence FLOAT, evidence TEXT, review_status TEXT, created_at TEXT), category_overrides_table (id TEXT PRIMARY KEY, canonical_supplier_id TEXT, gl_account TEXT, override_l1 TEXT, override_l2 TEXT, override_l3 TEXT, unspsc_code TEXT, reviewer TEXT, reason TEXT, created_at TEXT), audit_log_table (id TEXT PRIMARY KEY, table_name TEXT, record_id TEXT, field_name TEXT, old_value TEXT, new_value TEXT, changed_by TEXT, changed_at TEXT)
+- Implement get_engine(db_path: str) -> Engine using create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})
+- Implement init_db(engine: Engine) -> None that calls metadata.create_all(engine)
+- Implement insert_transactions(engine: Engine, records: list[dict]) -> int using engine.begin() context manager and INSERT, returns number of rows inserted
+- Implement get_transactions(engine: Engine, filters: dict = None) -> pd.DataFrame using pd.read_sql
+- Implement get_db_stats(engine: Engine) -> dict returning {'table_name': row_count} for all tables
+- CLI: python src/models/database.py --db-path data/db/spend_cube.db — creates DB, prints table names and row counts
+- Run: python src/models/database.py --db-path /tmp/test_spend.db — should print '5 tables created' without errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement SQLite database setup with SQLAlchemy Core`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-09 17:51:13] [OK] Story US-004 completed!
+[2026-04-09 17:51:13] [OK] Marked US-004 as passed
+[2026-04-09 17:51:13] [INFO] Logged progress for US-004: PASSED
+[2026-04-09 17:51:13] [STEP] Committing changes...

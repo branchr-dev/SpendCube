@@ -108,7 +108,8 @@
         "CLI: python src/models/database.py --db-path data/db/spend_cube.db — creates DB, prints table names and row counts",
         "Run: python src/models/database.py --db-path /tmp/test_spend.db — should print '5 tables created' without errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T15:51:13Z"
     },
     {
       "id": "US-005",
