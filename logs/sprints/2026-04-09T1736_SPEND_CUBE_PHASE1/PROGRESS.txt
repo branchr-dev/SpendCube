@@ -299,3 +299,15 @@ Story completed successfully by Ralph loop iteration 13
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 13
 
+
+## US-014 - Write README.md and CLAUDE.md (2026-04-09)
+- Expanded README.md from stub to full project README with mermaid architecture diagram, quick start, installation, config reference, Makefile targets table, input data format table, pipeline stages, development guide, phased build plan
+- Created CLAUDE.md with project purpose, stack, key design decisions, LLM usage policy, phase status, running instructions, and reference data inventory
+- Both files committed in feat: complete US-014
+
+---
+
+### [US-014] - 2026-04-09 18:21:10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 14
+

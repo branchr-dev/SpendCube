@@ -839,3 +839,63 @@ STORY_COMPLETE: US-013
 [2026-04-09 18:19:33] [OK] Marked US-013 as passed
 [2026-04-09 18:19:33] [INFO] Logged progress for US-013: PASSED
 [2026-04-09 18:19:33] [STEP] Committing changes...
+[2026-04-09 18:19:35] [INFO] Starting iteration 14
+[2026-04-09 18:19:35] [INFO] Processing story: US-014
+[2026-04-09 18:19:35] [STEP] Spawning Claude with prompt for US-014
+--- PROMPT FOR US-014 ---
+You are working on story US-014: Write README.md and CLAUDE.md
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Expand README.md from its current '# SpendCube' state into a complete project README with architecture diagram, setup instructions, and usage. Also create CLAUDE.md documenting project context for future Claude Code sessions.
+
+## Acceptance Criteria
+- Edit file: README.md — write full README with sections: # SpendCube, ## Overview (2-3 sentences), ## Architecture (mermaid diagram showing: Input CSV/Excel → Ingestion Pipeline → Canonical Transactions SQLite → Supplier Harmonisation → Categorisation → Spend Cube Parquet → Streamlit Dashboard + Recommendation Engine), ## Quick Start (5-step getting started), ## Installation (pip install, make install), ## Configuration (config.yaml structure with key settings explained, note that dry_run: true is default), ## Usage (Makefile targets table), ## Input Data Format (table showing expected columns with sample values from the spec messy dataset), ## Pipeline Stages (brief description of each stage), ## Development (make generate-test-data, make run-tests, pytest with coverage), ## Phased Build Plan (table of 6 phases with status: Phase 1 In Progress, Phases 2-6 Planned), ## License
+- Create CLAUDE.md at /Users/tompurnell/Documents/Claude/SpendCube/CLAUDE.md with sections: ## Project Purpose (procurement spend cube for consulting/client diagnostics), ## Stack (Python 3.11, pandas, pydantic v2, SQLAlchemy Core, rapidfuzz, sentence-transformers, anthropic SDK, Streamlit, SQLite), ## Key Design Decisions (SQLAlchemy Core not ORM; pydantic v2 with use_enum_values=True; confidence scoring 0-1 with bands HIGH/MEDIUM/LOW; LLM is last resort not first pass; dry_run=true default; DD/MM/YYYY assumed for ambiguous dates), ## LLM Usage Policy (only for: uncategorised spend below 0.6 confidence, parent company identification, recommendation narratives, description enrichment), ## Phase Status (6 phases, Phase 1 active), ## Running the Pipeline (make targets), ## Reference Data (what's in data/reference/)
+- Verify: README.md contains a mermaid code block (```mermaid)
+- Verify: CLAUDE.md exists and is non-empty
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-014
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-014: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-014 - Write README.md and CLAUDE.md`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-014 ---
+STORY_COMPLETE: US-014
+--- END OUTPUT ---
+[2026-04-09 18:21:10] [OK] Story US-014 completed!
+[2026-04-09 18:21:10] [OK] Marked US-014 as passed
+[2026-04-09 18:21:10] [INFO] Logged progress for US-014: PASSED
+[2026-04-09 18:21:10] [STEP] Committing changes...
