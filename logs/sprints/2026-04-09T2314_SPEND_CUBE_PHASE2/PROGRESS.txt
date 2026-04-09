@@ -59,3 +59,37 @@ All test cases pass including exact name, exact vendor ID, fuzzy review, and no-
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+## US-003 COMPLETE — 2026-04-09
+Implemented src/suppliers/embeddings.py — EmbeddingMatcher (Stage 4).
+
+### Key design decisions
+- **sentence-transformers installed at runtime**: not in venv initially — added during this story.
+  requirements.txt already listed sentence-transformers>=2.2 so pip install was straightforward.
+- **Cache keyed by normalised name string**: dict[str, np.ndarray] pickled to data/cache/supplier_embeddings.pkl.
+  Encode() loads uncached names in batch from model, then saves full cache back to disk.
+- **Cosine similarity via normalised dot product**: embeddings normalised with L2 norm, then matrix multiply.
+  Small epsilon (1e-10) added to norms to prevent divide-by-zero for zero vectors.
+- **Graceful degradation**: ImportError on sentence-transformers import is caught at module load time.
+  All match/encode calls check _SENTENCE_TRANSFORMERS_AVAILABLE flag and return EMBEDDING_UNAVAILABLE tuple.
+- **match_batch encodes in single pass**: all query + candidate names encoded together, similarity matrix
+  computed as matrix multiply — avoids repeated model calls for batch operations.
+- **evidence string format**: f'cosine_similarity={top:.3f} matched={best_candidate}' as specified.
+- **Thresholds from config.supplier_matching**: embedding_auto_threshold=0.90, embedding_review_threshold=0.80.
+  Confidence = similarity * 0.95 (AUTO) or * 0.85 (REVIEW).
+
+### CLI verified
+Similarity matrix printed for 5 unique normalised names; acme self-similarity = 1.000 as expected.
+Cache saved to data/cache/supplier_embeddings.pkl (committed).
+
+---
+
+### [US-003] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+
+---
+
+### [US-003] - 2026-04-09 23:30:55
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+

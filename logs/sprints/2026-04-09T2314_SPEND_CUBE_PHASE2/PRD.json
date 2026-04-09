@@ -98,7 +98,8 @@
         "If sentence-transformers not available (ImportError): log warning and return (None, 0.0, 'EMBEDDING_UNAVAILABLE', 'sentence-transformers not installed') — do not crash",
         "CLI: python src/suppliers/embeddings.py — encodes sample supplier names, prints similarity matrix for Acme variants"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:30:55Z"
     },
     {
       "id": "US-004",

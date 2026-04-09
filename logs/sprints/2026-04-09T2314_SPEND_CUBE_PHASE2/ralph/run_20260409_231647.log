@@ -136,3 +136,66 @@ STORY_COMPLETE: US-002
 [2026-04-09 23:28:36] [OK] Marked US-002 as passed
 [2026-04-09 23:28:36] [INFO] Logged progress for US-002: PASSED
 [2026-04-09 23:28:36] [STEP] Committing changes...
+[2026-04-09 23:28:38] [INFO] Starting iteration 3
+[2026-04-09 23:28:38] [INFO] Processing story: US-003
+[2026-04-09 23:28:38] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement embedding-based supplier matcher
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/suppliers/embeddings.py Stage 4: sentence-transformer embedding similarity matching for suppliers not resolved by deterministic or fuzzy matching. Caches embeddings to disk to avoid recomputation on repeated runs.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/embeddings.py — implement EmbeddingMatcher class
+- __init__(self, model_name: str = 'all-MiniLM-L6-v2', cache_path: str = 'data/cache/supplier_embeddings.pkl'): loads sentence-transformers model, creates data/cache/ directory if needed
+- Implement encode(self, names: list[str]) -> np.ndarray: encodes list of normalised names. Checks cache first (dict keyed by name). Encodes uncached names in batch, updates cache, saves cache to disk.
+- Implement match(self, query_name: str, candidate_names: list[str], candidate_ids: list[str], config) -> tuple[str | None, float, str, str]: encodes query_name, computes cosine similarity against all candidate_names embeddings. Returns (canonical_supplier_id, confidence, method, evidence) where: if top_similarity >= embedding_auto_threshold → confidence = top_similarity * 0.95, method='EMBEDDING_AUTO'; if top_similarity >= embedding_review_threshold → confidence = top_similarity * 0.85, method='EMBEDDING_REVIEW'; else (None, top_similarity, 'EMBEDDING_REJECT', evidence). evidence = f'cosine_similarity={top_similarity:.3f} matched={best_candidate}'
+- Implement match_batch(self, query_names: list[str], candidate_names: list[str], candidate_ids: list[str], config) -> list[tuple]: batch version for efficiency
+- If sentence-transformers not available (ImportError): log warning and return (None, 0.0, 'EMBEDDING_UNAVAILABLE', 'sentence-transformers not installed') — do not crash
+- CLI: python src/suppliers/embeddings.py — encodes sample supplier names, prints similarity matrix for Acme variants
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement embedding-based supplier matcher`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-09 23:30:55] [OK] Story US-003 completed!
+[2026-04-09 23:30:55] [OK] Marked US-003 as passed
+[2026-04-09 23:30:55] [INFO] Logged progress for US-003: PASSED
+[2026-04-09 23:30:55] [STEP] Committing changes...
