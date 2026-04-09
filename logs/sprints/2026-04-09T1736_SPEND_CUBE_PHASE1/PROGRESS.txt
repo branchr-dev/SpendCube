@@ -65,3 +65,21 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 COMPLETE - 2026-04-09
+- Implemented src/models/database.py with SQLAlchemy Core (no ORM), Postgres-compatible types only
+- Defined metadata = MetaData() and 5 Table objects: transactions, supplier_master, supplier_match_log, category_overrides, audit_log
+- transactions_table maps all 42 CanonicalTransaction fields; booleans stored as INTEGER; dates as TEXT ISO strings; raw_data as TEXT (JSON-serialised)
+- Implemented get_engine(db_path) → Engine using sqlite:/// with check_same_thread=False
+- Implemented init_db(engine) → calls metadata.create_all(engine)
+- Implemented insert_transactions(engine, records) → auto-serialises raw_data dict to JSON string, returns rowcount
+- Implemented get_transactions(engine, filters) → pd.DataFrame via pd.read_sql with optional equality filters
+- Implemented get_db_stats(engine) → {table_name: row_count} for all 5 tables
+- CLI: python src/models/database.py --db-path <path> → prints "5 tables created" + per-table row counts
+- Note: project venv at .venv/ required (sqlalchemy + pandas); system python3 is externally managed
+
+---
+
+### [US-004] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
