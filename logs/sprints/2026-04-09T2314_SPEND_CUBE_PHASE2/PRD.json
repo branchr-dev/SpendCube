@@ -82,7 +82,8 @@
         "Both classes return evidence string describing match: e.g. 'token_sort=95 token_set=97 partial=88 composite=0.92 + city_match+5'",
         "CLI: python src/suppliers/matcher.py — tests matching logic on sample supplier variants, prints match results with confidence and method"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:28:36Z"
     },
     {
       "id": "US-003",

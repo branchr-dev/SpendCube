@@ -31,3 +31,31 @@ Implemented src/suppliers/normaliser.py — SupplierNormaliser class.
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+## US-002 COMPLETE — 2026-04-09
+Implemented src/suppliers/matcher.py — DeterministicMatcher (Stage 2) and FuzzyMatcher (Stage 3).
+
+### Key design decisions
+- **DeterministicMatcher indexes at init**: builds dict(normalised_name→id) and dict(raw_supplier_id→id)
+  from the supplier_master_df for O(1) lookup. Vendor IDs are read from identifiers JSON {"raw_ids": [...]}.
+- **Priority order**: exact normalised name (0.95) checked before vendor ID (0.99), though vendor ID
+  has higher confidence when matched.
+- **FuzzyMatcher works in 0–100 scale internally**: composite_100 = ts*0.4 + tset*0.4 + pr*0.2.
+  Corroboration boosts (5, 8, 20 points) are added directly to composite_100 before threshold
+  comparison. Confidence uses pre-boost composite_0_1 * 0.95/0.85 so boost only affects method,
+  not final confidence value.
+- **Spec ambiguity on raw_score scale**: acceptance criteria says "raw_score >= auto_threshold/100"
+  and "confidence = raw_score/100 * 0.95". Interpreted as: raw_score is in 0–100 scale (so dividing
+  by 100 for both comparisons and confidence). This is consistent with config using integer thresholds
+  and integer corroboration boosts.
+- **rapidfuzz returns floats**: scores are rounded in evidence string for readability.
+
+### CLI verified
+All test cases pass including exact name, exact vendor ID, fuzzy review, and no-match cases.
+
+
+---
+
+### [US-002] - 2026-04-09 23:28:36
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+

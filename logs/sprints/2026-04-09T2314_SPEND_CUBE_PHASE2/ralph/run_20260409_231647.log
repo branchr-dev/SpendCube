@@ -72,3 +72,67 @@ STORY_COMPLETE: US-001
 [2026-04-09 23:24:12] [OK] Marked US-001 as passed
 [2026-04-09 23:24:12] [INFO] Logged progress for US-001: PASSED
 [2026-04-09 23:24:12] [STEP] Committing changes...
+[2026-04-09 23:24:14] [INFO] Starting iteration 2
+[2026-04-09 23:24:14] [INFO] Processing story: US-002
+[2026-04-09 23:24:14] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Implement deterministic supplier matcher
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/suppliers/matcher.py Stage 2: deterministic matching on exact normalised name, exact vendor ID (raw_supplier_id), and cross-system vendor number mapping. This handles the clear-cut cases before fuzzy matching is invoked. Also implements Stage 3 fuzzy matching using rapidfuzz with composite scoring and corroboration signal boosts.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/matcher.py — implement DeterministicMatcher class and FuzzyMatcher class
+- DeterministicMatcher.__init__(self, supplier_master_df: pd.DataFrame): accepts existing supplier master as DataFrame for lookup
+- DeterministicMatcher.match(self, raw_name: str, normalised_name: str, raw_supplier_id: str = None) -> tuple[str | None, float, str]: returns (canonical_supplier_id, confidence, method). Tries: (1) exact normalised name match → confidence 0.95, method='EXACT_NAME'; (2) exact raw_supplier_id match → confidence 0.99, method='EXACT_VENDOR_ID'. Returns (None, 0.0, '') if no match.
+- FuzzyMatcher.__init__(self, supplier_master_df: pd.DataFrame, config): stores thresholds from config.supplier_matching
+- FuzzyMatcher.score(self, name_a: str, name_b: str) -> float: compute weighted composite: token_sort_ratio * 0.40 + token_set_ratio * 0.40 + partial_ratio * 0.20 (all from rapidfuzz, divided by 100 to get 0-1 scale)
+- FuzzyMatcher.match(self, normalised_name: str, corroboration: dict = None) -> tuple[str | None, float, str, str]: returns (canonical_supplier_id, confidence, method, evidence). Scores against all entries in supplier_master_df. Best score: if raw_score >= auto_threshold/100 → confidence = raw_score/100 * 0.95, method='FUZZY_AUTO'; if raw_score >= review_threshold/100 → confidence = raw_score/100 * 0.85, method='FUZZY_REVIEW'; else (None, raw_score/100, 'FUZZY_REJECT', evidence). Apply corroboration boosts (same_city, same_postcode, same_abn from config) as additive points to raw_score before threshold check.
+- Both classes return evidence string describing match: e.g. 'token_sort=95 token_set=97 partial=88 composite=0.92 + city_match+5'
+- CLI: python src/suppliers/matcher.py — tests matching logic on sample supplier variants, prints match results with confidence and method
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Implement deterministic supplier matcher`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-09 23:28:36] [OK] Story US-002 completed!
+[2026-04-09 23:28:36] [OK] Marked US-002 as passed
+[2026-04-09 23:28:36] [INFO] Logged progress for US-002: PASSED
+[2026-04-09 23:28:36] [STEP] Committing changes...
