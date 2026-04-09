@@ -69,3 +69,67 @@ STORY_COMPLETE: US-001
 [2026-04-10 00:13:23] [OK] Marked US-001 as passed
 [2026-04-10 00:13:23] [INFO] Logged progress for US-001: PASSED
 [2026-04-10 00:13:23] [STEP] Committing changes...
+[2026-04-10 00:13:25] [INFO] Starting iteration 2
+[2026-04-10 00:13:25] [INFO] Processing story: US-002
+[2026-04-10 00:13:25] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Implement deterministic GL and supplier categorisation
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/categorisation/deterministic.py with two deterministic passes: Pass 1 (GL code mapping) and Pass 2 (supplier mapping). Both use data/reference/category_seed_mappings.csv as lookup. Also implements Pass 0: category_overrides table lookup (highest priority, always checked first).
+
+## Acceptance Criteria
+- Edit file: src/categorisation/deterministic.py — implement DeterministicCategoriser class
+- __init__(self, seed_mappings_path: str, engine, config): loads category_seed_mappings.csv, loads category_overrides from DB via pd.read_sql, loads internal_category_hierarchy.csv for UNSPSC lookup
+- Implement apply_overrides(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 0. Checks category_overrides table — matches on canonical_supplier_id OR gl_account. Returns (classified_df with category fields populated, unclassified_df). Confidence=1.0, method='MANUAL'.
+- Implement apply_gl_mapping(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 1. For each row, look up gl_account in seed_mappings where mapping_type='GL'. Match on exact GL code first, then on GL prefix (first 4 digits). Assign confidence from seed mapping row. Returns (classified, unclassified).
+- Implement apply_supplier_mapping(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 2. For each row, look up canonical_supplier_name in seed_mappings where mapping_type='SUPPLIER' (case-insensitive). Assign confidence from seed mapping row. Returns (classified, unclassified).
+- Each classified row gets: internal_category_l1, internal_category_l2, internal_category_l3, unspsc_segment (from hierarchy lookup), category_confidence, category_method set appropriately.
+- GL prefix matching: normalise GL codes by stripping leading zeros, try exact match then try first-4-digits prefix (e.g. gl_account='6420100' → try '6420100' then '6420').
+- CLI: python src/categorisation/deterministic.py — loads sample transactions, runs all 3 passes, prints classification counts per pass and method
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Implement deterministic GL and supplier categorisation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-10 00:18:21] [OK] Story US-002 completed!
+[2026-04-10 00:18:21] [OK] Marked US-002 as passed
+[2026-04-10 00:18:21] [INFO] Logged progress for US-002: PASSED
+[2026-04-10 00:18:21] [STEP] Committing changes...

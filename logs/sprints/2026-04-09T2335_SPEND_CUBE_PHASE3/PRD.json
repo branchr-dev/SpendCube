@@ -78,7 +78,8 @@
         "GL prefix matching: normalise GL codes by stripping leading zeros, try exact match then try first-4-digits prefix (e.g. gl_account='6420100' → try '6420100' then '6420').",
         "CLI: python src/categorisation/deterministic.py — loads sample transactions, runs all 3 passes, prints classification counts per pass and method"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:18:21Z"
     },
     {
       "id": "US-003",
