@@ -82,3 +82,24 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+## US-005 COMPLETE — 2026-04-10
+- builder.py already had --db and --output flags (no change needed)
+- Updated Makefile: build-cube uses python src/cube/builder.py --db data/db/spend_cube.db
+- Updated Makefile: export uses python src/cube/exporter.py --db data/db/spend_cube.db --format parquet
+- Created src/cube/pipeline.py: orchestrates builder → metrics → exporter → diagnostics
+- Pipeline prints full KPI summary + data quality scorecard
+- End-to-end verified: pipeline exits 0, transactions.parquet (10 rows) matches SQLite (10 rows), quality_scorecard.json exists
+
+---
+
+### [US-005] - 2026-04-10 01:01:17
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
+
+---
+
+### [US-005] - 2026-04-10 01:01:42
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

@@ -265,3 +265,65 @@ STORY_COMPLETE: US-004
 [2026-04-10 01:00:27] [OK] Marked US-004 as passed
 [2026-04-10 01:00:27] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 01:00:27] [STEP] Committing changes...
+[2026-04-10 01:00:29] [INFO] Starting iteration 5
+[2026-04-10 01:00:29] [INFO] Processing story: US-005
+[2026-04-10 01:00:29] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Integrate cube pipeline with Makefile and end-to-end test
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Wire cube builder, metrics, exporter, and diagnostics into the Makefile build-cube and export targets. Verify end-to-end pipeline on sample data.
+
+## Acceptance Criteria
+- Edit file: src/cube/builder.py — ensure CLI accepts --db flag and --output flag
+- Edit file: Makefile — update build-cube target to: python src/cube/builder.py --db data/db/spend_cube.db; update export target to: python src/cube/exporter.py --db data/db/spend_cube.db --format parquet
+- Create src/cube/pipeline.py: a simple orchestrator script that runs builder → metrics → exporter → diagnostics in sequence. CLI: python src/cube/pipeline.py --db data/db/spend_cube.db. Prints final summary: total_spend, unique_suppliers, invoice_count, contract_coverage_pct, maverick_spend_pct, tail_spend_pct, data quality scorecard.
+- Run end-to-end: python src/cube/pipeline.py --db data/db/spend_cube.db — exits 0
+- Verify: data/output/transactions.parquet exists after running, data/output/quality_scorecard.json exists
+- Verify: loaded Parquet file has same row count as transactions table in SQLite
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Integrate cube pipeline with Makefile and end-to-end test`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 01:01:42] [OK] Story US-005 completed!
+[2026-04-10 01:01:42] [OK] Marked US-005 as passed
+[2026-04-10 01:01:42] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 01:01:42] [STEP] Committing changes...
