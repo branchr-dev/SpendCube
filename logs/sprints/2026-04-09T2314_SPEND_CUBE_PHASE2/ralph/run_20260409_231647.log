@@ -199,3 +199,68 @@ STORY_COMPLETE: US-003
 [2026-04-09 23:30:55] [OK] Marked US-003 as passed
 [2026-04-09 23:30:55] [INFO] Logged progress for US-003: PASSED
 [2026-04-09 23:30:55] [STEP] Committing changes...
+[2026-04-09 23:30:57] [INFO] Starting iteration 4
+[2026-04-09 23:30:57] [INFO] Processing story: US-004
+[2026-04-09 23:30:57] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement LLM parent company enrichment
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/suppliers/parent_mapper.py Stage 5: LLM-based parent company identification for canonical suppliers where parent is unknown. Must respect dry_run config, batch 20 suppliers per call, and cap all results at LOW confidence (0.50) since LLM results always require human review.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/parent_mapper.py — implement ParentMapper class
+- __init__(self, config): loads config, initialises anthropic.Anthropic() client only if not dry_run
+- Implement enrich(self, supplier_names: list[str]) -> list[dict]: if config.llm.dry_run is True, log 'DRY RUN: skipping parent company LLM enrichment' and return list of dicts with parent_company_name=None, confidence=0.0, method='DRY_RUN' for each supplier
+- When not dry_run: batch supplier_names into groups of config.llm.batch_size (default 20). For each batch, send a single Claude API call with prompt: 'For each of the following supplier names, identify the ultimate parent company or corporate group if known. If unsure, return null. Format: JSON array of objects with fields: supplier_name, parent_company_name (null if unknown or same entity), confidence (0.0-1.0). Only include well-known parent relationships you are confident about.\n\nSuppliers:\n{names_json}'
+- Use model from config.llm.model (claude-sonnet-4-20250514). Max tokens 1000. Temperature 0.
+- Parse JSON response, cap all confidence values at 0.50, set method='LLM_PARENT'
+- Log each LLM call via log_llm_call() from src/utils/logging.py
+- Handle API errors gracefully: log error, return None parent for affected batch
+- CLI: python src/suppliers/parent_mapper.py — with dry_run=true (default), prints 'DRY RUN' message for sample supplier list
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement LLM parent company enrichment`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-09 23:32:03] [OK] Story US-004 completed!
+[2026-04-09 23:32:03] [OK] Marked US-004 as passed
+[2026-04-09 23:32:03] [INFO] Logged progress for US-004: PASSED
+[2026-04-09 23:32:03] [STEP] Committing changes...

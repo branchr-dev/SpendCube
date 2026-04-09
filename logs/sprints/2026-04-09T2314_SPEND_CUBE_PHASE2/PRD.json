@@ -116,7 +116,8 @@
         "Handle API errors gracefully: log error, return None parent for affected batch",
         "CLI: python src/suppliers/parent_mapper.py — with dry_run=true (default), prints 'DRY RUN' message for sample supplier list"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:32:03Z"
     },
     {
       "id": "US-005",
