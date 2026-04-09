@@ -518,3 +518,62 @@ STORY_COMPLETE: US-008
 [2026-04-10 00:09:30] [OK] Marked US-008 as passed
 [2026-04-10 00:09:30] [INFO] Logged progress for US-008: PASSED
 [2026-04-10 00:09:30] [STEP] Committing changes...
+[2026-04-10 00:09:32] [INFO] Starting iteration 9
+[2026-04-10 00:09:32] [INFO] Processing story: US-009
+[2026-04-10 00:09:32] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Update CLAUDE.md with Phase 2 patterns
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md at the project root to document the supplier harmonisation pipeline patterns, the 5-stage architecture, confidence scoring, and the canonical_supplier_id generation approach. Future Claude sessions need this context.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — add section '## Phase 2: Supplier Harmonisation' documenting: 5-stage pipeline order (normalise → deterministic → fuzzy → embedding → LLM), canonical_supplier_id generation (SHA256 of normalised_name, first 12 hex chars), confidence bands (HIGH>=0.85, MEDIUM>=0.60, LOW<0.60), review queue threshold (confidence < 0.60 → PENDING in supplier_match_log), LLM parent enrichment only when dry_run=false and capped at 0.50 confidence
+- Update the '## Phase Status' section: Phase 1 Complete, Phase 2 Complete, Phases 3-6 Planned
+- Verify: CLAUDE.md contains 'SHA256' (canonical ID generation pattern) and 'PENDING' (review queue status)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Update CLAUDE.md with Phase 2 patterns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-04-10 00:10:17] [OK] Story US-009 completed!
+[2026-04-10 00:10:17] [OK] Marked US-009 as passed
+[2026-04-10 00:10:18] [INFO] Logged progress for US-009: PASSED
+[2026-04-10 00:10:18] [STEP] Committing changes...
