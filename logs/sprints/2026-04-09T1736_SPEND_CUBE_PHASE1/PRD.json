@@ -224,7 +224,8 @@
         "CLI: python src/ingestion/ingest.py --file data/input/sample.csv [--source DEFAULT] [--db data/db/spend_cube.db]: runs full pipeline, prints summary: total rows, document_type counts, flag counts (is_credit_note, is_intercompany, is_tax_line), currency conversion warnings, any parse failures",
         "Verify by running: python src/ingestion/ingest.py --file data/input/sample.csv — output must show: 10 rows processed, CREDIT_NOTE: 2 (CN-2024-001 negative amount + TAX-ADJ-001 has negative amount so also credit), is_intercompany: 1 (INTERCOMPANY - LEGAL), is_tax_line: 1 (TAX-ADJ-001 with GL 2100100), 1 USD transaction converted to AUD"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:11:27Z"
     },
     {
       "id": "US-012",

@@ -219,3 +219,31 @@ Story completed successfully by Ralph loop iteration 9
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 10
 
+
+## US-011 COMPLETE - 2026-04-09
+- Created data/input/sample.csv: 10-row messy dataset with header VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE
+- 3 Acme variants (Acme Pty Ltd / ACME PTY LIMITED / acme p/l), 3 Sodexo variants (Sodexo Australia Pty Ltd / SODEXO AUSTRALIA / Sodexo Aust P/L)
+- Mixed date formats: DD/MM/YYYY, YYYY-MM-DD, DD-Mon-YYYY, M/D/YYYY (5/4/2024)
+- CN-2024-001 (negative + CN prefix → CREDIT_NOTE), TAX-ADJ-001 (negative, blank VENDOR_NAME, GL 2100100 → CREDIT_NOTE + TAX)
+- INTERCOMPANY - LEGAL row (is_intercompany=True), DHL Express (USD → AUD conversion)
+- Implemented Ingestor class in src/ingestion/ingest.py
+- ingest_file(): reads CSV/Excel → column mapping → date parsing → currency conversion → cleaning → UUID generation → timestamps → raw_data JSON
+- ingest_to_db(): calls ingest_file(), converts to DB records (Decimal→float, bool→int, date→ISO), calls insert_transactions()
+- CLI: --file, --source, --db, --config args; prints document_type counts, flag counts, currency conversion summary
+- Verified: 10 rows processed, CREDIT_NOTE: 2, is_intercompany: 1, is_tax_line: 1, 1 USD transaction converted to AUD
+- Note: fx_rate_used renamed to fx_rate (to match DB column); is_freight_line and fx_warning excluded from DB insert (not in transactions table)
+- Note: _DB_COLUMNS set used to filter DataFrame columns before DB insert — prevents SQLAlchemy error on unknown columns
+
+---
+
+### [US-011] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 11
+
+
+---
+
+### [US-011] - 2026-04-09 18:11:27
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 11
+

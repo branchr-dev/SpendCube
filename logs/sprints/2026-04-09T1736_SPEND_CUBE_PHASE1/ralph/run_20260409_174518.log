@@ -644,3 +644,66 @@ STORY_COMPLETE: US-010
 [2026-04-09 18:04:40] [OK] Marked US-010 as passed
 [2026-04-09 18:04:40] [INFO] Logged progress for US-010: PASSED
 [2026-04-09 18:04:40] [STEP] Committing changes...
+[2026-04-09 18:04:42] [INFO] Starting iteration 11
+[2026-04-09 18:04:42] [INFO] Processing story: US-011
+[2026-04-09 18:04:42] [STEP] Spawning Claude with prompt for US-011
+--- PROMPT FOR US-011 ---
+You are working on story US-011: Implement ingestion pipeline orchestrator and create sample.csv
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/ingestion/ingest.py as the main ingestion orchestrator that ties together column mapping, date parsing, currency conversion, and cleaning into a single pipeline. Also create data/input/sample.csv containing the exact 10-row messy dataset from the spec. This story is the Phase 1 validation gate.
+
+## Acceptance Criteria
+- Create data/input/sample.csv containing the exact 10 rows from the spec sample dataset as comma-separated values with header: VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE. Include the row with empty VENDOR_NAME (the TAX-ADJ-001 row). The blank VENDOR_NAME should be an empty field.
+- Edit file: src/ingestion/ingest.py — implement Ingestor class
+- __init__(self, config): initialises ColumnMapper, CurrencyConverter, DataCleaner, loads config
+- Implement ingest_file(self, file_path: str, source_system: str = None) -> pd.DataFrame: reads CSV or .xlsx/.xls, auto-detects source system if not provided, applies column mapping, parses invoice_date with parse_date_series(), converts currency via CurrencyConverter, cleans with DataCleaner, generates UUID transaction_id for each row, sets source_row_number to original row index, sets ingested_at and last_modified_at to current UTC datetime, stores all original columns as JSON string in raw_data column
+- Implement ingest_to_db(self, file_path: str, engine, source_system: str = None) -> int: calls ingest_file(), converts DataFrame to list of dicts, calls insert_transactions(engine, records), returns row count
+- CLI: python src/ingestion/ingest.py --file data/input/sample.csv [--source DEFAULT] [--db data/db/spend_cube.db]: runs full pipeline, prints summary: total rows, document_type counts, flag counts (is_credit_note, is_intercompany, is_tax_line), currency conversion warnings, any parse failures
+- Verify by running: python src/ingestion/ingest.py --file data/input/sample.csv — output must show: 10 rows processed, CREDIT_NOTE: 2 (CN-2024-001 negative amount + TAX-ADJ-001 has negative amount so also credit), is_intercompany: 1 (INTERCOMPANY - LEGAL), is_tax_line: 1 (TAX-ADJ-001 with GL 2100100), 1 USD transaction converted to AUD
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-011
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-011: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-011 - Implement ingestion pipeline orchestrator and create sample.csv`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-011 ---
+STORY_COMPLETE: US-011
+--- END OUTPUT ---
+[2026-04-09 18:11:27] [OK] Story US-011 completed!
+[2026-04-09 18:11:27] [OK] Marked US-011 as passed
+[2026-04-09 18:11:27] [INFO] Logged progress for US-011: PASSED
+[2026-04-09 18:11:27] [STEP] Committing changes...
