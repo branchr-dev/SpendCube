@@ -1,0 +1,60 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+# Created: Thu  9 Apr 2026 17:45:18 CEST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE - 2026-04-09
+- Created all directories: src/, dashboard/, tests/, data/ and all subdirectories
+- Created 10 __init__.py files (all src/ subpackages + dashboard/)
+- Created 41 placeholder Python modules with docstrings + # TODO: implement
+- Created 7 test files with module docstrings only
+- Created requirements.txt with 16 pinned dependencies
+- Created Makefile with 9 targets (each prefixed with @echo)
+- Verified: python3 -c 'import src; import src.models; import src.ingestion' succeeds
+- Note: __pycache__ dirs created during import check were included in commit (not gitignored yet)
+
+
+---
+
+### [US-001] - 2026-04-09 17:47:05
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
+## US-002 COMPLETE - 2026-04-09
+- Created config.yaml at project root with all required sections (paths, llm, supplier_matching, categorisation, spend_cube, recommendations, logging, column_mappings/DEFAULT)
+- Implemented src/config.py with pydantic v2 typed Config model and nested section models
+- load_config() validates required sections, raises ConfigError with clear message if missing
+- Relative paths resolved to absolute anchored at config.yaml's directory
+- CLI: python3 src/config.py prints full config as formatted YAML, exits 0
+- Note: pyyaml and pydantic must be installed (pip3 install pyyaml pydantic) — included in requirements.txt
+
+---
+
+### [US-002] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-002] - 2026-04-09 17:48:02
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+
+## US-003 COMPLETE - 2026-04-09
+- Implemented 6 str enums: DocumentType, CategoryMethod, SpendType, Addressability, ManagedStatus, ReviewStatus
+- Implemented ConfidenceBand with HIGH=0.85, MEDIUM=0.60 class constants and get_band() classmethod
+- Implemented CanonicalTransaction with 42 fields: system identity, document, raw supplier, financial (original + base), GL/cost, payment, procurement refs, canonical supplier, categorisation, spend classification, boolean flags, review workflow, raw_data
+- Implemented SupplierMaster with 8 fields
+- Implemented SupplierMatchLog with 8 fields
+- CLI block creates minimal CanonicalTransaction and prints JSON + 'Schema OK'
+- Verify: python3 src/models/schema.py prints valid JSON and 'Schema OK' with no errors
+- Note: raw_data is typed as dict[str, Any] — JSON serialisable via model_dump_json()
+
+---
+
+### [US-003] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
