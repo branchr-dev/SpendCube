@@ -1,0 +1,8 @@
+category_l1,category_l2,category_l3,base_amount,invoice_number,po_number,payment_terms_days
+Facilities,Catering,,4300.0,2,2,30.0
+IT,Cloud Services,,6800.0,1,1,30.0
+IT,Telecommunications,Mobile Fleet,4200.0,1,1,30.0
+Logistics,Freight,International Freight,13229.51,1,1,14.0
+Marketing,Advertising,,2500.0,1,1,30.0
+Office Supplies,Print Consumables,,340.5,1,1,30.0
+Professional Services,Audit and Accounting,,15000.0,1,1,30.0

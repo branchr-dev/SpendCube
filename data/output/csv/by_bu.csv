@@ -1,0 +1,9 @@
+business_unit,cost_centre,base_amount,invoice_number,po_number,payment_terms_days
+Corporate,CC-ADM-01,340.5,1,1,30.0
+Corporate,CC-FIN-01,15000.0,1,1,30.0
+Corporate,CC-IT-01,4200.0,1,1,30.0
+Corporate,CC-IT-02,6800.0,1,1,30.0
+Corporate,CC-MKT-01,2500.0,1,1,30.0
+Operations,CC-LOG-01,13229.51,1,1,14.0
+Operations,CC-OPS-01,3200.0,1,1,30.0
+Operations,CC-OPS-02,1100.0,1,1,30.0
