@@ -1,0 +1,235 @@
+{
+  "project": {
+    "id": "SPEND-CUBE-PHASE2-2026-04",
+    "name": "SpendCube Phase 2 - Supplier Harmonisation",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2",
+    "track": "code"
+  },
+  "summary": "Phase 2 of a 6-phase procurement spend cube system. Builds the supplier harmonisation pipeline on top of the Phase 1 foundation. Implements: (1) name normaliser (suffix stripping, abbreviation expansion, T/A stripping), (2) deterministic matcher (exact normalised name, exact vendor ID), (3) fuzzy matcher (rapidfuzz composite scoring with corroboration signals), (4) embedding similarity matcher (sentence-transformers), (5) LLM parent company enrichment (dry-run aware, batched), (6) supplier master table builder, (7) harmoniser orchestrator tying all stages together. Validation gate: the 10-row sample data correctly merges Acme x3 and Sodexo x2 into canonical suppliers. 10+ passing unit tests.",
+  "decisions": {
+    "pipeline_stages": "5-stage pipeline runs in strict order: normalise → deterministic → fuzzy → embedding → LLM. Each stage only processes suppliers not resolved by earlier stages.",
+    "canonical_supplier_id": "Generated as a stable hash of the normalised canonical name (SHA256 first 12 chars) so IDs are reproducible across runs — not random UUIDs.",
+    "fuzzy_composite_score": "Weighted average of token_sort_ratio (40%), token_set_ratio (40%), partial_ratio (20%) from rapidfuzz. Corroboration signals (city, postcode, ABN, vendor_id) added as flat point boosts before thresholding.",
+    "embedding_model": "all-MiniLM-L6-v2 via sentence-transformers. Encode normalised supplier names only (not raw). Embeddings cached to disk (data/cache/supplier_embeddings.pkl) to avoid recomputation.",
+    "llm_parent_enrichment": "Only runs when config.llm.dry_run = false. Batches 20 canonical suppliers per call. Results always go to review queue (never auto-accepted) — confidence capped at 0.50.",
+    "review_queue": "Items with supplier_match_confidence < 0.60 (config.categorisation.confidence_medium) go to review queue. Stored in supplier_match_log with review_status=PENDING.",
+    "idempotency": "Running harmoniser twice on same input: checks if canonical_supplier_id already exists in supplier_master before inserting. Updates match_log entries rather than duplicating.",
+    "phase1_foundation": "Phase 1 is complete. supplier_master_table and supplier_match_log_table already defined in src/models/database.py. SupplierMaster and SupplierMatchLog pydantic models in src/models/schema.py. legal_suffixes.yaml and abbreviation_map.yaml in data/reference/."
+  },
+  "context": {
+    "existing_tables": {
+      "supplier_master": "canonical_supplier_id (TEXT PK), canonical_name, parent_company_id, parent_name, country, identifiers (JSON TEXT), created_at, updated_at — defined in src/models/database.py",
+      "supplier_match_log": "id (TEXT PK), raw_supplier_name, raw_supplier_id, canonical_supplier_id, match_method, confidence (FLOAT), evidence (TEXT), review_status, created_at — defined in src/models/database.py",
+      "transactions": "All canonical fields including canonical_supplier_id, canonical_supplier_name, parent_company_id, parent_company_name, supplier_match_confidence, supplier_match_method — these get populated by the harmoniser"
+    },
+    "key_files": [
+      "src/models/schema.py - SupplierMaster, SupplierMatchLog, ReviewStatus pydantic models (Phase 1)",
+      "src/models/database.py - get_engine(), init_db(), supplier_master_table, supplier_match_log_table, transactions_table, insert_transactions() (Phase 1)",
+      "src/config.py - load_config() returning Config with supplier_matching thresholds (Phase 1)",
+      "config.yaml - supplier_matching section: fuzzy_auto_threshold=88, fuzzy_review_threshold=70, embedding_auto_threshold=0.90, embedding_review_threshold=0.80, corroboration_same_city=5, corroboration_same_postcode=8, corroboration_same_abn=20 (Phase 1)",
+      "data/reference/legal_suffixes.yaml - list of entity suffixes to strip (Phase 1)",
+      "data/reference/abbreviation_map.yaml - abbreviation expansion map (Phase 1)",
+      "data/reference/category_seed_mappings.csv - includes SUPPLIER mapping_type rows with supplier→category (Phase 1)",
+      "data/input/sample.csv - 10-row messy sample with Acme x3, Sodexo x2 (Phase 1)",
+      "src/suppliers/normaliser.py - placeholder (Phase 1, implement now)",
+      "src/suppliers/matcher.py - placeholder (Phase 1, implement now)",
+      "src/suppliers/embeddings.py - placeholder (Phase 1, implement now)",
+      "src/suppliers/parent_mapper.py - placeholder (Phase 1, implement now)",
+      "src/suppliers/harmoniser.py - placeholder (Phase 1, implement now)",
+      "tests/test_supplier_harmonisation.py - placeholder (Phase 1, implement now)"
+    ],
+    "patterns_to_follow": [
+      "Each module independently runnable via CLI with if __name__ == '__main__' block — pattern established in Phase 1 ingestion modules",
+      "Use get_logger_from_config(name, config) from src/utils/logging.py for all logging",
+      "Load config via load_config() from src/config.py",
+      "Use get_engine(db_path) from src/models/database.py for all DB access",
+      "All methods idempotent — running twice on same input produces same output",
+      "Stage pipeline: each stage returns (matched, unmatched) DataFrames — unmatched passed to next stage",
+      "Confidence scoring: 0.0–1.0, bands HIGH>=0.85, MEDIUM>=0.60, LOW<0.60 (ConfidenceBand in src/models/schema.py)"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Implement supplier name normaliser",
+      "description": "Implement src/suppliers/normaliser.py. This is Stage 1 of the harmonisation pipeline — always runs first, on every supplier name. It produces a normalised form used for all downstream matching. Must correctly normalise all Acme and Sodexo variants from the sample data into the same normalised string.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/normaliser.py — implement SupplierNormaliser class",
+        "__init__(self, suffixes_path: str, abbreviations_path: str): loads data/reference/legal_suffixes.yaml and data/reference/abbreviation_map.yaml",
+        "Implement normalise(self, name: str) -> str performing in order: (1) return empty string if name is None/blank, (2) lowercase, (3) strip leading/trailing whitespace, (4) remove T/A, T.A., Trading As, t/a prefixes (regex), (5) strip legal entity suffixes from suffix list (word-boundary match, longest first), (6) expand abbreviations from abbreviation map (whole-word match only), (7) remove punctuation except hyphens within words, (8) collapse multiple spaces to single space, (9) strip again",
+        "Verify normalise() results: normalise('Acme Pty Ltd') == 'acme', normalise('ACME PTY LIMITED') == 'acme', normalise('acme p/l') == 'acme', normalise('SODEXO AUSTRALIA') == 'sodexo australia', normalise('Sodexo Aust P/L') == 'sodexo australia', normalise('DHL EXPRESS') == 'dhl express', normalise('Telstra Corporation') == 'telstra', normalise('INTERCOMPANY - LEGAL') == 'intercompany legal', normalise(None) == '', normalise('') == ''",
+        "Implement normalise_series(self, series: pd.Series) -> pd.Series for vectorised batch normalisation",
+        "CLI: python src/suppliers/normaliser.py — runs normalise() on all 10 sample supplier names, prints raw → normalised pairs",
+        "Run: python src/suppliers/normaliser.py — exits 0, Acme x3 all normalise to 'acme', Sodexo x2 both normalise to 'sodexo australia'"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-09T21:24:12Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Implement deterministic supplier matcher",
+      "description": "Implement src/suppliers/matcher.py Stage 2: deterministic matching on exact normalised name, exact vendor ID (raw_supplier_id), and cross-system vendor number mapping. This handles the clear-cut cases before fuzzy matching is invoked. Also implements Stage 3 fuzzy matching using rapidfuzz with composite scoring and corroboration signal boosts.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/matcher.py — implement DeterministicMatcher class and FuzzyMatcher class",
+        "DeterministicMatcher.__init__(self, supplier_master_df: pd.DataFrame): accepts existing supplier master as DataFrame for lookup",
+        "DeterministicMatcher.match(self, raw_name: str, normalised_name: str, raw_supplier_id: str = None) -> tuple[str | None, float, str]: returns (canonical_supplier_id, confidence, method). Tries: (1) exact normalised name match → confidence 0.95, method='EXACT_NAME'; (2) exact raw_supplier_id match → confidence 0.99, method='EXACT_VENDOR_ID'. Returns (None, 0.0, '') if no match.",
+        "FuzzyMatcher.__init__(self, supplier_master_df: pd.DataFrame, config): stores thresholds from config.supplier_matching",
+        "FuzzyMatcher.score(self, name_a: str, name_b: str) -> float: compute weighted composite: token_sort_ratio * 0.40 + token_set_ratio * 0.40 + partial_ratio * 0.20 (all from rapidfuzz, divided by 100 to get 0-1 scale)",
+        "FuzzyMatcher.match(self, normalised_name: str, corroboration: dict = None) -> tuple[str | None, float, str, str]: returns (canonical_supplier_id, confidence, method, evidence). Scores against all entries in supplier_master_df. Best score: if raw_score >= auto_threshold/100 → confidence = raw_score/100 * 0.95, method='FUZZY_AUTO'; if raw_score >= review_threshold/100 → confidence = raw_score/100 * 0.85, method='FUZZY_REVIEW'; else (None, raw_score/100, 'FUZZY_REJECT', evidence). Apply corroboration boosts (same_city, same_postcode, same_abn from config) as additive points to raw_score before threshold check.",
+        "Both classes return evidence string describing match: e.g. 'token_sort=95 token_set=97 partial=88 composite=0.92 + city_match+5'",
+        "CLI: python src/suppliers/matcher.py — tests matching logic on sample supplier variants, prints match results with confidence and method"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Implement embedding-based supplier matcher",
+      "description": "Implement src/suppliers/embeddings.py Stage 4: sentence-transformer embedding similarity matching for suppliers not resolved by deterministic or fuzzy matching. Caches embeddings to disk to avoid recomputation on repeated runs.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/embeddings.py — implement EmbeddingMatcher class",
+        "__init__(self, model_name: str = 'all-MiniLM-L6-v2', cache_path: str = 'data/cache/supplier_embeddings.pkl'): loads sentence-transformers model, creates data/cache/ directory if needed",
+        "Implement encode(self, names: list[str]) -> np.ndarray: encodes list of normalised names. Checks cache first (dict keyed by name). Encodes uncached names in batch, updates cache, saves cache to disk.",
+        "Implement match(self, query_name: str, candidate_names: list[str], candidate_ids: list[str], config) -> tuple[str | None, float, str, str]: encodes query_name, computes cosine similarity against all candidate_names embeddings. Returns (canonical_supplier_id, confidence, method, evidence) where: if top_similarity >= embedding_auto_threshold → confidence = top_similarity * 0.95, method='EMBEDDING_AUTO'; if top_similarity >= embedding_review_threshold → confidence = top_similarity * 0.85, method='EMBEDDING_REVIEW'; else (None, top_similarity, 'EMBEDDING_REJECT', evidence). evidence = f'cosine_similarity={top_similarity:.3f} matched={best_candidate}'",
+        "Implement match_batch(self, query_names: list[str], candidate_names: list[str], candidate_ids: list[str], config) -> list[tuple]: batch version for efficiency",
+        "If sentence-transformers not available (ImportError): log warning and return (None, 0.0, 'EMBEDDING_UNAVAILABLE', 'sentence-transformers not installed') — do not crash",
+        "CLI: python src/suppliers/embeddings.py — encodes sample supplier names, prints similarity matrix for Acme variants"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Implement LLM parent company enrichment",
+      "description": "Implement src/suppliers/parent_mapper.py Stage 5: LLM-based parent company identification for canonical suppliers where parent is unknown. Must respect dry_run config, batch 20 suppliers per call, and cap all results at LOW confidence (0.50) since LLM results always require human review.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/parent_mapper.py — implement ParentMapper class",
+        "__init__(self, config): loads config, initialises anthropic.Anthropic() client only if not dry_run",
+        "Implement enrich(self, supplier_names: list[str]) -> list[dict]: if config.llm.dry_run is True, log 'DRY RUN: skipping parent company LLM enrichment' and return list of dicts with parent_company_name=None, confidence=0.0, method='DRY_RUN' for each supplier",
+        "When not dry_run: batch supplier_names into groups of config.llm.batch_size (default 20). For each batch, send a single Claude API call with prompt: 'For each of the following supplier names, identify the ultimate parent company or corporate group if known. If unsure, return null. Format: JSON array of objects with fields: supplier_name, parent_company_name (null if unknown or same entity), confidence (0.0-1.0). Only include well-known parent relationships you are confident about.\\n\\nSuppliers:\\n{names_json}'",
+        "Use model from config.llm.model (claude-sonnet-4-20250514). Max tokens 1000. Temperature 0.",
+        "Parse JSON response, cap all confidence values at 0.50, set method='LLM_PARENT'",
+        "Log each LLM call via log_llm_call() from src/utils/logging.py",
+        "Handle API errors gracefully: log error, return None parent for affected batch",
+        "CLI: python src/suppliers/parent_mapper.py — with dry_run=true (default), prints 'DRY RUN' message for sample supplier list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Implement supplier master builder",
+      "description": "Implement the supplier master table builder in src/suppliers/harmoniser.py (partial implementation — the master builder portion). This takes a DataFrame of unique raw supplier names and builds the canonical supplier_master table by deduplicating against any existing entries.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/harmoniser.py — implement build_supplier_master(raw_suppliers: pd.DataFrame, engine, config) -> pd.DataFrame function (not a class yet — just this function)",
+        "raw_suppliers has columns: raw_supplier_name, raw_supplier_id (may be null), normalised_name (pre-computed)",
+        "For each unique normalised_name: generate canonical_supplier_id as first 12 chars of SHA256(normalised_name.encode()).hexdigest()",
+        "Build canonical_name as the most-common raw_supplier_name among all rows sharing the same normalised_name (title-cased)",
+        "Check if canonical_supplier_id already exists in supplier_master table (get_transactions equivalent for supplier_master). If exists, skip insert (idempotent).",
+        "Insert new canonical suppliers into supplier_master_table with: canonical_supplier_id, canonical_name, parent_company_id=None, parent_name=None, country=None, identifiers=JSON of {raw_ids: [list of unique raw_supplier_ids]}, created_at=now, updated_at=now",
+        "Return DataFrame of all canonical suppliers (both new and existing) with columns: canonical_supplier_id, canonical_name, normalised_name",
+        "Verify: given the 10-row sample data, the 5 Acme/ACME/acme rows produce exactly 1 canonical supplier entry, and the 2 Sodexo rows produce exactly 1 canonical supplier entry"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Implement harmoniser orchestrator",
+      "description": "Complete src/suppliers/harmoniser.py with the full SupplierHarmoniser orchestrator class that runs all 5 pipeline stages in order, produces the supplier_master and supplier_match_log tables, and updates the transactions table with canonical supplier IDs. This is the main entry point for the supplier harmonisation phase.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/harmoniser.py — implement SupplierHarmoniser class (in addition to the build_supplier_master function from US-005)",
+        "__init__(self, config, engine): initialises SupplierNormaliser, DeterministicMatcher, FuzzyMatcher, EmbeddingMatcher, ParentMapper, loads config thresholds",
+        "Implement harmonise(self, transactions_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: accepts transactions DataFrame (from ingestion), returns (supplier_master_df, match_log_df)",
+        "Pipeline: (1) Extract unique (raw_supplier_name, raw_supplier_id) pairs from transactions_df. (2) Normalise all names with SupplierNormaliser. (3) Group by normalised_name — rows with identical normalised_name are already the same supplier. (4) Build initial supplier_master via build_supplier_master(). (5) For each raw supplier not matched by normalisation alone, run DeterministicMatcher against existing master. (6) For remaining unmatched, run FuzzyMatcher. (7) For remaining unmatched, run EmbeddingMatcher. (8) Run ParentMapper on all canonical suppliers without a parent. (9) Write supplier_master to DB. (10) Write match_log entries for all raw→canonical mappings to DB. (11) Return both DataFrames.",
+        "Implement update_transactions(self, transactions_df: pd.DataFrame, match_log_df: pd.DataFrame) -> pd.DataFrame: joins match_log onto transactions by raw_supplier_name, populates canonical_supplier_id, canonical_supplier_name, parent_company_id, parent_company_name, supplier_match_confidence, supplier_match_method columns",
+        "Implement get_review_queue(self, match_log_df: pd.DataFrame) -> pd.DataFrame: returns rows where confidence < config.categorisation.confidence_medium (0.60), sorted by supplier spend desc (requires transactions_df join)",
+        "CLI: python src/suppliers/harmoniser.py --db data/db/spend_cube.db: loads transactions from DB, runs full harmonisation pipeline, prints summary: unique raw suppliers, canonical suppliers created, match method breakdown, review queue size"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Integrate harmoniser with Makefile and end-to-end pipeline",
+      "description": "Wire the harmoniser into the Makefile harmonise target and verify the end-to-end pipeline works: ingest sample.csv → harmonise → supplier_master populated with correct canonical suppliers. Also add a harmonise CLI that can be run standalone.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/harmoniser.py — ensure the CLI block (if __name__ == '__main__') accepts: --db (path to SQLite db, default data/db/spend_cube.db), --input (optional CSV path — if provided, ingests first then harmonises; if not, harmonises existing transactions in DB)",
+        "Edit file: Makefile — update harmonise target to: python src/suppliers/harmoniser.py --db data/db/spend_cube.db",
+        "End-to-end test: run python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db (ingest first), then python src/suppliers/harmoniser.py --db data/db/spend_cube.db",
+        "Verify end-to-end: after running both commands on sample.csv, the supplier_master table must contain: exactly 1 entry for 'acme' (canonical_name: 'Acme Pty Ltd' or similar), exactly 1 entry for 'sodexo australia', exactly 1 for 'dhl express', exactly 1 for 'telstra', plus entries for remaining unique suppliers",
+        "Verify: supplier_match_log has one entry per raw supplier name from sample.csv (10 rows → up to 9 non-null supplier entries)",
+        "Verify: transactions table rows for Acme Pty Ltd, ACME PTY LIMITED, acme p/l all have the same canonical_supplier_id",
+        "Run: python src/suppliers/harmoniser.py --db data/db/spend_cube.db — exits 0, prints supplier count summary"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Write Phase 2 unit tests",
+      "description": "Write comprehensive unit tests for all supplier harmonisation modules in tests/test_supplier_harmonisation.py. Tests must cover the core validation gate: Acme x3 and Sodexo x2 correctly merged. Minimum 12 tests, all passing.",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_supplier_harmonisation.py — write minimum 12 test functions",
+        "Test normaliser: test_normalise_acme_pty_ltd, test_normalise_acme_pty_limited, test_normalise_acme_pl (all three must produce identical output), test_normalise_sodexo_australia, test_normalise_sodexo_aust_pl (both must produce identical output), test_normalise_none_returns_empty, test_normalise_strips_ta_prefix",
+        "Test deterministic matcher: test_exact_name_match_returns_high_confidence, test_exact_vendor_id_match_returns_099, test_no_match_returns_none",
+        "Test fuzzy matcher: test_fuzzy_composite_score_acme_variants_above_88, test_fuzzy_below_threshold_returns_none",
+        "Test harmoniser integration: test_harmonise_sample_data_merges_acme_to_one_canonical, test_harmonise_sample_data_merges_sodexo_to_one_canonical, test_harmonise_is_idempotent (run twice, supplier_master row count unchanged)",
+        "Use the in_memory_engine fixture from tests/conftest.py (created in Phase 1). Add a sample_suppliers_df fixture returning a DataFrame of the 10 sample rows' supplier fields.",
+        "Run: pytest tests/test_supplier_harmonisation.py -v — all tests pass",
+        "Run: pytest tests/test_supplier_harmonisation.py --cov=src/suppliers --cov-report=term-missing — coverage >= 70% on src/suppliers/"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Update CLAUDE.md with Phase 2 patterns",
+      "description": "Update CLAUDE.md at the project root to document the supplier harmonisation pipeline patterns, the 5-stage architecture, confidence scoring, and the canonical_supplier_id generation approach. Future Claude sessions need this context.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add section '## Phase 2: Supplier Harmonisation' documenting: 5-stage pipeline order (normalise → deterministic → fuzzy → embedding → LLM), canonical_supplier_id generation (SHA256 of normalised_name, first 12 hex chars), confidence bands (HIGH>=0.85, MEDIUM>=0.60, LOW<0.60), review queue threshold (confidence < 0.60 → PENDING in supplier_match_log), LLM parent enrichment only when dry_run=false and capped at 0.50 confidence",
+        "Update the '## Phase Status' section: Phase 1 Complete, Phase 2 Complete, Phases 3-6 Planned",
+        "Verify: CLAUDE.md contains 'SHA256' (canonical ID generation pattern) and 'PENDING' (review queue status)"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_normaliser": "python src/suppliers/normaliser.py — Acme x3 and Sodexo x2 normalise to same strings",
+      "check_harmoniser": "python src/suppliers/harmoniser.py --db data/db/spend_cube.db — prints supplier counts",
+      "run_tests": "pytest tests/test_supplier_harmonisation.py -v — all tests green",
+      "check_db_canonical": "python -c \"import pandas as pd; from sqlalchemy import create_engine; e=create_engine('sqlite:///data/db/spend_cube.db'); df=pd.read_sql('SELECT canonical_name, COUNT(*) as n FROM supplier_master GROUP BY canonical_name', e); print(df)\" — shows 1 row for Acme, 1 for Sodexo"
+    },
+    "expected_counts": {
+      "acme_variants_in_sample": 3,
+      "acme_canonical_entries": 1,
+      "sodexo_variants_in_sample": 2,
+      "sodexo_canonical_entries": 1,
+      "minimum_unit_tests": 12,
+      "minimum_coverage_pct": 70
+    },
+    "checks": [
+      "normalise('Acme Pty Ltd') == normalise('ACME PTY LIMITED') == normalise('acme p/l') (all three identical)",
+      "normalise('SODEXO AUSTRALIA') == normalise('Sodexo Aust P/L') (both identical)",
+      "supplier_master table has exactly 1 Acme entry after harmonising sample.csv",
+      "supplier_master table has exactly 1 Sodexo entry after harmonising sample.csv",
+      "transactions table: all 3 Acme rows share the same canonical_supplier_id",
+      "review queue only contains suppliers with confidence < 0.60",
+      "dry_run=true means no LLM API calls are made",
+      "Running harmoniser twice on same data does not duplicate supplier_master rows",
+      "pytest tests/test_supplier_harmonisation.py — all green"
+    ]
+  },
+  "risks": [
+    "sentence-transformers download on first run: all-MiniLM-L6-v2 is ~90MB. Mitigation: EmbeddingMatcher catches ImportError and returns EMBEDDING_UNAVAILABLE gracefully. Model downloads to HuggingFace cache (~/.cache/huggingface).",
+    "Fuzzy matching on small supplier master: Stage 3 fuzzy matching against a small master (10 rows) will score well. At scale (50K suppliers) this becomes O(n) per query — for v1 this is acceptable, Phase 2+ can add blocking/indexing.",
+    "Normalisation over-aggressively strips tokens: e.g. normalise('Group') → '' if 'Group' is in suffixes. Mitigation: after stripping, if result is empty string, fall back to lowercased original name.",
+    "SHA256 canonical_supplier_id collisions: extremely unlikely with 12 hex chars (48 bits). Acceptable for v1."
+  ],
+  "outOfScope": [
+    "ABN/ACN lookup via external API",
+    "Blocking/indexing for 50K+ supplier fuzzy matching performance (v1 scale is acceptable)",
+    "Supplier deduplication UI (Phase 6 review workstation)",
+    "Spend categorisation (Phase 3 sprint)",
+    "Spend cube construction (Phase 4 sprint)",
+    "Streamlit dashboards (Phase 5 sprint)",
+    "Recommendation engine (Phase 6 sprint)"
+  ]
+}

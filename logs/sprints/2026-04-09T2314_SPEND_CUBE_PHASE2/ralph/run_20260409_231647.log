@@ -1,0 +1,74 @@
+[2026-04-09 23:16:47] [INFO] Ralph loop starting
+[2026-04-09 23:16:47] [INFO] Created progress file: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Thu  9 Apr 2026 23:16:47 CEST
+PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-09 23:16:47] [INFO] Starting iteration 1
+[2026-04-09 23:16:47] [INFO] Processing story: US-001
+[2026-04-09 23:16:47] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Implement supplier name normaliser
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/suppliers/normaliser.py. This is Stage 1 of the harmonisation pipeline — always runs first, on every supplier name. It produces a normalised form used for all downstream matching. Must correctly normalise all Acme and Sodexo variants from the sample data into the same normalised string.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/normaliser.py — implement SupplierNormaliser class
+- __init__(self, suffixes_path: str, abbreviations_path: str): loads data/reference/legal_suffixes.yaml and data/reference/abbreviation_map.yaml
+- Implement normalise(self, name: str) -> str performing in order: (1) return empty string if name is None/blank, (2) lowercase, (3) strip leading/trailing whitespace, (4) remove T/A, T.A., Trading As, t/a prefixes (regex), (5) strip legal entity suffixes from suffix list (word-boundary match, longest first), (6) expand abbreviations from abbreviation map (whole-word match only), (7) remove punctuation except hyphens within words, (8) collapse multiple spaces to single space, (9) strip again
+- Verify normalise() results: normalise('Acme Pty Ltd') == 'acme', normalise('ACME PTY LIMITED') == 'acme', normalise('acme p/l') == 'acme', normalise('SODEXO AUSTRALIA') == 'sodexo australia', normalise('Sodexo Aust P/L') == 'sodexo australia', normalise('DHL EXPRESS') == 'dhl express', normalise('Telstra Corporation') == 'telstra', normalise('INTERCOMPANY - LEGAL') == 'intercompany legal', normalise(None) == '', normalise('') == ''
+- Implement normalise_series(self, series: pd.Series) -> pd.Series for vectorised batch normalisation
+- CLI: python src/suppliers/normaliser.py — runs normalise() on all 10 sample supplier names, prints raw → normalised pairs
+- Run: python src/suppliers/normaliser.py — exits 0, Acme x3 all normalise to 'acme', Sodexo x2 both normalise to 'sodexo australia'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Implement supplier name normaliser`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-09 23:24:12] [OK] Story US-001 completed!
+[2026-04-09 23:24:12] [OK] Marked US-001 as passed
+[2026-04-09 23:24:12] [INFO] Logged progress for US-001: PASSED
+[2026-04-09 23:24:12] [STEP] Committing changes...

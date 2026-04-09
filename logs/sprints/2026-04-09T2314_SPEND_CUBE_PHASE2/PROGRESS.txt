@@ -1,0 +1,33 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+# Created: Thu  9 Apr 2026 23:16:47 CEST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+
+## US-001 COMPLETE — 2026-04-09
+Implemented src/suppliers/normaliser.py — SupplierNormaliser class.
+
+### Key design decisions
+- **Hard/soft suffix split**: legal_suffixes.yaml contains both true legal entity designators
+  (Pty Ltd, Ltd, Inc, etc.) AND geographic/organisational qualifiers (Australia, Group,
+  International, etc.). Only the former are stripped — the latter are preserved as they
+  distinguish regional entities (e.g. "Sodexo Australia" from "Sodexo UK"). This is encoded
+  in the _LEGAL_ENTITY_SET frozenset in normaliser.py.
+- **Abbreviation expansion AFTER suffix stripping**: 'Sodexo Aust P/L' → strip 'P/L' → 
+  'Sodexo Aust' → expand 'Aust' → 'Sodexo Australia'. Expansion before stripping would 
+  produce 'Sodexo Australia P/L' which works too, but current order matches spec.
+- **Iterative suffix stripping with restart**: after each successful suffix removal the loop
+  restarts from the longest suffix to handle chained suffixes like 'ACME PTY LIMITED' →
+  strip 'limited' → strip 'pty' → 'acme'.
+- **Over-strip protection**: if entire name reduces to empty string, fall back to lowercased
+  original to prevent e.g. "Pty Ltd" → "" (would become "pty ltd").
+
+### All 10 acceptance criteria test cases pass
+
+---
+
+### [US-001] - 2026-04-09 23:24:12
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
