@@ -581,3 +581,66 @@ STORY_COMPLETE: US-009
 [2026-04-09 18:03:15] [OK] Marked US-009 as passed
 [2026-04-09 18:03:15] [INFO] Logged progress for US-009: PASSED
 [2026-04-09 18:03:15] [STEP] Committing changes...
+[2026-04-09 18:03:17] [INFO] Starting iteration 10
+[2026-04-09 18:03:17] [INFO] Processing story: US-010
+[2026-04-09 18:03:17] [STEP] Spawning Claude with prompt for US-010
+--- PROMPT FOR US-010 ---
+You are working on story US-010: Implement flexible column mapper
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/ingestion/column_mapper.py for YAML-driven column mapping from arbitrary source schemas to canonical field names. The DEFAULT mapping from config.yaml (created in US-002) must map the sample dataset correctly.
+
+## Acceptance Criteria
+- Edit file: src/ingestion/column_mapper.py — implement ColumnMapper class
+- __init__(self, mappings: dict): stores mappings dict from config.column_mappings section
+- Implement map_dataframe(self, df: pd.DataFrame, source_system: str = 'DEFAULT') -> pd.DataFrame: renames columns using the mapping for source_system (falls back to DEFAULT). Columns not in the mapping are preserved with original names.
+- Implement get_mapping(self, source_system: str = 'DEFAULT') -> dict: returns the column mapping dict for the given source system, falling back to DEFAULT
+- Implement detect_source_system(self, columns: list[str]) -> str: tries each mapping in config, returns the source_system whose mapping has the highest column overlap with the given columns. Returns 'DEFAULT' if no good match.
+- Implement get_unmapped_required_fields(self, df_columns: list[str], source_system: str = 'DEFAULT') -> list[str]: returns list of canonical required fields not covered by current mapping
+- CLI: python src/ingestion/column_mapper.py — applies DEFAULT mapping to a test dataframe with VENDOR_NAME, VENDOR_NUM etc., prints original vs renamed column names
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-010
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-010: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-010 - Implement flexible column mapper`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-010 ---
+STORY_COMPLETE: US-010
+--- END OUTPUT ---
+[2026-04-09 18:04:40] [OK] Story US-010 completed!
+[2026-04-09 18:04:40] [OK] Marked US-010 as passed
+[2026-04-09 18:04:40] [INFO] Logged progress for US-010: PASSED
+[2026-04-09 18:04:40] [STEP] Committing changes...

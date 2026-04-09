@@ -208,7 +208,8 @@
         "Implement get_unmapped_required_fields(self, df_columns: list[str], source_system: str = 'DEFAULT') -> list[str]: returns list of canonical required fields not covered by current mapping",
         "CLI: python src/ingestion/column_mapper.py — applies DEFAULT mapping to a test dataframe with VENDOR_NAME, VENDOR_NUM etc., prints original vs renamed column names"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:04:40Z"
     },
     {
       "id": "US-011",
