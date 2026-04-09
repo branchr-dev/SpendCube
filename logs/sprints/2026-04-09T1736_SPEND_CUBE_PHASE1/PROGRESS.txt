@@ -201,3 +201,14 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 9
 
+
+## US-010 COMPLETE - 2026-04-09
+- Implemented ColumnMapper class in src/ingestion/column_mapper.py
+- __init__(mappings): stores mappings dict (from config.column_mappings)
+- get_mapping(source_system='DEFAULT'): returns mapping dict, falls back to DEFAULT
+- map_dataframe(df, source_system='DEFAULT'): renames only columns present in df; unmapped columns preserved
+- detect_source_system(columns): iterates all mappings, returns system with highest column overlap; returns 'DEFAULT' if no match
+- get_unmapped_required_fields(df_columns, source_system='DEFAULT'): checks which of REQUIRED_CANONICAL_FIELDS (invoice_number, original_amount, original_currency, invoice_date, raw_supplier_name) are not covered by current mapping × present columns
+- CLI: loads config.yaml, maps test dataframe, prints original/renamed columns, detected system, unmapped fields
+- Verification: DEFAULT mapping covers all 13 sample columns; all required canonical fields covered; detected system = 'DEFAULT'
+
