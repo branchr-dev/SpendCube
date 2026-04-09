@@ -150,7 +150,8 @@
         "Update '## Running the Pipeline': make ingest && make harmonise && make categorise && make build-cube && make export",
         "Verify: CLAUDE.md contains 'tail_spend' and 'maverick'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T23:11:46Z"
     }
   ],
   "verification": {

@@ -388,3 +388,63 @@ STORY_COMPLETE: US-006
 [2026-04-10 01:11:01] [OK] Marked US-006 as passed
 [2026-04-10 01:11:01] [INFO] Logged progress for US-006: PASSED
 [2026-04-10 01:11:01] [STEP] Committing changes...
+[2026-04-10 01:11:03] [INFO] Starting iteration 7
+[2026-04-10 01:11:03] [INFO] Processing story: US-007
+[2026-04-10 01:11:03] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Update CLAUDE.md with Phase 4 patterns
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md to document cube architecture, metrics definitions, and diagnostics thresholds for future sessions.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — add section '## Phase 4: Spend Cube and Diagnostics' documenting: cube built from transactions table, 6 output DataFrames (transactions/by_supplier/by_category/by_bu/by_month/by_payment_terms), tail spend definition (bottom 80% suppliers by count contributing ≤20% spend), maverick = no PO and not on contract, Parquet outputs in data/output/, diagnostics 9 checks with GREEN/AMBER/RED bands
+- Update '## Phase Status': Phases 1-4 Complete, Phases 5-6 Planned
+- Update '## Running the Pipeline': make ingest && make harmonise && make categorise && make build-cube && make export
+- Verify: CLAUDE.md contains 'tail_spend' and 'maverick'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Update CLAUDE.md with Phase 4 patterns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-04-10 01:11:46] [OK] Story US-007 completed!
+[2026-04-10 01:11:46] [OK] Marked US-007 as passed
+[2026-04-10 01:11:46] [INFO] Logged progress for US-007: PASSED
+[2026-04-10 01:11:46] [STEP] Committing changes...
