@@ -91,7 +91,8 @@
         "Implement load_parquet(self, key: str) -> pd.DataFrame: loads data/output/{key}.parquet",
         "CLI: python src/cube/exporter.py --db data/db/spend_cube.db --format parquet — builds cube and exports, prints list of files created with sizes"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:58:32Z"
     },
     {
       "id": "US-004",

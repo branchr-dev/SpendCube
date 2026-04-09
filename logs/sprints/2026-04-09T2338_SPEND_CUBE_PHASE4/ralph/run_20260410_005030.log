@@ -138,3 +138,66 @@ STORY_COMPLETE: US-002
 [2026-04-10 00:57:20] [OK] Marked US-002 as passed
 [2026-04-10 00:57:20] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 00:57:20] [STEP] Committing changes...
+[2026-04-10 00:57:22] [INFO] Starting iteration 3
+[2026-04-10 00:57:22] [INFO] Processing story: US-003
+[2026-04-10 00:57:22] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement Parquet and Excel exporter
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/cube/exporter.py to persist cube outputs as Parquet files and optionally as Excel/CSV. Creates data/output/ directory if needed.
+
+## Acceptance Criteria
+- Edit file: src/cube/exporter.py — implement CubeExporter class
+- __init__(self, output_dir: str = 'data/output'): creates output_dir if not exists
+- Implement export_parquet(self, cube: dict[str, pd.DataFrame]) -> dict[str, str]: writes each DataFrame to data/output/{key}.parquet using pyarrow engine. Returns dict of {key: file_path}. Files: transactions.parquet, by_supplier.parquet, by_category.parquet, by_bu.parquet, by_month.parquet, by_payment_terms.parquet.
+- Implement export_excel(self, cube: dict[str, pd.DataFrame], filename: str = 'spend_cube.xlsx') -> str: writes all cube DataFrames as separate sheets in a single Excel workbook at data/output/{filename}. Returns file path.
+- Implement export_csv(self, cube: dict[str, pd.DataFrame], subdir: str = 'csv') -> dict[str, str]: writes each DataFrame as CSV to data/output/csv/. Returns dict of paths.
+- Implement load_parquet(self, key: str) -> pd.DataFrame: loads data/output/{key}.parquet
+- CLI: python src/cube/exporter.py --db data/db/spend_cube.db --format parquet — builds cube and exports, prints list of files created with sizes
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement Parquet and Excel exporter`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 00:58:32] [OK] Story US-003 completed!
+[2026-04-10 00:58:32] [OK] Marked US-003 as passed
+[2026-04-10 00:58:32] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 00:58:32] [STEP] Committing changes...
