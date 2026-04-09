@@ -155,7 +155,8 @@
         "CLI: python src/ingestion/date_parser.py — prints parse results for all 9 sample dates plus edge cases (None, empty, NaN, Excel serial 45369)",
         "Run: python src/ingestion/date_parser.py — exits 0, all 9 sample dates parse correctly"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T15:59:37Z"
     },
     {
       "id": "US-008",
