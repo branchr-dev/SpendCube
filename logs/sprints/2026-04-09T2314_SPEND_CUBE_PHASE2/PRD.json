@@ -165,7 +165,8 @@
         "Verify: transactions table rows for Acme Pty Ltd, ACME PTY LIMITED, acme p/l all have the same canonical_supplier_id",
         "Run: python src/suppliers/harmoniser.py --db data/db/spend_cube.db — exits 0, prints supplier count summary"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:46:44Z"
     },
     {
       "id": "US-008",

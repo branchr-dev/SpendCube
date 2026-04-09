@@ -1,25 +1,216 @@
 {
   "project": {
-    "id": "SPEND_CUBE_PHASE6-2026-04",
-    "name": "SPEND CUBE PHASE6",
+    "id": "SPEND-CUBE-PHASE6-2026-04",
+    "name": "SpendCube Phase 6 - Recommendations and Review Workstation",
     "created": "2026-04-09",
     "status": "in_progress",
     "owner": "tom",
-    "sprint_folder": "logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6"
+    "sprint_folder": "logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6",
+    "track": "code"
   },
-  "summary": "Phase 6 Recommendations and Review Workstation: rule-based engine, LLM narratives, review queues, audit trail",
-  "decisions": {},
+  "summary": "Phase 6 of 6 — final phase. Builds the recommendation engine (rule-based with LLM narrative generation) and the review workstation UI (supplier match review, category review, manual overrides, audit trail). Wires recommendations into the dashboard as page 06. Wires review workstation as page 07. Validation gate: at least 5 recommendation types generate from test data, review workflows function end-to-end, manual corrections persist and feed back into future pipeline runs.",
+  "decisions": {
+    "recommendations_approach": "Rule-based first — generate all recommendations deterministically from cube metrics. LLM used only to generate consulting-quality narrative text (optional, dry_run skips). Recommendations stored as DataFrame and exported to data/output/recommendations.json.",
+    "recommendation_schema": "Each recommendation: type, category/supplier (context), evidence (string), estimated_impact_aud (float), confidence (HIGH/MEDIUM/LOW), action (string), lever (string), assumptions (list). Sorted by estimated_impact_aud desc.",
+    "review_workstation": "Streamlit page 07. Shows supplier match review queue (from supplier_match_log where review_status=PENDING) and category review queue (from transactions where category_confidence < 0.60). Approve/reject/override buttons write to DB and audit_log.",
+    "audit_trail": "Every manual action in review workstation writes to audit_log_table (defined in src/models/database.py Phase 1): table_name, record_id, field_name, old_value, new_value, changed_by, changed_at.",
+    "feedback_loop": "Approved supplier matches update supplier_master. Approved category overrides insert into category_overrides_table. Both feed into next pipeline run automatically.",
+    "savings_levers": "14 lever types from spec. Rules engine generates whichever are applicable. Minimum 5 guaranteed: SUPPLIER_CONSOLIDATION, PAYMENT_TERM_EXTENSION, TAIL_SPEND_RATIONALISATION, CONTRACT_COMPLIANCE, MAVERICK_SPEND.",
+    "phase_foundation": "All phases 1-5 complete. Cube built, all 5 dashboard pages working. recommendations/rules.py, narratives.py, engine.py are placeholders. dashboard/pages/06_recommendations.py and 07_review_workstation.py are placeholders."
+  },
   "context": {
-    "existing_tables": {},
-    "key_files": [],
-    "patterns_to_follow": []
+    "existing_tables": {
+      "transactions": "Full canonical schema with category/supplier fields — source for recommendations",
+      "supplier_match_log": "review_status=PENDING rows = supplier review queue",
+      "category_overrides": "Manual category corrections — written by review workstation",
+      "audit_log": "Every manual action logged here — table_name, record_id, field_name, old/new value, changed_by, changed_at"
+    },
+    "key_files": [
+      "src/cube/metrics.py - CubeMetrics.compute_all() returns scalar KPIs (Phase 4)",
+      "src/cube/builder.py - SpendCubeBuilder.build() returns cube DataFrames (Phase 4)",
+      "src/models/database.py - audit_log_table, category_overrides_table, supplier_match_log_table (Phase 1)",
+      "src/recommendations/rules.py - placeholder (Phase 1, implement now)",
+      "src/recommendations/narratives.py - placeholder (Phase 1, implement now)",
+      "src/recommendations/engine.py - placeholder (Phase 1, implement now)",
+      "dashboard/pages/06_recommendations.py - placeholder (Phase 1, implement now)",
+      "dashboard/pages/07_review_workstation.py - placeholder (Phase 1, implement now)",
+      "tests/test_recommendations.py - placeholder (Phase 1, implement now)"
+    ],
+    "patterns_to_follow": [
+      "Same module CLI pattern as all prior phases",
+      "LLM calls gated on config.llm.dry_run — skip narrative generation when dry_run=true",
+      "Review workstation writes to DB then clears st.cache_data to force refresh",
+      "Audit log entry on every write: use insert_audit_log(engine, table, record_id, field, old, new, changed_by='system') helper",
+      "Recommendations sorted by estimated_impact_aud descending"
+    ]
   },
-  "userStories": [],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Implement rule-based recommendation engine",
+      "description": "Implement src/recommendations/rules.py with all rule-based recommendation generators. These run deterministically from cube metrics — no LLM. Must generate at least 5 recommendation types from the 10-row sample data.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/rules.py — implement RecommendationRules class",
+        "__init__(self, cube: dict[str, pd.DataFrame], metrics: dict, config): stores cube and metrics",
+        "Implement generate_all(self) -> list[dict]: calls all rule methods, returns sorted list of recommendation dicts",
+        "Implement rule_supplier_consolidation(self) -> list[dict]: for each L2 category with > config.recommendations.consolidation_threshold (5) suppliers, generate SUPPLIER_CONSOLIDATION rec. estimated_impact = category_spend * config.recommendations.consolidation_saving_pct (0.08). Evidence: '{n} suppliers in {category}, top supplier = {pct}%'.",
+        "Implement rule_payment_term_extension(self) -> list[dict]: for each supplier in top 50 by spend where weighted_avg_terms < config.recommendations.target_payment_days (45), generate PAYMENT_TERM_EXTENSION. estimated_impact = (target - current) / 365 * annual_spend * config.recommendations.wacc. Filter: only if estimated_impact > config.recommendations.min_wc_opportunity (10000). Evidence: 'Current: {n} days, Target: {t} days'.",
+        "Implement rule_tail_spend_rationalisation(self) -> list[dict]: if tail_spend_pct > config.recommendations.tail_spend_alert_pct (0.05), generate TAIL_SPEND_RATIONALISATION. estimated_impact = tail_spend_amount * 0.10. Evidence: '{n} tail suppliers, {pct} of spend'.",
+        "Implement rule_maverick_spend(self) -> list[dict]: if maverick_spend_pct > config.recommendations.maverick_alert_pct (0.15), generate CONTRACT_COMPLIANCE. estimated_impact = maverick_spend * 0.05.",
+        "Implement rule_competitive_tender(self) -> list[dict]: for each L2 category with single supplier (count=1) and spend > 50000 AUD, generate COMPETITIVE_TENDER rec. estimated_impact = category_spend * 0.07.",
+        "Implement rule_contract_coverage_gap(self) -> list[dict]: for each L1 category where contract_coverage_pct < 0.50 and spend > 20000, generate CONTRACT_COVERAGE_GAP rec.",
+        "Each recommendation dict: {type, context (category or supplier name), evidence, estimated_impact_aud (float), confidence ('HIGH'/'MEDIUM'/'LOW'), action (string), lever (string)}",
+        "CLI: python src/recommendations/rules.py --db data/db/spend_cube.db — prints all recommendations sorted by impact"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Implement LLM narrative generation",
+      "description": "Implement src/recommendations/narratives.py to optionally enrich rule-based recommendations with consulting-quality narrative text using the Claude API. Must skip when dry_run=true.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/narratives.py — implement NarrativeGenerator class",
+        "__init__(self, config): loads config, initialises anthropic.Anthropic() only if not dry_run",
+        "Implement enrich(self, recommendations: list[dict]) -> list[dict]: if dry_run, return recommendations unchanged (narrative field = None). When not dry_run: batch all recommendations into one call. Prompt: 'You are a procurement consultant. For each recommendation, write a concise 2-3 sentence consulting-quality narrative explaining the issue, evidence, and recommended action. Format: JSON array with fields: type, context, narrative.\\n\\nRecommendations:\\n{recs_json}'. Parse response, merge narrative back into each rec dict.",
+        "Log LLM call via log_llm_call()",
+        "Handle API errors: log warning, return recommendations without narrative",
+        "CLI: python src/recommendations/narratives.py — with dry_run=true, prints sample recommendations without narrative enrichment"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Implement recommendation engine orchestrator and export",
+      "description": "Implement src/recommendations/engine.py as the orchestrator that runs rules → narratives → exports to data/output/recommendations.json. Also update Makefile.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/engine.py — implement RecommendationEngine class",
+        "__init__(self, config, engine): initialises SpendCubeBuilder, CubeMetrics, RecommendationRules, NarrativeGenerator",
+        "Implement run(self) -> list[dict]: builds cube → computes metrics → runs rules → enriches with narratives → returns sorted recommendations list",
+        "Implement export(self, recommendations: list[dict], path: str = 'data/output/recommendations.json') -> str: saves to JSON, returns path",
+        "Implement to_dataframe(self, recommendations: list[dict]) -> pd.DataFrame: returns DataFrame with columns: type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative",
+        "Edit file: Makefile — no separate target needed; recommendations are generated as part of build-cube pipeline. Update build-cube target to also run: python src/recommendations/engine.py --db data/db/spend_cube.db",
+        "CLI: python src/recommendations/engine.py --db data/db/spend_cube.db — runs full engine, prints recommendations table sorted by impact",
+        "Verify: python src/recommendations/engine.py --db data/db/spend_cube.db — generates at least 3 recommendations from the 10-row sample data (maverick, tail spend, contract coverage gap are most likely)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Implement recommendations dashboard page",
+      "description": "Implement dashboard/pages/06_recommendations.py — the recommendations page showing all generated recommendations with evidence, impact sizing, and savings heatmap.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/06_recommendations.py — implement recommendations page",
+        "Load recommendations: load data/output/recommendations.json with @st.cache_data. If not found, show st.warning('Run make build-cube to generate recommendations').",
+        "KPI row: Total Identified Savings (AUD, sum estimated_impact_aud), Recommendation Count, # HIGH confidence, # MEDIUM confidence",
+        "Recommendations table: st.dataframe showing all recommendations with columns: Rank, Type, Context, Evidence, Estimated Impact (AUD formatted), Confidence (coloured), Lever. Sorted by impact desc.",
+        "Savings heatmap: plotly heatmap with recommendation type on y-axis, lever category on x-axis, colour = estimated_impact_aud. Use dashboard/components/charts.heatmap().",
+        "Expandable detail cards (st.expander) for each recommendation: show full evidence, action, narrative (if available), assumptions.",
+        "Filter by confidence level: st.multiselect(['HIGH', 'MEDIUM', 'LOW'], default all)",
+        "Download button: export recommendations as Excel",
+        "Page title: 'Recommendations'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Implement review workstation — supplier match queue",
+      "description": "Implement the supplier match review queue section of dashboard/pages/07_review_workstation.py. Shows PENDING supplier matches for human approval/rejection, with approve/reject/merge actions that persist to DB.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/07_review_workstation.py — implement review workstation page (supplier section)",
+        "Page title: 'Review Workstation'",
+        "Section: 'Supplier Match Review' with st.subheader",
+        "Load supplier_match_log rows where review_status='PENDING' from SQLite. Sort by confidence asc (lowest confidence first), then by spend desc.",
+        "For each pending match, show: st.expander(f'{raw_supplier_name} → {canonical_supplier_name} (conf: {confidence:.2f})'). Inside: show raw_supplier_id, match_method, evidence string, proposed canonical_supplier_name. Three buttons: ✅ Approve, ❌ Reject, ✏️ Override (text input for manual canonical name).",
+        "On Approve: UPDATE supplier_match_log SET review_status='APPROVED', reviewed_at=now WHERE id=?. INSERT audit_log entry. UPDATE transactions SET canonical_supplier_id/name = approved values WHERE raw_supplier_name=?. Clear st.cache_data.",
+        "On Reject: UPDATE supplier_match_log SET review_status='REJECTED'. INSERT audit_log. Clear cache.",
+        "On Override: create new supplier_master entry if needed, set review_status='APPROVED', update transactions. INSERT audit_log.",
+        "Show count: 'X matches pending review' header metric."
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Implement review workstation — category review queue and overrides",
+      "description": "Implement the category review queue and override editor sections of dashboard/pages/07_review_workstation.py.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/07_review_workstation.py — add category review section (appending to existing file)",
+        "Section: 'Category Review Queue' with st.subheader",
+        "Load transactions where category_confidence < 0.60, sort by abs(base_amount) desc (highest spend first). Show top 50.",
+        "For each row: st.expander(f'{raw_supplier_name} | {raw_line_description[:50]} | AUD {base_amount:,.0f} | conf: {category_confidence:.2f}'). Show: current category (if any), category_method. Two selectboxes: L1 category, L2 category (filtered). Button: 'Override Category'.",
+        "On override: INSERT into category_overrides_table (canonical_supplier_id, gl_account, override_l1, override_l2, override_l3=None, reviewer='manual', reason='reviewer override'). UPDATE transactions row category fields. INSERT audit_log. Clear cache.",
+        "Section: 'Category Override Rules' — st.dataframe showing existing category_overrides rows. Button: 'Delete' per row. st.form to add new override rule manually.",
+        "Section: 'Audit Trail' — show last 50 audit_log entries as dataframe (table_name, field_name, old_value, new_value, changed_by, changed_at).",
+        "Verify: approving a supplier match updates transactions table (check via sqlite query that canonical_supplier_id changes)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Write Phase 6 unit tests",
+      "description": "Write unit tests for the recommendation engine in tests/test_recommendations.py. All tests must pass.",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_recommendations.py — write minimum 10 test functions",
+        "Test RecommendationRules: test_generates_at_least_one_recommendation_from_sample, test_maverick_recommendation_generated_when_po_missing, test_tail_spend_recommendation_generated, test_payment_term_rec_only_for_suppliers_below_target, test_recommendations_sorted_by_impact_desc, test_no_negative_impact_recommendations",
+        "Test NarrativeGenerator: test_dry_run_returns_recommendations_unchanged, test_dry_run_makes_no_api_calls",
+        "Test RecommendationEngine: test_run_returns_list, test_export_creates_json_file, test_to_dataframe_has_correct_columns",
+        "Use in_memory_engine and cube_df fixtures from tests/conftest.py",
+        "Run: pytest tests/test_recommendations.py -v — all tests pass",
+        "Run: pytest tests/test_recommendations.py --cov=src/recommendations --cov-report=term-missing — coverage >= 70%"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Final integration test and CLAUDE.md update",
+      "description": "Run the complete end-to-end pipeline on the 1000-row synthetic test dataset (generated in Phase 1) to verify the full system works at scale. Update CLAUDE.md with Phase 6 documentation and final project status.",
+      "acceptanceCriteria": [
+        "Generate 1000-row test data if not already present: python src/utils/generate_test_data.py --rows 1000 --seed 42 --output data/input/test_1k.csv",
+        "Run full pipeline on test_1k.csv: python src/ingestion/ingest.py --file data/input/test_1k.csv --db data/db/spend_cube_1k.db && python src/suppliers/harmoniser.py --db data/db/spend_cube_1k.db && python src/categorisation/categoriser.py --db data/db/spend_cube_1k.db && python src/cube/pipeline.py --db data/db/spend_cube_1k.db",
+        "Verify 1000-row run: all 4 commands exit 0, spend_cube_1k.db populated with 1000 transactions, supplier_master has < 1000 entries (deduplication worked), at least 700 transactions categorised at MEDIUM+ confidence (70%)",
+        "Verify recommendations generated: python src/recommendations/engine.py --db data/db/spend_cube_1k.db — generates ≥5 recommendations",
+        "Edit file: CLAUDE.md — add section '## Phase 6: Recommendations and Review Workstation'. Update Phase Status: All 6 Phases Complete. Add section '## End-to-End Pipeline' with full make command sequence. Add '## Definition of Done' checklist from spec showing all items checked.",
+        "Verify: CLAUDE.md contains 'All 6 Phases Complete'"
+      ],
+      "passes": false
+    }
+  ],
   "verification": {
-    "queries": {},
-    "expected_counts": {},
-    "checks": []
+    "queries": {
+      "check_recommendations": "python src/recommendations/engine.py --db data/db/spend_cube.db — prints ≥3 recommendations",
+      "check_1k_pipeline": "python src/ingestion/ingest.py --file data/input/test_1k.csv --db data/db/spend_cube_1k.db — exits 0",
+      "run_tests": "pytest tests/test_recommendations.py -v — all green",
+      "check_audit_log": "python -c \"import pandas as pd; from sqlalchemy import create_engine; e=create_engine('sqlite:///data/db/spend_cube.db'); df=pd.read_sql('SELECT * FROM audit_log LIMIT 5', e); print(df)\""
+    },
+    "expected_counts": {
+      "minimum_recommendation_types": 5,
+      "minimum_unit_tests": 10,
+      "minimum_coverage_pct": 70,
+      "test_1k_categorised_pct": 70
+    },
+    "checks": [
+      "≥5 recommendation types generated from 1000-row test data",
+      "Approving supplier match updates transactions table",
+      "Category override persists to category_overrides_table",
+      "Audit trail logged for all review workstation actions",
+      "Full pipeline runs end-to-end on 1000-row test data without errors",
+      "data/output/recommendations.json created",
+      "pytest tests/test_recommendations.py — all green",
+      "CLAUDE.md says 'All 6 Phases Complete'"
+    ]
   },
-  "risks": [],
-  "outOfScope": []
+  "risks": [
+    "Review workstation DB writes in Streamlit: st.cache_data must be cleared after every write or UI will show stale data. Use st.cache_data.clear() after each DB mutation.",
+    "Small sample data for recommendations: 10-row sample may not trigger all recommendation rules (e.g. supplier consolidation needs >5 suppliers in same category). Use 1000-row test data for integration validation.",
+    "Concurrent DB writes: SQLite doesn't support concurrent writes well. Review workstation is single-user so this is acceptable for v1.",
+    "Recommendations JSON schema: must be stable — dashboard page and export depend on it. Define the schema explicitly in engine.py docstring."
+  ],
+  "outOfScope": [
+    "Real-time ERP integration",
+    "Multi-tenant SaaS architecture",
+    "User authentication",
+    "Spend forecasting",
+    "Automated email/workflow triggers",
+    "OCR invoice scanning",
+    "Supplier risk scoring beyond data quality flags"
+  ]
 }

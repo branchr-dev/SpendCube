@@ -391,3 +391,66 @@ STORY_COMPLETE: US-006
 [2026-04-09 23:43:39] [OK] Marked US-006 as passed
 [2026-04-09 23:43:39] [INFO] Logged progress for US-006: PASSED
 [2026-04-09 23:43:39] [STEP] Committing changes...
+[2026-04-09 23:43:41] [INFO] Starting iteration 7
+[2026-04-09 23:43:41] [INFO] Processing story: US-007
+[2026-04-09 23:43:41] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Integrate harmoniser with Makefile and end-to-end pipeline
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Wire the harmoniser into the Makefile harmonise target and verify the end-to-end pipeline works: ingest sample.csv → harmonise → supplier_master populated with correct canonical suppliers. Also add a harmonise CLI that can be run standalone.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/harmoniser.py — ensure the CLI block (if __name__ == '__main__') accepts: --db (path to SQLite db, default data/db/spend_cube.db), --input (optional CSV path — if provided, ingests first then harmonises; if not, harmonises existing transactions in DB)
+- Edit file: Makefile — update harmonise target to: python src/suppliers/harmoniser.py --db data/db/spend_cube.db
+- End-to-end test: run python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db (ingest first), then python src/suppliers/harmoniser.py --db data/db/spend_cube.db
+- Verify end-to-end: after running both commands on sample.csv, the supplier_master table must contain: exactly 1 entry for 'acme' (canonical_name: 'Acme Pty Ltd' or similar), exactly 1 entry for 'sodexo australia', exactly 1 for 'dhl express', exactly 1 for 'telstra', plus entries for remaining unique suppliers
+- Verify: supplier_match_log has one entry per raw supplier name from sample.csv (10 rows → up to 9 non-null supplier entries)
+- Verify: transactions table rows for Acme Pty Ltd, ACME PTY LIMITED, acme p/l all have the same canonical_supplier_id
+- Run: python src/suppliers/harmoniser.py --db data/db/spend_cube.db — exits 0, prints supplier count summary
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Integrate harmoniser with Makefile and end-to-end pipeline`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-04-09 23:46:44] [OK] Story US-007 completed!
+[2026-04-09 23:46:44] [OK] Marked US-007 as passed
+[2026-04-09 23:46:44] [INFO] Logged progress for US-007: PASSED
+[2026-04-09 23:46:44] [STEP] Committing changes...
