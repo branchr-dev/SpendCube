@@ -1,0 +1,325 @@
+{
+  "project": {
+    "id": "SPEND-CUBE-PHASE1-2026-04",
+    "name": "SpendCube Phase 1 - Foundation",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1",
+    "track": "code"
+  },
+  "summary": "Phase 1 of a 6-phase production-grade procurement spend cube application. This sprint establishes the complete foundation: project structure, configuration system, canonical pydantic schema, SQLite database setup, reference data files (UNSPSC, FX rates, legal suffixes, abbreviation map, seed mappings), structured logging, synthetic test data generator, and the full ingestion pipeline (date parser, currency converter, cleaner, column mapper, CSV/Excel loader). Validation gate: ingest the 10-row sample messy dataset and produce a clean canonical transactions table with 15+ passing unit tests.",
+  "decisions": {
+    "python_version": "Python 3.11+ with pydantic v2 for canonical schema validation",
+    "storage": "SQLite for v1 with schema designed to migrate to Postgres — all types chosen accordingly (no SQLite-specific types)",
+    "config": "Single config.yaml as source of truth for all thresholds, paths, API settings, FX rate paths. dry_run defaults to true so no LLM calls happen accidentally.",
+    "schema_approach": "Pydantic v2 models define canonical schema; SQLAlchemy Core (not ORM) for SQLite table definitions — avoids ORM magic while keeping SQL explicit",
+    "reference_data": "All reference data bundled in data/reference/. UNSPSC is a representative ~500-commodity subset covering common procurement categories since the full v24 table is proprietary. FX rates are monthly averages 2023-2025 for AUD/USD/EUR/GBP/SGD/NZD/JPY/CNY.",
+    "raw_data_preservation": "All raw source columns stored as JSON in raw_data column so transformations are fully reversible",
+    "date_parsing": "Multi-format parser handles DD/MM/YYYY, YYYY-MM-DD, DD-Mon-YYYY, M/D/YYYY — uses explicit format chain before dateutil fallback. Always try DD/MM/YYYY before M/D/YYYY for AU data.",
+    "column_mapping": "Flexible YAML-driven column mapping in config.yaml maps source schemas to canonical fields. DEFAULT mapping covers the sample dataset format.",
+    "phase_split": "This is Phase 1 of 6. Phases 2-6 cover: supplier harmonisation, categorisation, spend cube, dashboards, recommendations. Each is a separate Ralph sprint."
+  },
+  "context": {
+    "existing_tables": {},
+    "key_files": [
+      "config.yaml - single source of truth for all settings (to be created in US-002)",
+      "src/models/schema.py - canonical pydantic schema (to be created in US-003)",
+      "src/models/database.py - SQLite table definitions (to be created in US-004)",
+      "data/reference/ - all reference data files (to be created in US-005)",
+      "src/utils/logging.py - structured logging (to be created in US-006)",
+      "src/ingestion/date_parser.py - multi-format date parsing (to be created in US-007)",
+      "src/ingestion/currency_converter.py - FX conversion (to be created in US-008)",
+      "src/ingestion/cleaner.py - data cleaning and flag detection (to be created in US-009)",
+      "src/ingestion/column_mapper.py - flexible column mapping (to be created in US-010)",
+      "src/ingestion/ingest.py - ingestion orchestrator (to be created in US-011)",
+      "src/utils/generate_test_data.py - synthetic data generator (to be created in US-012)",
+      "data/input/sample.csv - 10-row messy sample dataset (to be created in US-011)"
+    ],
+    "patterns_to_follow": [
+      "Each module independently runnable via CLI with if __name__ == '__main__' block and argparse",
+      "Structured logging via src/utils/logging.py used consistently — JSON format option controlled by config",
+      "All transformations idempotent — running twice on same input produces same output",
+      "Explicit over clever — no magic, no implicit state, no hidden side effects",
+      "Missing columns handled gracefully — canonical schema fields are Optional where source may not supply them",
+      "All monetary amounts stored as both original_amount/original_currency AND base_amount/base_currency"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create project directory structure and Makefile",
+      "description": "Scaffold the complete SpendCube project directory structure as defined in the spec. Working directory is /Users/tompurnell/Documents/Claude/SpendCube. Create all __init__.py files, placeholder module files with docstrings, requirements.txt, and a Makefile with all required targets. The README.md already exists with just '# SpendCube' — do not modify it yet (US-014 handles that). Do NOT create config.yaml, reference data files, or any real implementation yet — just the skeleton.",
+      "acceptanceCriteria": [
+        "Create directory structure: src/, src/models/, src/ingestion/, src/suppliers/, src/categorisation/, src/cube/, src/recommendations/, src/diagnostics/, src/utils/, dashboard/, dashboard/pages/, dashboard/components/, tests/, data/, data/reference/, data/input/, data/output/, data/db/",
+        "Create __init__.py in every src/ subdirectory and dashboard/",
+        "Create placeholder Python files (with triple-quoted module docstring + # TODO: implement comment only, no imports): src/config.py, src/models/schema.py, src/models/database.py, src/ingestion/ingest.py, src/ingestion/column_mapper.py, src/ingestion/date_parser.py, src/ingestion/currency_converter.py, src/ingestion/cleaner.py, src/suppliers/normaliser.py, src/suppliers/matcher.py, src/suppliers/embeddings.py, src/suppliers/parent_mapper.py, src/suppliers/harmoniser.py, src/categorisation/deterministic.py, src/categorisation/embedding_classifier.py, src/categorisation/llm_classifier.py, src/categorisation/categoriser.py, src/cube/builder.py, src/cube/metrics.py, src/cube/exporter.py, src/recommendations/rules.py, src/recommendations/narratives.py, src/recommendations/engine.py, src/diagnostics/quality.py, src/utils/generate_test_data.py, src/utils/logging.py, dashboard/app.py, dashboard/pages/01_spend_overview.py, dashboard/pages/02_category_deep_dive.py, dashboard/pages/03_supplier_deep_dive.py, dashboard/pages/04_payment_terms.py, dashboard/pages/05_data_quality.py, dashboard/pages/06_recommendations.py, dashboard/pages/07_review_workstation.py, dashboard/components/charts.py, dashboard/components/filters.py, dashboard/components/tables.py",
+        "Create tests/conftest.py, tests/test_ingestion.py, tests/test_supplier_harmonisation.py, tests/test_categorisation.py, tests/test_cube_builder.py, tests/test_recommendations.py, tests/test_diagnostics.py — all empty except for a module docstring",
+        "Create requirements.txt at project root with pinned versions: pandas>=2.0, openpyxl>=3.1, rapidfuzz>=3.0, sentence-transformers>=2.2, anthropic>=0.25, streamlit>=1.30, sqlalchemy>=2.0, pydantic>=2.0, python-dateutil>=2.9, pyarrow>=14.0, plotly>=5.18, pyyaml>=6.0, pytest>=7.4, pytest-cov>=4.1, faker>=22.0, numpy>=1.26",
+        "Create Makefile at project root with targets: install (pip install -r requirements.txt), generate-test-data (python src/utils/generate_test_data.py), ingest (python src/ingestion/ingest.py), harmonise (python src/suppliers/harmoniser.py), categorise (python src/categorisation/categoriser.py), build-cube (python src/cube/builder.py), serve-dashboard (streamlit run dashboard/app.py), run-tests (pytest tests/ -v --cov=src), export (python src/cube/exporter.py). Each target prefixed with @echo running target name.",
+        "Verify: python -c 'import src; import src.models; import src.ingestion' — should succeed with no errors"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-09T15:47:05Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Create config.yaml and config loader",
+      "description": "Create config.yaml at the project root containing all thresholds, paths, API settings, and the DEFAULT column mapping. Then implement src/config.py as a typed config loader. The column_mappings section in config.yaml maps the sample dataset column names (VENDOR_NAME, VENDOR_NUM, etc.) to canonical field names.",
+      "acceptanceCriteria": [
+        "Create config.yaml at /Users/tompurnell/Documents/Claude/SpendCube/config.yaml with all these top-level sections populated: paths (data_dir: data, input_dir: data/input, output_dir: data/output, db_path: data/db/spend_cube.db, reference_dir: data/reference), llm (model: claude-sonnet-4-20250514, batch_size: 20, dry_run: true, max_cost_usd: 10.0, api_key_env: ANTHROPIC_API_KEY), supplier_matching (fuzzy_auto_threshold: 88, fuzzy_review_threshold: 70, embedding_auto_threshold: 0.90, embedding_review_threshold: 0.80, corroboration_same_city: 5, corroboration_same_postcode: 8, corroboration_same_abn: 20), categorisation (confidence_high: 0.85, confidence_medium: 0.60, embedding_threshold: 0.80, llm_fallback_threshold: 0.60), spend_cube (base_currency: AUD, tail_spend_supplier_pct: 0.80, tail_spend_value_pct: 0.20), recommendations (consolidation_threshold: 5, consolidation_saving_pct: 0.08, target_payment_days: 45, wacc: 0.08, min_wc_opportunity: 10000, tail_spend_alert_pct: 0.05, maverick_alert_pct: 0.15), logging (level: INFO, json_format: false), column_mappings section with DEFAULT mapping: VENDOR_NAME: raw_supplier_name, VENDOR_NUM: raw_supplier_id, INV_NO: invoice_number, INV_DATE: invoice_date, LINE_DESC: raw_line_description, AMT: original_amount, CCY: original_currency, GL_CODE: gl_account, COST_CTR: cost_centre, PAY_TERMS: raw_payment_terms, PO_NUM: po_number, BUS_UNIT: business_unit, SITE: plant_site",
+        "Edit file: src/config.py — implement load_config(path: str = 'config.yaml') -> Config function. Config is a pydantic BaseModel or dataclass with typed nested sections matching the YAML structure.",
+        "Config loader raises ConfigError(Exception) with clear message if required top-level sections are missing",
+        "Config loader resolves relative paths to absolute paths based on the directory containing config.yaml",
+        "CLI: python src/config.py — prints loaded config as formatted YAML to stdout with all sections visible",
+        "Run: python src/config.py — exits with code 0 and prints config without errors"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-09T15:48:02Z"
+    },
+    {
+      "id": "US-003",
+      "title": "Implement canonical transaction schema with pydantic v2",
+      "description": "Implement the full canonical transaction schema in src/models/schema.py using pydantic v2. Every field from the spec must be present. Also implement supporting enums and the ConfidenceBand helper.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/schema.py — implement the following enums as Python str enums: DocumentType (INVOICE, CREDIT_NOTE, DEBIT_NOTE, ACCRUAL), CategoryMethod (DETERMINISTIC_GL, DETERMINISTIC_SUPPLIER, KEYWORD, EMBEDDING, LLM, MANUAL), SpendType (DIRECT, INDIRECT, CAPEX, OPEX), Addressability (ADDRESSABLE, NON_ADDRESSABLE, EXCLUDED), ManagedStatus (MANAGED, UNMANAGED, PARTIALLY_MANAGED), ReviewStatus (PENDING, APPROVED, REJECTED, SKIPPED)",
+        "Implement ConfidenceBand with class constants HIGH=0.85, MEDIUM=0.60 and classmethod get_band(score: float) -> str returning 'HIGH', 'MEDIUM', or 'LOW'",
+        "Implement CanonicalTransaction(BaseModel) with model_config = ConfigDict(populate_by_name=True, use_enum_values=True) and ALL fields from the spec with correct types. transaction_id defaults to str(uuid4()), ingested_at and last_modified_at default to datetime.utcnow(). All Optional fields typed as Optional[X] = None.",
+        "Implement SupplierMaster(BaseModel): canonical_supplier_id, canonical_name, parent_company_id, parent_name, country, identifiers (dict), created_at, updated_at",
+        "Implement SupplierMatchLog(BaseModel): id, raw_supplier_name, raw_supplier_id, canonical_supplier_id, match_method, confidence, evidence, review_status (ReviewStatus)",
+        "CLI block: if __name__ == '__main__': create a sample CanonicalTransaction with minimal fields and print its model_dump_json(indent=2). Also print 'Schema OK'.",
+        "Run: python src/models/schema.py — prints 'Schema OK' and valid JSON without errors",
+        "Verify: CanonicalTransaction(source_system='TEST', source_row_number=1, invoice_number='INV-001', original_amount=Decimal('1250.00'), original_currency='AUD', base_amount=Decimal('1250.00'), base_currency='AUD', invoice_date=date(2024,3,15), raw_supplier_name='Acme Pty Ltd', raw_data={}) creates without validation error"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-09T15:49:47Z"
+    },
+    {
+      "id": "US-004",
+      "title": "Implement SQLite database setup with SQLAlchemy Core",
+      "description": "Implement src/models/database.py defining all SQLite tables using SQLAlchemy Core (not ORM) and providing helper functions for database operations. Schema must be Postgres-compatible — no SQLite-specific types.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/database.py — define metadata = MetaData() and SQLAlchemy Table objects for: transactions_table (all canonical CanonicalTransaction fields as columns; raw_data as TEXT; use TEXT for strings, FLOAT for floats, INTEGER for ints, TEXT for dates stored as ISO strings), supplier_master_table (canonical_supplier_id TEXT PRIMARY KEY, canonical_name TEXT, parent_company_id TEXT, parent_name TEXT, country TEXT, identifiers TEXT, created_at TEXT, updated_at TEXT), supplier_match_log_table (id TEXT PRIMARY KEY, raw_supplier_name TEXT, raw_supplier_id TEXT, canonical_supplier_id TEXT, match_method TEXT, confidence FLOAT, evidence TEXT, review_status TEXT, created_at TEXT), category_overrides_table (id TEXT PRIMARY KEY, canonical_supplier_id TEXT, gl_account TEXT, override_l1 TEXT, override_l2 TEXT, override_l3 TEXT, unspsc_code TEXT, reviewer TEXT, reason TEXT, created_at TEXT), audit_log_table (id TEXT PRIMARY KEY, table_name TEXT, record_id TEXT, field_name TEXT, old_value TEXT, new_value TEXT, changed_by TEXT, changed_at TEXT)",
+        "Implement get_engine(db_path: str) -> Engine using create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})",
+        "Implement init_db(engine: Engine) -> None that calls metadata.create_all(engine)",
+        "Implement insert_transactions(engine: Engine, records: list[dict]) -> int using engine.begin() context manager and INSERT, returns number of rows inserted",
+        "Implement get_transactions(engine: Engine, filters: dict = None) -> pd.DataFrame using pd.read_sql",
+        "Implement get_db_stats(engine: Engine) -> dict returning {'table_name': row_count} for all tables",
+        "CLI: python src/models/database.py --db-path data/db/spend_cube.db — creates DB, prints table names and row counts",
+        "Run: python src/models/database.py --db-path /tmp/test_spend.db — should print '5 tables created' without errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Create reference data files",
+      "description": "Create all reference data CSV and YAML files in data/reference/. These are bundled with the application. The UNSPSC file should be a representative ~500-commodity subset. FX rates cover 2023-2025 monthly averages for 8 currencies. Seed mappings include ~200 supplier/GL/keyword-to-category mappings.",
+      "acceptanceCriteria": [
+        "Create data/reference/unspsc_v24.csv with columns: segment_code, segment_name, family_code, family_name, class_code, class_name, commodity_code, commodity_name. Minimum 400 rows. Cover segments: 44 (Office/Photo/Film), 43 (IT/Broadcasting), 78 (Transportation/Storage), 80 (Management/Business), 81 (Engineering/R&D), 72 (Building/Construction), 76 (Industrial Cleaning), 51 (Drugs/Pharma/Biotech), 50 (Food/Beverage/Tobacco), 53 (Apparel/Luggage/Personal), 73 (Industrial Production/Manufacturing), 55 (Published Products). Use realistic 8-digit commodity codes following the UNSPSC pattern (segment 2 digits + family 2 + class 2 + commodity 2).",
+        "Create data/reference/fx_rates.csv with columns: year_month, from_ccy, to_ccy, rate. Cover 2023-01 through 2025-12 for all bidirectional pairs: AUD↔USD, AUD↔EUR, AUD↔GBP, AUD↔SGD, AUD↔NZD, AUD↔JPY, AUD↔CNY. Use realistic rates: AUD/USD ~0.63-0.68, AUD/EUR ~0.58-0.62, AUD/GBP ~0.50-0.54, AUD/SGD ~0.85-0.92, AUD/NZD ~1.07-1.12, AUD/JPY ~90-100, AUD/CNY ~4.5-4.8. Minimum 36 months × 14 pairs = 504 rows.",
+        "Create data/reference/legal_suffixes.yaml as a YAML list under key 'suffixes'. Include at minimum 40 entries covering: 'Pty Ltd', 'Pty. Ltd.', 'Pty. Ltd', 'P/L', 'P.L.', 'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Incorporated', 'Ltd', 'Ltd.', 'Limited', 'GmbH', 'AG', 'S.A.', 'S.A.S.', 'B.V.', 'N.V.', 'PLC', 'Plc', 'Corp', 'Corp.', 'Corporation', 'Co', 'Co.', 'Company', 'Trust', 'Pty', 'Holdings', 'Group', 'International', 'Trading', 'Services', 'Solutions', 'Aust', 'Australia', 'Global' (as standalone suffix tokens)",
+        "Create data/reference/abbreviation_map.yaml as key: value YAML mapping. Minimum 30 entries: Aust: Australia, Intl: International, Svcs: Services, Mgt: Management, Mgmt: Management, Dept: Department, Govt: Government, Tech: Technology, Eng: Engineering, Mfg: Manufacturing, Distrib: Distribution, Comms: Communications, Corp: Corporation, Assoc: Association, Fndtn: Foundation, Natl: National, Fed: Federal, Qld: Queensland, NSW: 'New South Wales', Vic: Victoria, SA: 'South Australia', WA: 'Western Australia', Tas: Tasmania, ACT: 'Australian Capital Territory'",
+        "Create data/reference/category_seed_mappings.csv with columns: mapping_type, source_value, internal_category_l1, internal_category_l2, internal_category_l3, unspsc_segment_code, confidence. Include minimum 200 rows with mapping_type values SUPPLIER, GL, KEYWORD. Examples: SUPPLIER|Telstra|IT|Telecommunications|Mobile Fleet|43, SUPPLIER|DHL|Logistics|Freight|International Freight|78, SUPPLIER|Sodexo|Facilities|Catering|Staff Catering|50, SUPPLIER|Officeworks|Office Supplies|Stationery||44, GL|6420|Office Supplies|Stationery||44, GL|6510|Facilities|Building Services||72, GL|6300|Logistics|Freight||78, GL|6440|IT|Telecommunications||43, KEYWORD|toner|Office Supplies|Print Consumables||44, KEYWORD|catering|Facilities|Catering||50, KEYWORD|freight|Logistics|Freight||78",
+        "Verify: all files load cleanly — python -c \"import pandas as pd, yaml; pd.read_csv('data/reference/unspsc_v24.csv'); pd.read_csv('data/reference/fx_rates.csv'); pd.read_csv('data/reference/category_seed_mappings.csv'); yaml.safe_load(open('data/reference/legal_suffixes.yaml')); yaml.safe_load(open('data/reference/abbreviation_map.yaml')); print('All reference files OK')\" — prints 'All reference files OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Implement structured logging utility",
+      "description": "Implement src/utils/logging.py providing a consistent logging setup across all modules. Must support human-readable and JSON format controlled by config.",
+      "acceptanceCriteria": [
+        "Edit file: src/utils/logging.py — implement get_logger(name: str, level: str = 'INFO', json_format: bool = False) -> logging.Logger",
+        "When json_format=False: format '[HH:MM:SS] [LEVEL] [name] message' using StreamHandler to stdout",
+        "When json_format=True: emit each log line as a single JSON object with fields: timestamp (ISO), level, logger, message. Use a custom Formatter subclass.",
+        "Implement log_llm_call(logger: logging.Logger, prompt: str, response: str, model: str, tokens_used: int = 0, cost_usd: float = 0.0) -> None that logs at INFO level with json extra fields: llm_call=True, model, tokens_used, cost_usd, prompt_preview (first 100 chars of prompt)",
+        "Implement get_logger_from_config(name: str, config) -> logging.Logger that reads level and json_format from config object",
+        "CLI: python src/utils/logging.py — demonstrates INFO, WARNING, ERROR in both formats"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Implement multi-format date parser",
+      "description": "Implement src/ingestion/date_parser.py to handle all date format inconsistencies in real procurement data. Must correctly parse every date in the 10-row sample dataset.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/date_parser.py — implement parse_date(value: Any) -> date | None",
+        "Handle and correctly parse: '15/03/2024' → date(2024,3,15), '2024-03-18' → date(2024,3,18), '20-Mar-2024' → date(2024,3,20), '5/4/2024' → date(2024,4,5), '01/04/2024' → date(2024,4,1), '2024-04-03' → date(2024,4,3), '12/02/2024' → date(2024,2,12), '31/03/2024' → date(2024,3,31), '28/02/2024' → date(2024,2,28)",
+        "Return None for: None, '', 'N/A', float('nan'), pd.NaT — no exceptions raised",
+        "Handle Excel date serials (integers, e.g. 45369) by converting via date(1899,12,30) + timedelta(days=int(value))",
+        "Use explicit format chain: ['%d/%m/%Y', '%Y-%m-%d', '%d-%b-%Y', '%m/%d/%Y', '%d-%m-%Y', '%Y/%m/%d'] before falling back to dateutil.parser.parse(value, dayfirst=True)",
+        "Implement parse_date_series(series: pd.Series) -> pd.Series for vectorised batch parsing",
+        "CLI: python src/ingestion/date_parser.py — prints parse results for all 9 sample dates plus edge cases (None, empty, NaN, Excel serial 45369)",
+        "Run: python src/ingestion/date_parser.py — exits 0, all 9 sample dates parse correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Implement currency converter",
+      "description": "Implement src/ingestion/currency_converter.py to convert transaction amounts from original currency to base currency using the bundled FX rate table created in US-005.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/currency_converter.py — implement CurrencyConverter class",
+        "__init__(self, fx_rates_path: str, base_currency: str = 'AUD'): loads data/reference/fx_rates.csv, creates a lookup dict keyed by (from_ccy, to_ccy, year_month_str)",
+        "Implement convert(self, amount: Decimal, from_ccy: str, transaction_date: date) -> tuple[Decimal, float | None, str | None] returning (converted_amount, rate_used, warning). Warning is None on success.",
+        "If from_ccy == base_currency: return (amount, 1.0, None)",
+        "If currency pair not in FX table: return (amount, None, f'UNKNOWN_CURRENCY_PAIR: {from_ccy}/{base_currency}')",
+        "If year_month not in table: find nearest available month, apply its rate, set warning = f'RATE_ESTIMATE: used {nearest_month} rate for {year_month}'",
+        "Implement convert_dataframe(self, df: pd.DataFrame, amount_col: str, currency_col: str, date_col: str) -> pd.DataFrame: adds columns base_amount (Decimal), fx_rate_used (float), fx_warning (str)",
+        "CLI: python src/ingestion/currency_converter.py — converts sample amounts including the DHL USD 8750.00 row, prints conversion table",
+        "Verify: convert(Decimal('8750.00'), 'USD', date(2024,2,12)) returns a converted amount between 12000 and 15000 AUD (reasonable range)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Implement data cleaner",
+      "description": "Implement src/ingestion/cleaner.py for all basic cleaning, type coercion, and flag detection on raw ingested DataFrames. This populates the boolean flag fields (is_credit_note, is_intercompany, is_tax_line, is_freight_line) and parses payment terms.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/cleaner.py — implement DataCleaner class with method clean(self, df: pd.DataFrame) -> pd.DataFrame",
+        "Strip leading/trailing whitespace from all object/string columns",
+        "Normalise null representations: '', 'N/A', 'n/a', 'NULL', 'null', 'None', '-', '#N/A', 'nan' → np.nan",
+        "Implement detect_document_type(row: pd.Series) -> str: return 'CREDIT_NOTE' if row's amount < 0 OR invoice_number starts with 'CN-' or 'CR-' (case-insensitive); return 'INVOICE' otherwise",
+        "Implement parse_payment_terms(raw: str | None) -> int | None: parse 'Net 30', 'NET30', 'net30', 'Net 30', 'Net30', 'n30', '30 days', '30' → 30. Handle 'Net 14'→14, 'Net 45'→45, 'Net 60'→60. Return None for None or unparseable. Use regex: r'\\b(\\d+)\\b' to extract the integer.",
+        "Implement detect_intercompany(supplier_name: str) -> bool: True if supplier_name (uppercased) contains any of: 'INTERCOMPANY', 'INTER-COMPANY', 'INTRA-COMPANY', 'INTERNAL -', 'IC - ', or starts with 'IC-'",
+        "Implement detect_tax_line(description: str, gl_account: str) -> bool: True if description (lowercased) contains 'gst', 'vat', 'tax adj', 'tax adjustment', 'withholding tax' OR gl_account (if not None) starts with '2' (balance sheet GL range)",
+        "Implement detect_freight_line(description: str) -> bool: True if description (lowercased) contains any of 'freight', 'shipping charge', 'delivery charge', 'courier fee'",
+        "clean() method applies all detections and adds columns: document_type, payment_terms_days, is_credit_note, is_intercompany, is_tax_line, is_freight_line",
+        "CLI: python src/ingestion/cleaner.py — loads sample data, runs clean(), prints before/after for key fields"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "Implement flexible column mapper",
+      "description": "Implement src/ingestion/column_mapper.py for YAML-driven column mapping from arbitrary source schemas to canonical field names. The DEFAULT mapping from config.yaml (created in US-002) must map the sample dataset correctly.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/column_mapper.py — implement ColumnMapper class",
+        "__init__(self, mappings: dict): stores mappings dict from config.column_mappings section",
+        "Implement map_dataframe(self, df: pd.DataFrame, source_system: str = 'DEFAULT') -> pd.DataFrame: renames columns using the mapping for source_system (falls back to DEFAULT). Columns not in the mapping are preserved with original names.",
+        "Implement get_mapping(self, source_system: str = 'DEFAULT') -> dict: returns the column mapping dict for the given source system, falling back to DEFAULT",
+        "Implement detect_source_system(self, columns: list[str]) -> str: tries each mapping in config, returns the source_system whose mapping has the highest column overlap with the given columns. Returns 'DEFAULT' if no good match.",
+        "Implement get_unmapped_required_fields(self, df_columns: list[str], source_system: str = 'DEFAULT') -> list[str]: returns list of canonical required fields not covered by current mapping",
+        "CLI: python src/ingestion/column_mapper.py — applies DEFAULT mapping to a test dataframe with VENDOR_NAME, VENDOR_NUM etc., prints original vs renamed column names"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "Implement ingestion pipeline orchestrator and create sample.csv",
+      "description": "Implement src/ingestion/ingest.py as the main ingestion orchestrator that ties together column mapping, date parsing, currency conversion, and cleaning into a single pipeline. Also create data/input/sample.csv containing the exact 10-row messy dataset from the spec. This story is the Phase 1 validation gate.",
+      "acceptanceCriteria": [
+        "Create data/input/sample.csv containing the exact 10 rows from the spec sample dataset as comma-separated values with header: VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE. Include the row with empty VENDOR_NAME (the TAX-ADJ-001 row). The blank VENDOR_NAME should be an empty field.",
+        "Edit file: src/ingestion/ingest.py — implement Ingestor class",
+        "__init__(self, config): initialises ColumnMapper, CurrencyConverter, DataCleaner, loads config",
+        "Implement ingest_file(self, file_path: str, source_system: str = None) -> pd.DataFrame: reads CSV or .xlsx/.xls, auto-detects source system if not provided, applies column mapping, parses invoice_date with parse_date_series(), converts currency via CurrencyConverter, cleans with DataCleaner, generates UUID transaction_id for each row, sets source_row_number to original row index, sets ingested_at and last_modified_at to current UTC datetime, stores all original columns as JSON string in raw_data column",
+        "Implement ingest_to_db(self, file_path: str, engine, source_system: str = None) -> int: calls ingest_file(), converts DataFrame to list of dicts, calls insert_transactions(engine, records), returns row count",
+        "CLI: python src/ingestion/ingest.py --file data/input/sample.csv [--source DEFAULT] [--db data/db/spend_cube.db]: runs full pipeline, prints summary: total rows, document_type counts, flag counts (is_credit_note, is_intercompany, is_tax_line), currency conversion warnings, any parse failures",
+        "Verify by running: python src/ingestion/ingest.py --file data/input/sample.csv — output must show: 10 rows processed, CREDIT_NOTE: 2 (CN-2024-001 negative amount + TAX-ADJ-001 has negative amount so also credit), is_intercompany: 1 (INTERCOMPANY - LEGAL), is_tax_line: 1 (TAX-ADJ-001 with GL 2100100), 1 USD transaction converted to AUD"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-012",
+      "title": "Implement synthetic test data generator",
+      "description": "Implement src/utils/generate_test_data.py to produce realistic messy procurement CSVs for development, testing, and demos. This is critical infrastructure for all subsequent phases. Output format must match data/input/sample.csv.",
+      "acceptanceCriteria": [
+        "Edit file: src/utils/generate_test_data.py — implement generate_test_data(rows, suppliers, categories, messiness, duplicate_supplier_rate, credit_note_rate, intercompany_rate, seed) -> pd.DataFrame and a CLI wrapper",
+        "CLI: python src/utils/generate_test_data.py --rows 1000 --suppliers 100 --messiness 0.3 --seed 42 --output data/input/test_1k.csv",
+        "Arguments: --rows (default 10000), --suppliers (default 500), --categories (default 50), --messiness (float 0.0-1.0, default 0.3), --duplicate_supplier_rate (default 0.15), --credit_note_rate (default 0.05), --intercompany_rate (default 0.03), --output (default data/input/test_data.csv), --seed (int, default 42)",
+        "Output CSV columns: VENDOR_NAME, VENDOR_NUM, INV_NO, INV_DATE, LINE_DESC, AMT, CCY, GL_CODE, COST_CTR, PAY_TERMS, PO_NUM, BUS_UNIT, SITE",
+        "Supplier names: generate base names using Faker (company names), then create variants based on duplicate_supplier_rate — same base name with different legal suffixes/abbreviations/capitalisation",
+        "Date formats: at messiness=0.0 all dates are YYYY-MM-DD; at messiness=1.0 dates are randomly DD/MM/YYYY, YYYY-MM-DD, DD-Mon-YYYY in ~equal proportions",
+        "Missing fields: apply missing rates controlled by messiness — at messiness=0.3, ~30% PO_NUM missing, ~20% COST_CTR missing, ~10% PAY_TERMS missing",
+        "Credit notes: credit_note_rate fraction of rows have negative AMT and INV_NO starting with 'CN-'",
+        "Intercompany rows: intercompany_rate fraction have VENDOR_NAME = 'INTERCOMPANY - [DEPT]'",
+        "GL codes: generate from realistic ranges (6420000-6429999 for office, 6510000-6519999 for facilities, 6300000-6309999 for logistics, 6440000-6449999 for IT). At messiness>0.3, some GL codes have leading zeros stripped.",
+        "CCY: 90% AUD, 5% USD, 3% EUR, 2% other — with messiness=0 all CCY fields filled, at messiness=0.3 ~10% missing",
+        "Run: python src/utils/generate_test_data.py --rows 1000 --seed 42 --output /tmp/test_gen.csv && python -c \"import pandas as pd; df=pd.read_csv('/tmp/test_gen.csv'); print(len(df), 'rows,', df.columns.tolist())\" — should print '1000 rows' and correct column list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-013",
+      "title": "Write Phase 1 unit tests",
+      "description": "Write comprehensive unit tests for all Phase 1 modules in tests/test_ingestion.py with fixtures in tests/conftest.py. All tests must pass. Requires all prior Phase 1 stories to be complete.",
+      "acceptanceCriteria": [
+        "Edit file: tests/conftest.py — add pytest fixtures: @pytest.fixture def config() loading config from config.yaml; @pytest.fixture def sample_df() returning the 10-row sample as a DataFrame with the same column names as data/input/sample.csv; @pytest.fixture def in_memory_engine() returning an in-memory SQLite engine with all tables initialised via init_db()",
+        "Edit file: tests/test_ingestion.py — write minimum 15 test functions covering:",
+        "  Date parser: test_parse_date_ddmmyyyy, test_parse_date_iso, test_parse_date_dd_mon_yyyy, test_parse_date_ambiguous_slash, test_parse_date_none_returns_none, test_parse_date_empty_string_returns_none, test_parse_date_nan_returns_none, test_parse_date_excel_serial",
+        "  Currency converter: test_same_currency_returns_original, test_usd_to_aud_returns_reasonable_amount, test_unknown_currency_returns_warning, test_missing_month_uses_nearest",
+        "  Data cleaner: test_whitespace_stripped, test_null_variants_normalised, test_payment_terms_net30, test_payment_terms_NET30_no_space, test_payment_terms_none, test_detect_credit_note_negative_amount, test_detect_credit_note_cn_prefix, test_detect_intercompany, test_detect_tax_line_gst, test_detect_tax_line_gl_balance_sheet",
+        "  Ingestion: test_ingest_sample_csv_returns_10_rows, test_ingest_cn_row_is_credit_note, test_ingest_intercompany_row_flagged, test_ingest_tax_row_flagged, test_ingest_usd_row_converted_to_aud, test_ingest_all_rows_have_transaction_id",
+        "Run: pytest tests/test_ingestion.py -v — all tests pass (green)",
+        "Run: pytest tests/test_ingestion.py --cov=src/ingestion --cov-report=term-missing — line coverage ≥ 75% on src/ingestion/"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-014",
+      "title": "Write README.md and CLAUDE.md",
+      "description": "Expand README.md from its current '# SpendCube' state into a complete project README with architecture diagram, setup instructions, and usage. Also create CLAUDE.md documenting project context for future Claude Code sessions.",
+      "acceptanceCriteria": [
+        "Edit file: README.md — write full README with sections: # SpendCube, ## Overview (2-3 sentences), ## Architecture (mermaid diagram showing: Input CSV/Excel → Ingestion Pipeline → Canonical Transactions SQLite → Supplier Harmonisation → Categorisation → Spend Cube Parquet → Streamlit Dashboard + Recommendation Engine), ## Quick Start (5-step getting started), ## Installation (pip install, make install), ## Configuration (config.yaml structure with key settings explained, note that dry_run: true is default), ## Usage (Makefile targets table), ## Input Data Format (table showing expected columns with sample values from the spec messy dataset), ## Pipeline Stages (brief description of each stage), ## Development (make generate-test-data, make run-tests, pytest with coverage), ## Phased Build Plan (table of 6 phases with status: Phase 1 In Progress, Phases 2-6 Planned), ## License",
+        "Create CLAUDE.md at /Users/tompurnell/Documents/Claude/SpendCube/CLAUDE.md with sections: ## Project Purpose (procurement spend cube for consulting/client diagnostics), ## Stack (Python 3.11, pandas, pydantic v2, SQLAlchemy Core, rapidfuzz, sentence-transformers, anthropic SDK, Streamlit, SQLite), ## Key Design Decisions (SQLAlchemy Core not ORM; pydantic v2 with use_enum_values=True; confidence scoring 0-1 with bands HIGH/MEDIUM/LOW; LLM is last resort not first pass; dry_run=true default; DD/MM/YYYY assumed for ambiguous dates), ## LLM Usage Policy (only for: uncategorised spend below 0.6 confidence, parent company identification, recommendation narratives, description enrichment), ## Phase Status (6 phases, Phase 1 active), ## Running the Pipeline (make targets), ## Reference Data (what's in data/reference/)",
+        "Verify: README.md contains a mermaid code block (```mermaid)",
+        "Verify: CLAUDE.md exists and is non-empty"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_structure": "find /Users/tompurnell/Documents/Claude/SpendCube/src -name '*.py' | wc -l — should be ≥ 30",
+      "check_config": "python src/config.py — prints config without error",
+      "check_schema": "python src/models/schema.py — prints 'Schema OK'",
+      "check_db": "python src/models/database.py --db-path /tmp/test.db — prints '5 tables created'",
+      "check_reference_data": "python -c \"import pandas as pd; df=pd.read_csv('data/reference/fx_rates.csv'); print(len(df), 'FX rate rows')\" — prints ≥ 504",
+      "ingest_sample": "python src/ingestion/ingest.py --file data/input/sample.csv — prints '10 rows processed'",
+      "generate_data": "python src/utils/generate_test_data.py --rows 1000 --seed 42 --output /tmp/gen.csv && wc -l /tmp/gen.csv — prints 1001",
+      "run_tests": "pytest tests/test_ingestion.py -v — all tests green"
+    },
+    "expected_counts": {
+      "sample_rows": 10,
+      "credit_notes_in_sample": 2,
+      "intercompany_in_sample": 1,
+      "tax_lines_in_sample": 1,
+      "usd_transactions_in_sample": 1,
+      "unspsc_rows_minimum": 400,
+      "fx_rate_rows_minimum": 504,
+      "seed_mapping_rows_minimum": 200,
+      "minimum_unit_tests": 15,
+      "minimum_source_files": 30
+    },
+    "checks": [
+      "All placeholder source files created (US-001)",
+      "config.yaml loads without error (US-002)",
+      "Canonical schema creates sample transaction without validation error (US-003)",
+      "SQLite DB initialises 5 tables (US-004)",
+      "All 5 reference files load cleanly (US-005)",
+      "sample.csv ingests with correct document_type, flag, and currency conversion results (US-011)",
+      "Test suite: pytest tests/test_ingestion.py — all green (US-013)",
+      "README.md contains mermaid diagram (US-014)",
+      "CLAUDE.md created (US-014)"
+    ]
+  },
+  "risks": [
+    "UNSPSC reference data: Full v24 table is proprietary (~50K commodities). Mitigation: build a representative ~500-commodity subset covering all major procurement segments. Sufficient for Phase 3 categorisation demo.",
+    "Date format ambiguity DD/MM/YYYY vs MM/DD/YYYY: '5/4/2024' could be 5 April or 4 May. Mitigation: explicit format chain always tries DD/MM/YYYY first (Australian convention). Document this assumption in config and README.",
+    "pydantic v2 breaking changes from v1: syntax differs significantly. Mitigation: use pydantic v2 throughout — model_config = ConfigDict(...), model_dump() not .dict(), model_validate() not .parse_obj().",
+    "Decimal vs float for monetary amounts: Python float loses precision. Mitigation: use Decimal for all monetary fields in schema; convert to float only when writing to SQLite TEXT or doing arithmetic."
+  ],
+  "outOfScope": [
+    "Supplier harmonisation (Phase 2 — separate sprint)",
+    "Spend categorisation and UNSPSC classification (Phase 3 — separate sprint)",
+    "Spend cube construction and dimensional model (Phase 4 — separate sprint)",
+    "Streamlit dashboards and visualisations (Phase 5 — separate sprint)",
+    "Recommendation engine and savings levers (Phase 6 — separate sprint)",
+    "Embedding-based matching (Phase 2)",
+    "LLM integration and API calls (Phase 3+)",
+    "Real-time ERP integration",
+    "Multi-tenant architecture",
+    "User authentication",
+    "OCR invoice scanning"
+  ]
+}

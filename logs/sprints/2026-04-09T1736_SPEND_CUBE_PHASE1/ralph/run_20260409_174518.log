@@ -1,0 +1,200 @@
+[2026-04-09 17:45:18] [INFO] Ralph loop starting
+[2026-04-09 17:45:18] [INFO] Created progress file: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Thu  9 Apr 2026 17:45:18 CEST
+PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-09 17:45:18] [INFO] Starting iteration 1
+[2026-04-09 17:45:18] [INFO] Processing story: US-001
+[2026-04-09 17:45:18] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Create project directory structure and Makefile
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Scaffold the complete SpendCube project directory structure as defined in the spec. Working directory is /Users/tompurnell/Documents/Claude/SpendCube. Create all __init__.py files, placeholder module files with docstrings, requirements.txt, and a Makefile with all required targets. The README.md already exists with just '# SpendCube' — do not modify it yet (US-014 handles that). Do NOT create config.yaml, reference data files, or any real implementation yet — just the skeleton.
+
+## Acceptance Criteria
+- Create directory structure: src/, src/models/, src/ingestion/, src/suppliers/, src/categorisation/, src/cube/, src/recommendations/, src/diagnostics/, src/utils/, dashboard/, dashboard/pages/, dashboard/components/, tests/, data/, data/reference/, data/input/, data/output/, data/db/
+- Create __init__.py in every src/ subdirectory and dashboard/
+- Create placeholder Python files (with triple-quoted module docstring + # TODO: implement comment only, no imports): src/config.py, src/models/schema.py, src/models/database.py, src/ingestion/ingest.py, src/ingestion/column_mapper.py, src/ingestion/date_parser.py, src/ingestion/currency_converter.py, src/ingestion/cleaner.py, src/suppliers/normaliser.py, src/suppliers/matcher.py, src/suppliers/embeddings.py, src/suppliers/parent_mapper.py, src/suppliers/harmoniser.py, src/categorisation/deterministic.py, src/categorisation/embedding_classifier.py, src/categorisation/llm_classifier.py, src/categorisation/categoriser.py, src/cube/builder.py, src/cube/metrics.py, src/cube/exporter.py, src/recommendations/rules.py, src/recommendations/narratives.py, src/recommendations/engine.py, src/diagnostics/quality.py, src/utils/generate_test_data.py, src/utils/logging.py, dashboard/app.py, dashboard/pages/01_spend_overview.py, dashboard/pages/02_category_deep_dive.py, dashboard/pages/03_supplier_deep_dive.py, dashboard/pages/04_payment_terms.py, dashboard/pages/05_data_quality.py, dashboard/pages/06_recommendations.py, dashboard/pages/07_review_workstation.py, dashboard/components/charts.py, dashboard/components/filters.py, dashboard/components/tables.py
+- Create tests/conftest.py, tests/test_ingestion.py, tests/test_supplier_harmonisation.py, tests/test_categorisation.py, tests/test_cube_builder.py, tests/test_recommendations.py, tests/test_diagnostics.py — all empty except for a module docstring
+- Create requirements.txt at project root with pinned versions: pandas>=2.0, openpyxl>=3.1, rapidfuzz>=3.0, sentence-transformers>=2.2, anthropic>=0.25, streamlit>=1.30, sqlalchemy>=2.0, pydantic>=2.0, python-dateutil>=2.9, pyarrow>=14.0, plotly>=5.18, pyyaml>=6.0, pytest>=7.4, pytest-cov>=4.1, faker>=22.0, numpy>=1.26
+- Create Makefile at project root with targets: install (pip install -r requirements.txt), generate-test-data (python src/utils/generate_test_data.py), ingest (python src/ingestion/ingest.py), harmonise (python src/suppliers/harmoniser.py), categorise (python src/categorisation/categoriser.py), build-cube (python src/cube/builder.py), serve-dashboard (streamlit run dashboard/app.py), run-tests (pytest tests/ -v --cov=src), export (python src/cube/exporter.py). Each target prefixed with @echo running target name.
+- Verify: python -c 'import src; import src.models; import src.ingestion' — should succeed with no errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Create project directory structure and Makefile`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-09 17:47:05] [OK] Story US-001 completed!
+[2026-04-09 17:47:05] [OK] Marked US-001 as passed
+[2026-04-09 17:47:05] [INFO] Logged progress for US-001: PASSED
+[2026-04-09 17:47:05] [WARN] No git changes detected - story may have been documentation only
+[2026-04-09 17:47:07] [INFO] Starting iteration 2
+[2026-04-09 17:47:07] [INFO] Processing story: US-002
+[2026-04-09 17:47:07] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Create config.yaml and config loader
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create config.yaml at the project root containing all thresholds, paths, API settings, and the DEFAULT column mapping. Then implement src/config.py as a typed config loader. The column_mappings section in config.yaml maps the sample dataset column names (VENDOR_NAME, VENDOR_NUM, etc.) to canonical field names.
+
+## Acceptance Criteria
+- Create config.yaml at /Users/tompurnell/Documents/Claude/SpendCube/config.yaml with all these top-level sections populated: paths (data_dir: data, input_dir: data/input, output_dir: data/output, db_path: data/db/spend_cube.db, reference_dir: data/reference), llm (model: claude-sonnet-4-20250514, batch_size: 20, dry_run: true, max_cost_usd: 10.0, api_key_env: ANTHROPIC_API_KEY), supplier_matching (fuzzy_auto_threshold: 88, fuzzy_review_threshold: 70, embedding_auto_threshold: 0.90, embedding_review_threshold: 0.80, corroboration_same_city: 5, corroboration_same_postcode: 8, corroboration_same_abn: 20), categorisation (confidence_high: 0.85, confidence_medium: 0.60, embedding_threshold: 0.80, llm_fallback_threshold: 0.60), spend_cube (base_currency: AUD, tail_spend_supplier_pct: 0.80, tail_spend_value_pct: 0.20), recommendations (consolidation_threshold: 5, consolidation_saving_pct: 0.08, target_payment_days: 45, wacc: 0.08, min_wc_opportunity: 10000, tail_spend_alert_pct: 0.05, maverick_alert_pct: 0.15), logging (level: INFO, json_format: false), column_mappings section with DEFAULT mapping: VENDOR_NAME: raw_supplier_name, VENDOR_NUM: raw_supplier_id, INV_NO: invoice_number, INV_DATE: invoice_date, LINE_DESC: raw_line_description, AMT: original_amount, CCY: original_currency, GL_CODE: gl_account, COST_CTR: cost_centre, PAY_TERMS: raw_payment_terms, PO_NUM: po_number, BUS_UNIT: business_unit, SITE: plant_site
+- Edit file: src/config.py — implement load_config(path: str = 'config.yaml') -> Config function. Config is a pydantic BaseModel or dataclass with typed nested sections matching the YAML structure.
+- Config loader raises ConfigError(Exception) with clear message if required top-level sections are missing
+- Config loader resolves relative paths to absolute paths based on the directory containing config.yaml
+- CLI: python src/config.py — prints loaded config as formatted YAML to stdout with all sections visible
+- Run: python src/config.py — exits with code 0 and prints config without errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Create config.yaml and config loader`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-09 17:48:02] [OK] Story US-002 completed!
+[2026-04-09 17:48:02] [OK] Marked US-002 as passed
+[2026-04-09 17:48:02] [INFO] Logged progress for US-002: PASSED
+[2026-04-09 17:48:02] [WARN] No git changes detected - story may have been documentation only
+[2026-04-09 17:48:04] [INFO] Starting iteration 3
+[2026-04-09 17:48:04] [INFO] Processing story: US-003
+[2026-04-09 17:48:04] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement canonical transaction schema with pydantic v2
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the full canonical transaction schema in src/models/schema.py using pydantic v2. Every field from the spec must be present. Also implement supporting enums and the ConfidenceBand helper.
+
+## Acceptance Criteria
+- Edit file: src/models/schema.py — implement the following enums as Python str enums: DocumentType (INVOICE, CREDIT_NOTE, DEBIT_NOTE, ACCRUAL), CategoryMethod (DETERMINISTIC_GL, DETERMINISTIC_SUPPLIER, KEYWORD, EMBEDDING, LLM, MANUAL), SpendType (DIRECT, INDIRECT, CAPEX, OPEX), Addressability (ADDRESSABLE, NON_ADDRESSABLE, EXCLUDED), ManagedStatus (MANAGED, UNMANAGED, PARTIALLY_MANAGED), ReviewStatus (PENDING, APPROVED, REJECTED, SKIPPED)
+- Implement ConfidenceBand with class constants HIGH=0.85, MEDIUM=0.60 and classmethod get_band(score: float) -> str returning 'HIGH', 'MEDIUM', or 'LOW'
+- Implement CanonicalTransaction(BaseModel) with model_config = ConfigDict(populate_by_name=True, use_enum_values=True) and ALL fields from the spec with correct types. transaction_id defaults to str(uuid4()), ingested_at and last_modified_at default to datetime.utcnow(). All Optional fields typed as Optional[X] = None.
+- Implement SupplierMaster(BaseModel): canonical_supplier_id, canonical_name, parent_company_id, parent_name, country, identifiers (dict), created_at, updated_at
+- Implement SupplierMatchLog(BaseModel): id, raw_supplier_name, raw_supplier_id, canonical_supplier_id, match_method, confidence, evidence, review_status (ReviewStatus)
+- CLI block: if __name__ == '__main__': create a sample CanonicalTransaction with minimal fields and print its model_dump_json(indent=2). Also print 'Schema OK'.
+- Run: python src/models/schema.py — prints 'Schema OK' and valid JSON without errors
+- Verify: CanonicalTransaction(source_system='TEST', source_row_number=1, invoice_number='INV-001', original_amount=Decimal('1250.00'), original_currency='AUD', base_amount=Decimal('1250.00'), base_currency='AUD', invoice_date=date(2024,3,15), raw_supplier_name='Acme Pty Ltd', raw_data={}) creates without validation error
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement canonical transaction schema with pydantic v2`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-09 17:49:47] [OK] Story US-003 completed!
+[2026-04-09 17:49:47] [OK] Marked US-003 as passed
+[2026-04-09 17:49:47] [INFO] Logged progress for US-003: PASSED
+[2026-04-09 17:49:47] [STEP] Committing changes...
