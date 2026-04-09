@@ -94,7 +94,8 @@
         "Verify against sample data: 'Office supplies - toner cartridges HP' row should match toner/cartridge rule → Office Supplies/Print Consumables, 'Catering - Q1 events' → Facilities/Catering, 'Staff canteen March' → Facilities/Catering, 'International freight - Shanghai to Melb' → Logistics/Freight, 'Mobile fleet - Feb 2024 (450 handsets)' → IT/Telecoms, 'Ad hoc signage for conference' → Marketing/Print",
         "CLI: python src/categorisation/deterministic.py — after adding keyword pass, verify 6 of the 10 sample rows are classified by passes 1-3 combined"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:21:21Z"
     },
     {
       "id": "US-004",

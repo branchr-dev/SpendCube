@@ -133,3 +133,66 @@ STORY_COMPLETE: US-002
 [2026-04-10 00:18:21] [OK] Marked US-002 as passed
 [2026-04-10 00:18:21] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 00:18:21] [STEP] Committing changes...
+[2026-04-10 00:18:23] [INFO] Starting iteration 3
+[2026-04-10 00:18:23] [INFO] Processing story: US-003
+[2026-04-10 00:18:23] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement keyword rule-based categorisation
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement Pass 3 of the categorisation pipeline in src/categorisation/deterministic.py (extending the existing class): keyword/regex rule matching against cleaned_description and raw_line_description. Rules loaded from data/reference/keyword_rules.yaml.
+
+## Acceptance Criteria
+- Edit file: src/categorisation/deterministic.py — add apply_keyword_rules(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame] method to DeterministicCategoriser
+- Load keyword_rules.yaml in __init__ (already has path from config). Store as list of compiled regex patterns with associated category fields.
+- For each unclassified row: apply each rule's pattern against the combined text of cleaned_description + ' ' + raw_line_description (lowercased). Use re.search (not match). First rule that matches wins.
+- Assign: internal_category_l1/l2/l3 from rule, unspsc_segment from rule, category_confidence from rule's confidence value, category_method='KEYWORD'.
+- If multiple rules match, use the highest-confidence rule.
+- Verify against sample data: 'Office supplies - toner cartridges HP' row should match toner/cartridge rule → Office Supplies/Print Consumables, 'Catering - Q1 events' → Facilities/Catering, 'Staff canteen March' → Facilities/Catering, 'International freight - Shanghai to Melb' → Logistics/Freight, 'Mobile fleet - Feb 2024 (450 handsets)' → IT/Telecoms, 'Ad hoc signage for conference' → Marketing/Print
+- CLI: python src/categorisation/deterministic.py — after adding keyword pass, verify 6 of the 10 sample rows are classified by passes 1-3 combined
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement keyword rule-based categorisation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 00:21:21] [OK] Story US-003 completed!
+[2026-04-10 00:21:21] [OK] Marked US-003 as passed
+[2026-04-10 00:21:21] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 00:21:21] [STEP] Committing changes...

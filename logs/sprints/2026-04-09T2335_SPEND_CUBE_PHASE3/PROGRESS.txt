@@ -36,3 +36,24 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+## US-003 COMPLETE — 2026-04-10
+- Added `apply_keyword_rules` method to DeterministicCategoriser (Pass 3)
+- Loaded keyword_rules.yaml in __init__ using `reference_dir / "keyword_rules.yaml"` (PathsConfig ignores extra YAML keys)
+- Compiled 48 regex patterns with re.IGNORECASE at load time (not per-row)
+- Combined text: `cleaned_description + ' ' + raw_line_description` (lowercased); handles None/NaN for either field
+- Highest-confidence matching wins when multiple rules match
+- All 6 AC verification examples pass correctly
+- Signage rule confidence bumped 0.75 → 0.80 so "signage" beats "conference" (both present in "Ad hoc signage for conference")
+- CLI: 13/14 sample rows classified by passes 1-3 (93%); only "Miscellaneous services" remains
+
+### [US-003] - 2026-04-10 00:21:30
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+
+
+---
+
+### [US-003] - 2026-04-10 00:21:21
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+
