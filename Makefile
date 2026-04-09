@@ -18,7 +18,7 @@ harmonise:
 
 categorise:
 	@echo "Running categorise"
-	python src/categorisation/categoriser.py
+	python src/categorisation/categoriser.py --db data/db/spend_cube.db
 
 build-cube:
 	@echo "Running build-cube"
