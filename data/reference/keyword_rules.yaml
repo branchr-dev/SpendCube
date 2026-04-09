@@ -1,0 +1,324 @@
+rules:
+  # Office Supplies / Print Consumables
+  - pattern: "toner|cartridge|ink cartridge|drum unit"
+    l1: Office Supplies
+    l2: Print Consumables
+    unspsc_segment_code: 44
+    confidence: 0.82
+
+  - pattern: "printer|copier|multifunction device|mfd"
+    l1: Office Supplies
+    l2: Equipment
+    unspsc_segment_code: 44
+    confidence: 0.78
+
+  - pattern: "stationery|office supply|office supplies|paper reams|envelopes|folders"
+    l1: Office Supplies
+    l2: Stationery
+    unspsc_segment_code: 44
+    confidence: 0.82
+
+  # Facilities / Catering
+  - pattern: "catering|canteen|meal|lunch|breakfast|corporate dining|hospitality food"
+    l1: Facilities
+    l2: Catering
+    unspsc_segment_code: 90
+    confidence: 0.82
+
+  - pattern: "vending machine|vending service"
+    l1: Facilities
+    l2: Catering
+    unspsc_segment_code: 90
+    confidence: 0.78
+
+  # Facilities / Cleaning
+  - pattern: "cleaning|janitorial|housekeeping|sanitation services"
+    l1: Facilities
+    l2: Cleaning
+    unspsc_segment_code: 47
+    confidence: 0.78
+
+  - pattern: "waste management|waste removal|recycling|rubbish collection"
+    l1: Facilities
+    l2: Cleaning
+    unspsc_segment_code: 47
+    confidence: 0.75
+
+  # Facilities / Security
+  - pattern: "security guard|guard services|patrol|manned guarding|security services"
+    l1: Facilities
+    l2: Security
+    unspsc_segment_code: 92
+    confidence: 0.80
+
+  - pattern: "access control|cctv|electronic security|alarm system"
+    l1: Facilities
+    l2: Security
+    unspsc_segment_code: 92
+    confidence: 0.78
+
+  # Facilities / Building Maintenance
+  - pattern: "hvac|air conditioning|plumbing|building maintenance|facilities maintenance"
+    l1: Facilities
+    l2: Building Maintenance
+    unspsc_segment_code: 72
+    confidence: 0.80
+
+  - pattern: "electrical maintenance|electrician|switchboard"
+    l1: Facilities
+    l2: Building Maintenance
+    unspsc_segment_code: 72
+    confidence: 0.78
+
+  # Facilities / Utilities
+  - pattern: "electricity|electric bill|power bill|energy supply"
+    l1: Facilities
+    l2: Utilities
+    unspsc_segment_code: 83
+    confidence: 0.80
+
+  - pattern: "gas supply|natural gas|lpg"
+    l1: Facilities
+    l2: Utilities
+    unspsc_segment_code: 83
+    confidence: 0.80
+
+  - pattern: "water supply|water usage|water bill|utility|utilities"
+    l1: Facilities
+    l2: Utilities
+    unspsc_segment_code: 83
+    confidence: 0.80
+
+  # Logistics / Freight
+  - pattern: "freight|shipping|sea freight|air freight|road freight|haulage"
+    l1: Logistics
+    l2: Freight
+    unspsc_segment_code: 78
+    confidence: 0.82
+
+  - pattern: "courier|delivery|express delivery|parcel|despatch"
+    l1: Logistics
+    l2: Courier
+    unspsc_segment_code: 78
+    confidence: 0.82
+
+  # Logistics / Warehousing
+  - pattern: "warehouse|warehousing|storage facility|3pl|third.party logistics|pick.and.pack"
+    l1: Logistics
+    l2: Warehousing
+    unspsc_segment_code: 78
+    confidence: 0.78
+
+  # Logistics / Fleet
+  - pattern: "fuel|petrol|diesel|vehicle fuel|bowser"
+    l1: Logistics
+    l2: Fleet
+    unspsc_segment_code: 25
+    confidence: 0.78
+
+  - pattern: "fleet lease|vehicle lease|car lease|novated lease|fleet management"
+    l1: Logistics
+    l2: Fleet
+    unspsc_segment_code: 25
+    confidence: 0.80
+
+  # IT / Telecoms
+  - pattern: "mobile phone|handset|telecom|telecommunications|phone fleet|sim card|data plan"
+    l1: IT
+    l2: Telecoms
+    unspsc_segment_code: 43
+    confidence: 0.80
+
+  - pattern: "fixed line|landline|pbx|voip|internet service|broadband|isp"
+    l1: IT
+    l2: Telecoms
+    unspsc_segment_code: 43
+    confidence: 0.80
+
+  # IT / Hardware
+  - pattern: "laptop|desktop|workstation|computer hardware|notebook pc"
+    l1: IT
+    l2: Hardware
+    unspsc_segment_code: 43
+    confidence: 0.80
+
+  - pattern: "server|rack|storage array|nas|san|networking hardware|switch|router"
+    l1: IT
+    l2: Hardware
+    unspsc_segment_code: 43
+    confidence: 0.80
+
+  # IT / Software
+  - pattern: "software licence|software license|subscription|saas|annual licence|microsoft licence"
+    l1: IT
+    l2: Software
+    unspsc_segment_code: 43
+    confidence: 0.80
+
+  # IT / Cloud Services
+  - pattern: "cloud|aws|azure|google cloud|gcp|cloud hosting|cloud infrastructure"
+    l1: IT
+    l2: Cloud Services
+    unspsc_segment_code: 43
+    confidence: 0.82
+
+  # IT / IT Services
+  - pattern: "managed service|helpdesk|service desk|it support|it consulting"
+    l1: IT
+    l2: IT Services
+    unspsc_segment_code: 43
+    confidence: 0.78
+
+  # Professional Services / Legal
+  - pattern: "legal|solicitor|barrister|law firm|legal fees|legal services"
+    l1: Professional Services
+    l2: Legal
+    unspsc_segment_code: 80
+    confidence: 0.80
+
+  # Professional Services / Consulting
+  - pattern: "consulting|advisory|management consulting|strategy consulting|business advisory"
+    l1: Professional Services
+    l2: Consulting
+    unspsc_segment_code: 80
+    confidence: 0.78
+
+  # Professional Services / Engineering
+  - pattern: "engineering services|civil engineering|structural engineering|environmental consulting"
+    l1: Professional Services
+    l2: Engineering
+    unspsc_segment_code: 81
+    confidence: 0.78
+
+  # Professional Services / Research
+  - pattern: "market research|survey|focus group|feasibility study|research services"
+    l1: Professional Services
+    l2: Research
+    unspsc_segment_code: 80
+    confidence: 0.75
+
+  # HR / Recruitment
+  - pattern: "recruit|recruitment agency|staffing agency|temp labour|job board|executive search"
+    l1: HR
+    l2: Recruitment
+    unspsc_segment_code: 80
+    confidence: 0.78
+
+  # HR / Temp Labour
+  - pattern: "labour hire|on-hire|contingent worker|contractor placement"
+    l1: HR
+    l2: Temp Labour
+    unspsc_segment_code: 80
+    confidence: 0.80
+
+  # HR / Training
+  - pattern: "training|workshop|learning and development|l&d|e-learning|online learning|certification"
+    l1: HR
+    l2: Training
+    unspsc_segment_code: 86
+    confidence: 0.78
+
+  # HR / Benefits
+  - pattern: "superannuation|salary packaging|employee assistance|eap|health insurance benefit"
+    l1: HR
+    l2: Benefits
+    unspsc_segment_code: 84
+    confidence: 0.82
+
+  # Finance / Banking
+  - pattern: "bank fee|bank charges|merchant fee|transaction fee|fx services|foreign exchange"
+    l1: Finance
+    l2: Banking
+    unspsc_segment_code: 84
+    confidence: 0.80
+
+  # Finance / Insurance
+  - pattern: "insurance|professional indemnity|public liability|workers compensation|product liability"
+    l1: Finance
+    l2: Insurance
+    unspsc_segment_code: 84
+    confidence: 0.82
+
+  # Finance / Audit
+  - pattern: "audit|external audit|internal audit|accounting services|assurance services"
+    l1: Finance
+    l2: Audit
+    unspsc_segment_code: 84
+    confidence: 0.80
+
+  # Finance / Tax Advisory
+  - pattern: "tax advisory|corporate tax|gst advisory|transfer pricing|tax compliance"
+    l1: Finance
+    l2: Tax Advisory
+    unspsc_segment_code: 84
+    confidence: 0.78
+
+  # Marketing / Advertising
+  - pattern: "advertising|media buy|ad campaign|billboard|print advertisement"
+    l1: Marketing
+    l2: Advertising
+    unspsc_segment_code: 80
+    confidence: 0.80
+
+  # Marketing / Events
+  - pattern: "conference|event management|exhibition|sponsorship|trade show"
+    l1: Marketing
+    l2: Events
+    unspsc_segment_code: 80
+    confidence: 0.78
+
+  # Marketing / Print
+  - pattern: "signage|banner|display graphics|brochure|flyer|leaflet|marketing print"
+    l1: Marketing
+    l2: Print
+    unspsc_segment_code: 44
+    confidence: 0.75
+
+  # Marketing / Digital
+  - pattern: "seo|sem|search engine|social media marketing|digital marketing|email marketing"
+    l1: Marketing
+    l2: Digital
+    unspsc_segment_code: 43
+    confidence: 0.78
+
+  # Direct Materials / Raw Materials
+  - pattern: "raw material|steel|aluminium|aluminum|plastic resin|chemical|copper"
+    l1: Direct Materials
+    l2: Raw Materials
+    unspsc_segment_code: 11
+    confidence: 0.78
+
+  # Direct Materials / Packaging
+  - pattern: "packaging|pallet|carton|corrugated|shrink wrap|flexible packaging|box"
+    l1: Direct Materials
+    l2: Packaging
+    unspsc_segment_code: 31
+    confidence: 0.80
+
+  # Direct Materials / Components
+  - pattern: "electronic component|circuit board|pcb|mechanical part|assembly|sub-assembly"
+    l1: Direct Materials
+    l2: Components
+    unspsc_segment_code: 31
+    confidence: 0.80
+
+  # CAPEX / Equipment
+  - pattern: "capital equipment|manufacturing equipment|laboratory equipment|heavy machinery|plant purchase"
+    l1: CAPEX
+    l2: Equipment
+    unspsc_segment_code: 40
+    confidence: 0.78
+
+  # CAPEX / Fit-out
+  - pattern: "fit.out|fitout|refurbishment|office renovation|retail fitout|leasehold improvement"
+    l1: CAPEX
+    l2: Fit-out
+    unspsc_segment_code: 72
+    confidence: 0.80
+
+  # CAPEX / IT Infrastructure
+  - pattern: "network infrastructure|server room|data centre|data center|end user computing|it infrastructure"
+    l1: CAPEX
+    l2: IT Infrastructure
+    unspsc_segment_code: 43
+    confidence: 0.82

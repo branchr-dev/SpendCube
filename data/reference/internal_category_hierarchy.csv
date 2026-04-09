@@ -1,0 +1,121 @@
+l1_code,l1_name,l2_code,l2_name,l3_code,l3_name,unspsc_segment_code,unspsc_segment_name
+01,IT,0101,Telecoms,010101,Mobile,43,Information Technology Broadcasting and Telecommunications
+01,IT,0101,Telecoms,010102,Fixed Line,43,Information Technology Broadcasting and Telecommunications
+01,IT,0101,Telecoms,010103,Internet,43,Information Technology Broadcasting and Telecommunications
+01,IT,0102,Hardware,010201,Laptops and Desktops,43,Information Technology Broadcasting and Telecommunications
+01,IT,0102,Hardware,010202,Servers,43,Information Technology Broadcasting and Telecommunications
+01,IT,0102,Hardware,010203,Peripherals,43,Information Technology Broadcasting and Telecommunications
+01,IT,0103,Software,010301,Licences,43,Information Technology Broadcasting and Telecommunications
+01,IT,0103,Software,010302,Subscriptions,43,Information Technology Broadcasting and Telecommunications
+01,IT,0103,Software,010303,Custom Development,43,Information Technology Broadcasting and Telecommunications
+01,IT,0104,Cloud Services,010401,IaaS,43,Information Technology Broadcasting and Telecommunications
+01,IT,0104,Cloud Services,010402,SaaS,43,Information Technology Broadcasting and Telecommunications
+01,IT,0104,Cloud Services,010403,PaaS,43,Information Technology Broadcasting and Telecommunications
+01,IT,0105,IT Services,010501,Managed Services,43,Information Technology Broadcasting and Telecommunications
+01,IT,0105,IT Services,010502,Helpdesk Support,43,Information Technology Broadcasting and Telecommunications
+01,IT,0105,IT Services,010503,IT Consulting,43,Information Technology Broadcasting and Telecommunications
+02,Facilities,0201,Catering,020101,Staff Catering,90,Food Beverage and Tobacco Products
+02,Facilities,0201,Catering,020102,Corporate Events Catering,90,Food Beverage and Tobacco Products
+02,Facilities,0201,Catering,020103,Vending,90,Food Beverage and Tobacco Products
+02,Facilities,0202,Cleaning,020201,Janitorial Services,47,Cleaning Equipment and Supplies
+02,Facilities,0202,Cleaning,020202,Waste Management,47,Cleaning Equipment and Supplies
+02,Facilities,0202,Cleaning,020203,Window Cleaning,47,Cleaning Equipment and Supplies
+02,Facilities,0203,Security,020301,Manned Guarding,92,Defense National Security and Safety Equipment and Supplies
+02,Facilities,0203,Security,020302,Electronic Security,92,Defense National Security and Safety Equipment and Supplies
+02,Facilities,0203,Security,020303,Access Control,92,Defense National Security and Safety Equipment and Supplies
+02,Facilities,0204,Building Maintenance,020401,HVAC,72,Building and Construction and Maintenance Services
+02,Facilities,0204,Building Maintenance,020402,Electrical Maintenance,72,Building and Construction and Maintenance Services
+02,Facilities,0204,Building Maintenance,020403,Plumbing,72,Building and Construction and Maintenance Services
+02,Facilities,0205,Utilities,020501,Electricity,83,Utilities
+02,Facilities,0205,Utilities,020502,Gas,83,Utilities
+02,Facilities,0205,Utilities,020503,Water,83,Utilities
+03,Logistics,0301,Freight,030101,Air Freight,78,Transportation and Storage and Mail Services
+03,Logistics,0301,Freight,030102,Sea Freight,78,Transportation and Storage and Mail Services
+03,Logistics,0301,Freight,030103,Road Freight,78,Transportation and Storage and Mail Services
+03,Logistics,0302,Courier,030201,Express Courier,78,Transportation and Storage and Mail Services
+03,Logistics,0302,Courier,030202,Same Day Delivery,78,Transportation and Storage and Mail Services
+03,Logistics,0302,Courier,030203,International Courier,78,Transportation and Storage and Mail Services
+03,Logistics,0303,Warehousing,030301,Storage,78,Transportation and Storage and Mail Services
+03,Logistics,0303,Warehousing,030302,Pick and Pack,78,Transportation and Storage and Mail Services
+03,Logistics,0303,Warehousing,030303,Third Party Logistics,78,Transportation and Storage and Mail Services
+03,Logistics,0304,Fleet,030401,Vehicle Lease,25,Vehicles
+03,Logistics,0304,Fleet,030402,Fuel,25,Vehicles
+03,Logistics,0304,Fleet,030403,Fleet Maintenance,25,Vehicles
+04,Office Supplies,0401,Stationery,040101,Paper and Envelopes,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0401,Stationery,040102,Writing Instruments,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0401,Stationery,040103,Filing and Storage,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0402,Print Consumables,040201,Toner Cartridges,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0402,Print Consumables,040202,Ink Cartridges,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0402,Print Consumables,040203,Drums and Imaging Units,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0403,Furniture,040301,Desks and Tables,56,Furniture and Furnishings
+04,Office Supplies,0403,Furniture,040302,Chairs,56,Furniture and Furnishings
+04,Office Supplies,0403,Furniture,040303,Storage Units,56,Furniture and Furnishings
+04,Office Supplies,0404,Equipment,040401,Printers and Copiers,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0404,Equipment,040402,Shredders,44,Office Equipment and Accessories and Supplies
+04,Office Supplies,0404,Equipment,040403,Scanners,44,Office Equipment and Accessories and Supplies
+05,Marketing,0501,Advertising,050101,Print Advertising,80,Management Advisory and Business Specialized Services
+05,Marketing,0501,Advertising,050102,Digital Advertising,80,Management Advisory and Business Specialized Services
+05,Marketing,0501,Advertising,050103,Outdoor Advertising,80,Management Advisory and Business Specialized Services
+05,Marketing,0502,Events,050201,Conferences,80,Management Advisory and Business Specialized Services
+05,Marketing,0502,Events,050202,Sponsorship,80,Management Advisory and Business Specialized Services
+05,Marketing,0502,Events,050203,Exhibitions,80,Management Advisory and Business Specialized Services
+05,Marketing,0503,Print,050301,Brochures and Flyers,44,Office Equipment and Accessories and Supplies
+05,Marketing,0503,Print,050302,Signage and Banners,44,Office Equipment and Accessories and Supplies
+05,Marketing,0503,Print,050303,Branded Merchandise,44,Office Equipment and Accessories and Supplies
+05,Marketing,0504,Digital,050401,SEO and SEM,43,Information Technology Broadcasting and Telecommunications
+05,Marketing,0504,Digital,050402,Social Media,43,Information Technology Broadcasting and Telecommunications
+05,Marketing,0504,Digital,050403,Email Marketing,43,Information Technology Broadcasting and Telecommunications
+06,HR,0601,Recruitment,060101,Agency Fees,80,Management Advisory and Business Specialized Services
+06,HR,0601,Recruitment,060102,Job Boards,80,Management Advisory and Business Specialized Services
+06,HR,0601,Recruitment,060103,Executive Search,80,Management Advisory and Business Specialized Services
+06,HR,0602,Training,060201,External Training,86,Education and Training Services
+06,HR,0602,Training,060202,Online Learning,86,Education and Training Services
+06,HR,0602,Training,060203,Certification and Accreditation,86,Education and Training Services
+06,HR,0603,Benefits,060301,Health Insurance,84,Financial and Insurance Services
+06,HR,0603,Benefits,060302,Superannuation,84,Financial and Insurance Services
+06,HR,0603,Benefits,060303,Employee Assistance Programme,84,Financial and Insurance Services
+06,HR,0604,Temp Labour,060401,On-hire Workers,80,Management Advisory and Business Specialized Services
+06,HR,0604,Temp Labour,060402,Labour Hire,80,Management Advisory and Business Specialized Services
+06,HR,0604,Temp Labour,060403,Independent Contractors,80,Management Advisory and Business Specialized Services
+07,Finance,0701,Banking,070101,Bank Fees,84,Financial and Insurance Services
+07,Finance,0701,Banking,070102,Merchant Services,84,Financial and Insurance Services
+07,Finance,0701,Banking,070103,FX Services,84,Financial and Insurance Services
+07,Finance,0702,Insurance,070201,General Insurance,84,Financial and Insurance Services
+07,Finance,0702,Insurance,070202,Professional Indemnity,84,Financial and Insurance Services
+07,Finance,0702,Insurance,070203,Workers Compensation,84,Financial and Insurance Services
+07,Finance,0703,Audit,070301,External Audit,84,Financial and Insurance Services
+07,Finance,0703,Audit,070302,Internal Audit,84,Financial and Insurance Services
+07,Finance,0703,Audit,070303,Tax Compliance,84,Financial and Insurance Services
+07,Finance,0704,Tax Advisory,070401,Corporate Tax,84,Financial and Insurance Services
+07,Finance,0704,Tax Advisory,070402,GST Advisory,84,Financial and Insurance Services
+07,Finance,0704,Tax Advisory,070403,Transfer Pricing,84,Financial and Insurance Services
+08,Professional Services,0801,Legal,080101,Solicitors,80,Management Advisory and Business Specialized Services
+08,Professional Services,0801,Legal,080102,Barristers,80,Management Advisory and Business Specialized Services
+08,Professional Services,0801,Legal,080103,IP Law,80,Management Advisory and Business Specialized Services
+08,Professional Services,0802,Consulting,080201,Strategy Consulting,80,Management Advisory and Business Specialized Services
+08,Professional Services,0802,Consulting,080202,Management Consulting,80,Management Advisory and Business Specialized Services
+08,Professional Services,0802,Consulting,080203,Operations Consulting,80,Management Advisory and Business Specialized Services
+08,Professional Services,0803,Engineering,080301,Civil Engineering,81,Engineering Services and Research and Technology Based Services
+08,Professional Services,0803,Engineering,080302,Structural Engineering,81,Engineering Services and Research and Technology Based Services
+08,Professional Services,0803,Engineering,080303,Environmental Engineering,81,Engineering Services and Research and Technology Based Services
+08,Professional Services,0804,Research,080401,Market Research,80,Management Advisory and Business Specialized Services
+08,Professional Services,0804,Research,080402,Technical Research,81,Engineering Services and Research and Technology Based Services
+08,Professional Services,0804,Research,080403,Feasibility Studies,80,Management Advisory and Business Specialized Services
+09,Direct Materials,0901,Raw Materials,090101,Metals,11,Mineral and Textile and Inedible Plant and Animal Materials
+09,Direct Materials,0901,Raw Materials,090102,Plastics,11,Mineral and Textile and Inedible Plant and Animal Materials
+09,Direct Materials,0901,Raw Materials,090103,Chemicals,11,Mineral and Textile and Inedible Plant and Animal Materials
+09,Direct Materials,0902,Packaging,090201,Corrugated Cartons,31,Manufacturing Components and Supplies
+09,Direct Materials,0902,Packaging,090202,Pallets,31,Manufacturing Components and Supplies
+09,Direct Materials,0902,Packaging,090203,Flexible Packaging,31,Manufacturing Components and Supplies
+09,Direct Materials,0903,Components,090301,Electronic Components,31,Manufacturing Components and Supplies
+09,Direct Materials,0903,Components,090302,Mechanical Parts,31,Manufacturing Components and Supplies
+09,Direct Materials,0903,Components,090303,Assemblies,31,Manufacturing Components and Supplies
+10,CAPEX,1001,Equipment,100101,Manufacturing Equipment,40,Distribution and Conditioning Systems and Equipment and Components
+10,CAPEX,1001,Equipment,100102,Laboratory Equipment,40,Distribution and Conditioning Systems and Equipment and Components
+10,CAPEX,1001,Equipment,100103,Heavy Machinery,40,Distribution and Conditioning Systems and Equipment and Components
+10,CAPEX,1002,Fit-out,100201,Office Fit-out,72,Building and Construction and Maintenance Services
+10,CAPEX,1002,Fit-out,100202,Retail Fit-out,72,Building and Construction and Maintenance Services
+10,CAPEX,1002,Fit-out,100203,Industrial Fit-out,72,Building and Construction and Maintenance Services
+10,CAPEX,1003,IT Infrastructure,100301,Network Infrastructure,43,Information Technology Broadcasting and Telecommunications
+10,CAPEX,1003,IT Infrastructure,100302,Data Centre,43,Information Technology Broadcasting and Telecommunications
+10,CAPEX,1003,IT Infrastructure,100303,End User Computing,43,Information Technology Broadcasting and Telecommunications

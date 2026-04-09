@@ -4,6 +4,8 @@ paths:
   output_dir: data/output
   db_path: data/db/spend_cube.db
   reference_dir: data/reference
+  internal_category_hierarchy: data/reference/internal_category_hierarchy.csv
+  keyword_rules: data/reference/keyword_rules.yaml
 
 llm:
   model: claude-sonnet-4-20250514
