@@ -272,7 +272,7 @@ rules:
     l1: Marketing
     l2: Print
     unspsc_segment_code: 44
-    confidence: 0.75
+    confidence: 0.80
 
   # Marketing / Digital
   - pattern: "seo|sem|search engine|social media marketing|digital marketing|email marketing"

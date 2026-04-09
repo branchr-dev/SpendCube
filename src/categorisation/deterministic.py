@@ -11,11 +11,13 @@ passed to the next pass.
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+import yaml
 
 # Ensure project root is on sys.path when run as a script.
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -85,6 +87,25 @@ class DeterministicCategoriser:
             str(row["source_value"]).strip().lower(): row.to_dict()
             for _, row in supplier_rows.iterrows()
         }
+
+        # ── Keyword rules (compiled regex) ────────────────────────────────
+        keyword_rules_path = reference_dir / "keyword_rules.yaml"
+        with open(keyword_rules_path) as _f:
+            _raw_rules = yaml.safe_load(_f)
+        self._keyword_rules: list[dict] = [
+            {
+                "pattern": re.compile(rule["pattern"], re.IGNORECASE),
+                "l1": rule.get("l1", ""),
+                "l2": rule.get("l2", ""),
+                "l3": rule.get("l3", ""),
+                "unspsc_segment_code": rule.get("unspsc_segment_code", ""),
+                "confidence": float(rule.get("confidence", 0.75)),
+            }
+            for rule in _raw_rules.get("rules", [])
+        ]
+        self.logger.info(
+            f"Loaded {len(self._keyword_rules)} keyword rules from {keyword_rules_path}"
+        )
 
     # ── Internal helpers ──────────────────────────────────────────────────
 
@@ -261,6 +282,68 @@ class DeterministicCategoriser:
         )
         return classified, unclassified
 
+    # ── Pass 3: Keyword rule matching ─────────────────────────────────────
+
+    def apply_keyword_rules(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Pass 3 — keyword/regex rule matching against transaction descriptions.
+
+        Applies each compiled rule pattern against the combined (lowercased) text of
+        ``cleaned_description`` and ``raw_line_description``.  If multiple rules match,
+        the rule with the highest confidence value wins.
+
+        Args:
+            df: DataFrame of unclassified transactions.
+
+        Returns:
+            (classified_df, unclassified_df)
+        """
+        if df.empty:
+            return pd.DataFrame(columns=df.columns), df.copy()
+
+        df = df.copy()
+        df = self._ensure_category_cols(df)
+        classified_mask = pd.Series(False, index=df.index)
+
+        for idx in df.index:
+            desc = (
+                str(df.at[idx, "cleaned_description"])
+                if "cleaned_description" in df.columns and pd.notna(df.at[idx, "cleaned_description"])
+                else ""
+            )
+            raw = (
+                str(df.at[idx, "raw_line_description"])
+                if "raw_line_description" in df.columns and pd.notna(df.at[idx, "raw_line_description"])
+                else ""
+            )
+            combined = f"{desc} {raw}".lower()
+            if not combined.strip():
+                continue
+
+            best: Optional[dict] = None
+            for rule in self._keyword_rules:
+                if rule["pattern"].search(combined):
+                    if best is None or rule["confidence"] > best["confidence"]:
+                        best = rule
+
+            if best is None:
+                continue
+
+            df.at[idx, "category_l1"] = best["l1"]
+            df.at[idx, "category_l2"] = best["l2"]
+            df.at[idx, "category_l3"] = best["l3"]
+            df.at[idx, "unspsc_code"] = str(best["unspsc_segment_code"])
+            df.at[idx, "category_confidence"] = best["confidence"]
+            df.at[idx, "category_method"] = CategoryMethod.KEYWORD.value
+            classified_mask.at[idx] = True
+
+        classified = df[classified_mask].copy()
+        unclassified = df[~classified_mask].copy()
+        self.logger.info(
+            f"Pass 3 (keyword rules): {len(classified)} classified, "
+            f"{len(unclassified)} unclassified"
+        )
+        return classified, unclassified
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -277,21 +360,26 @@ if __name__ == "__main__":
     seed_path = str(Path(config.paths.reference_dir) / "category_seed_mappings.csv")
     categoriser = DeterministicCategoriser(seed_path, engine, config)
 
-    # Build sample transactions covering all three passes
+    # Build sample transactions covering passes 1-3
     sample_data = [
         # Pass 1 — GL exact match
-        {"transaction_id": "t01", "gl_account": "6420100", "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Office stationery order"},
-        {"transaction_id": "t02", "gl_account": "6441",    "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Mobile phone fleet"},
-        {"transaction_id": "t03", "gl_account": "6420999", "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "General office supplies (prefix match)"},
+        {"transaction_id": "t01", "gl_account": "6420100", "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Office stationery order", "cleaned_description": None},
+        {"transaction_id": "t02", "gl_account": "6441",    "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Mobile phone fleet",      "cleaned_description": None},
+        {"transaction_id": "t03", "gl_account": "6420999", "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "General office supplies (prefix match)", "cleaned_description": None},
         # Pass 2 — Supplier match
-        {"transaction_id": "t04", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "Telstra",   "raw_line_description": "Monthly telecom invoice"},
-        {"transaction_id": "t05", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "Microsoft", "raw_line_description": "Azure subscription"},
-        {"transaction_id": "t06", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "DHL",       "raw_line_description": "International freight"},
-        {"transaction_id": "t07", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "KPMG",      "raw_line_description": "Audit fees Q1"},
-        # Unmatched — will go to later passes
-        {"transaction_id": "t08", "gl_account": "9999", "canonical_supplier_id": None, "canonical_supplier_name": "Unknown Vendor", "raw_line_description": "Miscellaneous services"},
-        {"transaction_id": "t09", "gl_account": None,   "canonical_supplier_id": None, "canonical_supplier_name": "Random Corp",    "raw_line_description": "Ad hoc signage"},
-        {"transaction_id": "t10", "gl_account": None,   "canonical_supplier_id": None, "canonical_supplier_name": None,             "raw_line_description": "Staff canteen March"},
+        {"transaction_id": "t04", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "Telstra",   "raw_line_description": "Monthly telecom invoice", "cleaned_description": None},
+        {"transaction_id": "t05", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "Microsoft", "raw_line_description": "Azure subscription",      "cleaned_description": None},
+        {"transaction_id": "t06", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "DHL",       "raw_line_description": "International freight",   "cleaned_description": None},
+        {"transaction_id": "t07", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": "KPMG",      "raw_line_description": "Audit fees Q1",           "cleaned_description": None},
+        # Pass 3 — Keyword rules (AC verification rows)
+        {"transaction_id": "t08", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Office supplies - toner cartridges HP",    "cleaned_description": None},
+        {"transaction_id": "t09", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Catering - Q1 events",                     "cleaned_description": None},
+        {"transaction_id": "t10", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Staff canteen March",                       "cleaned_description": None},
+        {"transaction_id": "t11", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "International freight - Shanghai to Melb", "cleaned_description": None},
+        {"transaction_id": "t12", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Mobile fleet - Feb 2024 (450 handsets)",   "cleaned_description": None},
+        {"transaction_id": "t13", "gl_account": None, "canonical_supplier_id": None, "canonical_supplier_name": None, "raw_line_description": "Ad hoc signage for conference",            "cleaned_description": None},
+        # Unmatched — passes to embedding/LLM
+        {"transaction_id": "t14", "gl_account": "9999", "canonical_supplier_id": None, "canonical_supplier_name": "Unknown Vendor", "raw_line_description": "Miscellaneous services", "cleaned_description": None},
     ]
     df = pd.DataFrame(sample_data)
 
@@ -322,9 +410,22 @@ if __name__ == "__main__":
             f"(conf={row['category_confidence']:.2f})"
         )
 
-    total_classified = len(classified_0) + len(classified_1) + len(classified_2)
-    print(f"\nTotal classified: {total_classified}/{len(df)} "
+    # Pass 3: keyword rules
+    classified_3, remaining = categoriser.apply_keyword_rules(remaining)
+    print(f"Pass 3 (KEYWORD): {len(classified_3)} classified")
+    for _, row in classified_3.iterrows():
+        print(
+            f"  {row['transaction_id']} desc='{row['raw_line_description']}' → "
+            f"{row['category_l1']}/{row['category_l2']} "
+            f"(conf={row['category_confidence']:.2f})"
+        )
+
+    total_classified = len(classified_0) + len(classified_1) + len(classified_2) + len(classified_3)
+    print(f"\nTotal classified (passes 1-3): {total_classified}/{len(df)} "
           f"({100*total_classified/len(df):.0f}%)")
-    print(f"Unclassified (to pass to keyword/embedding/LLM): {len(remaining)}")
-    for _, row in remaining.iterrows():
-        print(f"  {row['transaction_id']} → {row['raw_line_description']}")
+    assert total_classified >= 6, f"Expected ≥6 classified by passes 1-3, got {total_classified}"
+    print("✓ Passes 1-3 classify ≥6 rows")
+    if remaining.shape[0]:
+        print(f"Unclassified (to pass to embedding/LLM): {len(remaining)}")
+        for _, row in remaining.iterrows():
+            print(f"  {row['transaction_id']} → {row['raw_line_description']}")
