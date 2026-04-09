@@ -247,3 +247,24 @@ Story completed successfully by Ralph loop iteration 11
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 11
 
+
+## US-012 COMPLETE - 2026-04-09
+- Implemented src/utils/generate_test_data.py: generate_test_data() + CLI main()
+- generate_test_data(rows, suppliers, categories, messiness, duplicate_supplier_rate, credit_note_rate, intercompany_rate, seed) -> pd.DataFrame
+- Supplier pool: Faker en_AU company names; duplicate_supplier_rate fraction get legal suffix variants (Pty Ltd / PTY LIMITED / P/L etc.)
+- Date formats: YYYY-MM-DD (ISO), DD/MM/YYYY, DD-Mon-YYYY — at messiness=0 all ISO; mixed at messiness>0
+- Missing rates at messiness=0.3: PO_NUM ~30%, COST_CTR ~20%, PAY_TERMS ~10%, CCY ~10%
+- Credit notes: INV_NO starts CN-, AMT negative, PO_NUM always empty
+- Intercompany: VENDOR_NAME = 'INTERCOMPANY - [DEPT]'
+- GL codes from 4 realistic ranges (office/facilities/logistics/IT); leading digit occasionally stripped at messiness>0.3
+- CCY: 90% AUD, 5% USD, 3% EUR, 2% other; missing at messiness rate
+- Verified: 1000 rows, correct 13 columns, ~5.9% credit notes, ~3.4% intercompany, rates within spec
+- Note: sys.path manipulation required at top of script to prevent src/utils/logging.py shadowing stdlib logging
+- Note: faker not in original requirements.txt — must be installed separately (pip3 install faker)
+
+---
+
+### [US-012] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 12
+
