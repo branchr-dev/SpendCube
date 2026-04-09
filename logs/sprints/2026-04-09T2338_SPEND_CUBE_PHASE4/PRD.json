@@ -1,0 +1,182 @@
+{
+  "project": {
+    "id": "SPEND-CUBE-PHASE4-2026-04",
+    "name": "SpendCube Phase 4 - Spend Cube and Diagnostics",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4",
+    "track": "code"
+  },
+  "summary": "Phase 4 of 6. Builds the spend cube dimensional model from the canonical transactions table (populated by Phases 1-3). Implements: cube builder (aggregates by all dimensions), derived metrics computation (tail spend, maverick spend, concentration, contract coverage, WC metrics), Parquet/Excel/CSV exporter, and the data quality diagnostics module. Validation gate: cube sliceable by all core dimensions, diagnostics scorecard generates correctly from sample data.",
+  "decisions": {
+    "cube_representation": "Spend cube stored as a pandas DataFrame in memory and persisted as Parquet files in data/output/. Not a separate DB table — Parquet is the output format per spec. SQLite transactions table is the source of truth.",
+    "cube_granularity": "Cube built at transaction level first, then aggregated views materialized. Supports arbitrary slice/dice at query time via pandas groupby.",
+    "tail_spend_definition": "Bottom 80% of suppliers by count (sorted by spend desc) that contribute ≤ 20% of total spend. Configurable thresholds in config.yaml (spend_cube.tail_spend_supplier_pct=0.80, tail_spend_value_pct=0.20).",
+    "maverick_spend": "Transactions where po_number is null/empty AND is_on_contract is not True. These are invoiced without a PO or contract reference.",
+    "parquet_output": "Cube outputs: spend_cube.parquet (full transaction-level with all dimensions), summary_by_supplier.parquet, summary_by_category.parquet, summary_by_bu.parquet, summary_by_month.parquet. All in data/output/.",
+    "diagnostics_output": "Quality scorecard as dict of {check_name: {value, status (GREEN/AMBER/RED), threshold_band}} — serialised to data/output/quality_scorecard.json and available as DataFrame.",
+    "phase_foundation": "Phases 1-3 complete. transactions table in data/db/spend_cube.db has canonical supplier IDs, category assignments, all flags."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Full canonical schema with all fields populated by Phases 1-3: transaction_id, canonical_supplier_id, canonical_supplier_name, parent_company_id/name, all category fields, all flags (is_credit_note, is_intercompany, is_tax_line, is_freight_line), base_amount, base_currency, payment_terms_days, business_unit, cost_centre, gl_account, etc.",
+      "supplier_master": "canonical_supplier_id, canonical_name, parent_company_id, parent_name — populated by Phase 2"
+    },
+    "key_files": [
+      "src/models/database.py - get_engine(), get_transactions() (Phase 1)",
+      "src/config.py - load_config() with spend_cube section: base_currency=AUD, tail_spend_supplier_pct=0.80, tail_spend_value_pct=0.20 (Phase 1)",
+      "src/cube/builder.py - placeholder (Phase 1, implement now)",
+      "src/cube/metrics.py - placeholder (Phase 1, implement now)",
+      "src/cube/exporter.py - placeholder (Phase 1, implement now)",
+      "src/diagnostics/quality.py - placeholder (Phase 1, implement now)",
+      "tests/test_cube_builder.py - placeholder (Phase 1, implement now)",
+      "tests/test_diagnostics.py - placeholder (Phase 1, implement now)"
+    ],
+    "patterns_to_follow": [
+      "Each module independently runnable via CLI",
+      "Use get_logger_from_config from src/utils/logging.py",
+      "get_transactions(engine) returns DataFrame — use this as cube source",
+      "All cube outputs idempotent — rerunning overwrites data/output/ files",
+      "Parquet files use pyarrow engine",
+      "Diagnostics thresholds: GREEN/AMBER/RED bands per spec quality table"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Implement spend cube builder",
+      "description": "Implement src/cube/builder.py to build the dimensional spend cube from the canonical transactions table. Loads transactions from SQLite, computes dimension columns (time dimensions, tail spend flag), and materialises pre-aggregated views as DataFrames.",
+      "acceptanceCriteria": [
+        "Edit file: src/cube/builder.py — implement SpendCubeBuilder class",
+        "__init__(self, config, engine): loads config, engine",
+        "Implement build(self) -> dict[str, pd.DataFrame]: loads transactions via get_transactions(engine). Returns dict with keys: 'transactions' (full DataFrame), 'by_supplier' (grouped by canonical_supplier_name, parent_company_name — sum base_amount, count invoice_number, count po_number, mean payment_terms_days), 'by_category' (grouped by internal_category_l1, l2, l3 — same measures), 'by_bu' (grouped by business_unit, cost_centre), 'by_month' (grouped by year-month derived from invoice_date — format YYYY-MM), 'by_payment_terms' (grouped by payment_terms_days bucket: 0-14, 15-30, 31-45, 46-60, 60+)",
+        "Compute time dimensions on transactions DataFrame: invoice_year (int), invoice_month (str YYYY-MM), invoice_quarter (str YYYY-Q1/Q2/Q3/Q4)",
+        "Compute is_tail_spend flag: (1) sort suppliers by total spend desc, (2) compute cumulative spend %, (3) suppliers beyond top N% of suppliers (where top N% account for 80% of spend) are tail. Mark all transactions for tail suppliers as is_tail_spend=True.",
+        "Compute spend_concentration: top_10_supplier_pct, top_20_supplier_pct, top_50_supplier_pct as scalar metrics",
+        "Exclude is_intercompany=True, is_tax_line=True rows from addressable spend metrics (but keep them in full cube)",
+        "CLI: python src/cube/builder.py --db data/db/spend_cube.db — builds cube, prints dimension shape summary (e.g. '10 transactions, 8 canonical suppliers, 5 categories, 3 business units')"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Implement derived metrics computation",
+      "description": "Implement src/cube/metrics.py to compute all KPI and derived metrics from the cube DataFrames. These metrics power the dashboard KPI cards and benchmarking outputs.",
+      "acceptanceCriteria": [
+        "Edit file: src/cube/metrics.py — implement CubeMetrics class",
+        "__init__(self, cube: dict[str, pd.DataFrame], config): accepts the dict returned by SpendCubeBuilder.build()",
+        "Implement compute_all(self) -> dict: returns flat dict of all scalar KPIs",
+        "Compute: total_spend (sum base_amount, excluding intercompany/tax), total_suppliers (unique canonical_supplier_id count), total_invoices (unique invoice_number count), avg_transaction_size (total_spend / total_invoices), contract_coverage_pct (is_on_contract=True spend / total addressable spend), maverick_spend_pct (spend where po_number is null AND is_on_contract is not True, / total addressable spend), tail_spend_pct (is_tail_spend=True spend / total spend), tail_supplier_count",
+        "Compute payment terms metrics: weighted_avg_payment_terms (sum(base_amount * payment_terms_days) / sum(base_amount) for rows where payment_terms_days is not null), pct_missing_payment_terms",
+        "Compute concentration: hhi (Herfindahl-Hirschman Index = sum of (supplier_spend/total_spend)^2 * 10000), top_10_supplier_pct, pareto_80_supplier_count (number of suppliers accounting for 80% of spend)",
+        "Compute working_capital_opportunity(target_days: int = 45, wacc: float = 0.08) -> float: sum over top-50 suppliers of max(0, (target_days - supplier_avg_terms) / 365 * supplier_spend * wacc)",
+        "Compute data_quality_score (0-100): average of individual diagnostic scores from quality module",
+        "CLI: python src/cube/metrics.py --db data/db/spend_cube.db — prints all KPIs as formatted table"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Implement Parquet and Excel exporter",
+      "description": "Implement src/cube/exporter.py to persist cube outputs as Parquet files and optionally as Excel/CSV. Creates data/output/ directory if needed.",
+      "acceptanceCriteria": [
+        "Edit file: src/cube/exporter.py — implement CubeExporter class",
+        "__init__(self, output_dir: str = 'data/output'): creates output_dir if not exists",
+        "Implement export_parquet(self, cube: dict[str, pd.DataFrame]) -> dict[str, str]: writes each DataFrame to data/output/{key}.parquet using pyarrow engine. Returns dict of {key: file_path}. Files: transactions.parquet, by_supplier.parquet, by_category.parquet, by_bu.parquet, by_month.parquet, by_payment_terms.parquet.",
+        "Implement export_excel(self, cube: dict[str, pd.DataFrame], filename: str = 'spend_cube.xlsx') -> str: writes all cube DataFrames as separate sheets in a single Excel workbook at data/output/{filename}. Returns file path.",
+        "Implement export_csv(self, cube: dict[str, pd.DataFrame], subdir: str = 'csv') -> dict[str, str]: writes each DataFrame as CSV to data/output/csv/. Returns dict of paths.",
+        "Implement load_parquet(self, key: str) -> pd.DataFrame: loads data/output/{key}.parquet",
+        "CLI: python src/cube/exporter.py --db data/db/spend_cube.db --format parquet — builds cube and exports, prints list of files created with sizes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Implement data quality diagnostics module",
+      "description": "Implement src/diagnostics/quality.py with all 9 diagnostic checks from the spec. Each check returns a value, status (GREEN/AMBER/RED), and threshold bands. Output as both a structured dict and a printable scorecard.",
+      "acceptanceCriteria": [
+        "Edit file: src/diagnostics/quality.py — implement DataQualityDiagnostics class",
+        "__init__(self, transactions_df: pd.DataFrame, config): stores transactions",
+        "Implement run_all(self) -> dict[str, dict]: runs all 9 diagnostics, returns {check_name: {value, pct, status, green_threshold, amber_threshold, description, remediation}}",
+        "Implement all 9 checks as individual methods: check_missing_supplier_name() → pct rows where raw_supplier_name is null. GREEN<1%, AMBER 1-5%, RED>5%. check_uncategorised_spend() → pct spend (base_amount) where internal_category_l1 is null. GREEN<5%, AMBER 5-15%, RED>15%. check_unresolved_suppliers() → pct unique raw_supplier_names where canonical_supplier_id is null. GREEN<10%, AMBER 10-25%, RED>25%. check_missing_payment_terms() → pct spend where payment_terms_days is null. GREEN<10%, AMBER 10-30%, RED>30%. check_duplicate_invoice_risk() → pct rows where (invoice_number, base_amount) combination appears >1 time. GREEN<0.5%, AMBER 0.5-2%, RED>2%. check_negative_reversal_lines() → pct rows where base_amount < 0. INFO<3%, WARN 3-8%, ALERT>8%. check_weak_descriptions() → pct rows where raw_line_description is null OR len(words) < 5 OR raw_line_description.lower() in ('misc','miscellaneous','services','payment','invoice','charges'). GREEN<15%, AMBER 15-30%, RED>30%. check_missing_contract_linkage() → pct spend where po_number is null AND contract_id is null. GREEN<30%, AMBER 30-60%, RED>60%. check_missing_bu_cost_centre() → pct rows where business_unit is null AND cost_centre is null. GREEN<5%, AMBER 5-15%, RED>15%.",
+        "Implement generate_scorecard(self) -> str: returns formatted text scorecard with emoji indicators (✅ GREEN, ⚠️ AMBER, 🔴 RED)",
+        "Implement to_dataframe(self) -> pd.DataFrame: returns diagnostics as DataFrame for dashboard use",
+        "Implement export_json(self, path: str = 'data/output/quality_scorecard.json') -> str: saves scorecard to JSON",
+        "CLI: python src/diagnostics/quality.py --db data/db/spend_cube.db — runs all checks, prints scorecard"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Integrate cube pipeline with Makefile and end-to-end test",
+      "description": "Wire cube builder, metrics, exporter, and diagnostics into the Makefile build-cube and export targets. Verify end-to-end pipeline on sample data.",
+      "acceptanceCriteria": [
+        "Edit file: src/cube/builder.py — ensure CLI accepts --db flag and --output flag",
+        "Edit file: Makefile — update build-cube target to: python src/cube/builder.py --db data/db/spend_cube.db; update export target to: python src/cube/exporter.py --db data/db/spend_cube.db --format parquet",
+        "Create src/cube/pipeline.py: a simple orchestrator script that runs builder → metrics → exporter → diagnostics in sequence. CLI: python src/cube/pipeline.py --db data/db/spend_cube.db. Prints final summary: total_spend, unique_suppliers, invoice_count, contract_coverage_pct, maverick_spend_pct, tail_spend_pct, data quality scorecard.",
+        "Run end-to-end: python src/cube/pipeline.py --db data/db/spend_cube.db — exits 0",
+        "Verify: data/output/transactions.parquet exists after running, data/output/quality_scorecard.json exists",
+        "Verify: loaded Parquet file has same row count as transactions table in SQLite"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Write Phase 4 unit tests",
+      "description": "Write unit tests for the cube builder, metrics, and diagnostics in tests/test_cube_builder.py and tests/test_diagnostics.py. All tests must pass.",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_cube_builder.py — write minimum 10 test functions: test_build_returns_expected_keys, test_by_supplier_aggregates_correctly, test_by_month_has_invoice_date_as_yyyy_mm, test_tail_spend_flag_computed, test_spend_concentration_top10_pct_between_0_and_1, test_maverick_spend_excludes_po_rows, test_cube_excludes_intercompany_from_addressable",
+        "Edit file: tests/test_diagnostics.py — write minimum 8 test functions: test_missing_supplier_returns_correct_pct, test_duplicate_invoice_detects_duplicates, test_weak_description_flags_misc, test_scorecard_generates_without_error, test_all_9_checks_present_in_run_all, test_green_status_on_clean_data, test_red_status_on_dirty_data",
+        "Add fixtures to tests/conftest.py: cube_df() fixture that runs full pipeline (ingest + harmonise + categorise + build) on sample.csv using in_memory_engine",
+        "Run: pytest tests/test_cube_builder.py tests/test_diagnostics.py -v — all tests pass",
+        "Run: pytest tests/test_cube_builder.py tests/test_diagnostics.py --cov=src/cube --cov=src/diagnostics --cov-report=term-missing — coverage >= 70%"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Update CLAUDE.md with Phase 4 patterns",
+      "description": "Update CLAUDE.md to document cube architecture, metrics definitions, and diagnostics thresholds for future sessions.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add section '## Phase 4: Spend Cube and Diagnostics' documenting: cube built from transactions table, 6 output DataFrames (transactions/by_supplier/by_category/by_bu/by_month/by_payment_terms), tail spend definition (bottom 80% suppliers by count contributing ≤20% spend), maverick = no PO and not on contract, Parquet outputs in data/output/, diagnostics 9 checks with GREEN/AMBER/RED bands",
+        "Update '## Phase Status': Phases 1-4 Complete, Phases 5-6 Planned",
+        "Update '## Running the Pipeline': make ingest && make harmonise && make categorise && make build-cube && make export",
+        "Verify: CLAUDE.md contains 'tail_spend' and 'maverick'"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_parquet": "python -c \"import pandas as pd; df=pd.read_parquet('data/output/transactions.parquet'); print(len(df), 'rows in Parquet')\"",
+      "check_metrics": "python src/cube/metrics.py --db data/db/spend_cube.db",
+      "check_diagnostics": "python src/diagnostics/quality.py --db data/db/spend_cube.db",
+      "run_tests": "pytest tests/test_cube_builder.py tests/test_diagnostics.py -v"
+    },
+    "expected_counts": {
+      "cube_output_files": 6,
+      "diagnostic_checks": 9,
+      "minimum_unit_tests": 18
+    },
+    "checks": [
+      "data/output/transactions.parquet created",
+      "data/output/quality_scorecard.json created",
+      "Cube sliceable by supplier, category, BU, month, payment terms",
+      "Tail spend flag computed on transactions",
+      "All 9 diagnostics run without error on sample data",
+      "pytest tests/test_cube_builder.py tests/test_diagnostics.py — all green"
+    ]
+  },
+  "risks": [
+    "Small sample data (10 rows): most KPIs will show edge-case values (e.g. 100% maverick spend if no PO rows). Tests should assert correct computation logic, not specific values.",
+    "Tail spend with 10 rows: with small datasets the tail spend threshold may behave unexpectedly. Use absolute count fallback: if fewer than 10 suppliers, tail = suppliers below median spend.",
+    "Parquet type compatibility: Decimal types from pydantic schema need to be cast to float64 before writing Parquet."
+  ],
+  "outOfScope": [
+    "Streamlit dashboards (Phase 5)",
+    "Recommendation engine (Phase 6)",
+    "Real-time cube refresh",
+    "OLAP cube / MDX query support"
+  ]
+}

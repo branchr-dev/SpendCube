@@ -328,3 +328,66 @@ STORY_COMPLETE: US-005
 [2026-04-09 23:33:26] [OK] Marked US-005 as passed
 [2026-04-09 23:33:26] [INFO] Logged progress for US-005: PASSED
 [2026-04-09 23:33:26] [STEP] Committing changes...
+[2026-04-09 23:33:28] [INFO] Starting iteration 6
+[2026-04-09 23:33:28] [INFO] Processing story: US-006
+[2026-04-09 23:33:28] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Implement harmoniser orchestrator
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Complete src/suppliers/harmoniser.py with the full SupplierHarmoniser orchestrator class that runs all 5 pipeline stages in order, produces the supplier_master and supplier_match_log tables, and updates the transactions table with canonical supplier IDs. This is the main entry point for the supplier harmonisation phase.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/harmoniser.py — implement SupplierHarmoniser class (in addition to the build_supplier_master function from US-005)
+- __init__(self, config, engine): initialises SupplierNormaliser, DeterministicMatcher, FuzzyMatcher, EmbeddingMatcher, ParentMapper, loads config thresholds
+- Implement harmonise(self, transactions_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: accepts transactions DataFrame (from ingestion), returns (supplier_master_df, match_log_df)
+- Pipeline: (1) Extract unique (raw_supplier_name, raw_supplier_id) pairs from transactions_df. (2) Normalise all names with SupplierNormaliser. (3) Group by normalised_name — rows with identical normalised_name are already the same supplier. (4) Build initial supplier_master via build_supplier_master(). (5) For each raw supplier not matched by normalisation alone, run DeterministicMatcher against existing master. (6) For remaining unmatched, run FuzzyMatcher. (7) For remaining unmatched, run EmbeddingMatcher. (8) Run ParentMapper on all canonical suppliers without a parent. (9) Write supplier_master to DB. (10) Write match_log entries for all raw→canonical mappings to DB. (11) Return both DataFrames.
+- Implement update_transactions(self, transactions_df: pd.DataFrame, match_log_df: pd.DataFrame) -> pd.DataFrame: joins match_log onto transactions by raw_supplier_name, populates canonical_supplier_id, canonical_supplier_name, parent_company_id, parent_company_name, supplier_match_confidence, supplier_match_method columns
+- Implement get_review_queue(self, match_log_df: pd.DataFrame) -> pd.DataFrame: returns rows where confidence < config.categorisation.confidence_medium (0.60), sorted by supplier spend desc (requires transactions_df join)
+- CLI: python src/suppliers/harmoniser.py --db data/db/spend_cube.db: loads transactions from DB, runs full harmonisation pipeline, prints summary: unique raw suppliers, canonical suppliers created, match method breakdown, review queue size
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Implement harmoniser orchestrator`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-09 23:43:39] [OK] Story US-006 completed!
+[2026-04-09 23:43:39] [OK] Marked US-006 as passed
+[2026-04-09 23:43:39] [INFO] Logged progress for US-006: PASSED
+[2026-04-09 23:43:39] [STEP] Committing changes...

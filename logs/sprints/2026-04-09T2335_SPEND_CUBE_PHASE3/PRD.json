@@ -1,0 +1,234 @@
+{
+  "project": {
+    "id": "SPEND-CUBE-PHASE3-2026-04",
+    "name": "SpendCube Phase 3 - Spend Categorisation",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3",
+    "track": "code"
+  },
+  "summary": "Phase 3 of a 6-phase procurement spend cube system. Builds the hybrid spend categorisation pipeline: 6-pass system running in strict order of confidence. Pass 1: deterministic GL mapping. Pass 2: deterministic supplier mapping. Pass 3: keyword/rule-based matching. Pass 4: embedding similarity (sentence-transformers). Pass 5: LLM fallback (Claude API, batched, dry-run aware). Pass 6: human review queue. Also loads UNSPSC reference hierarchy and internal category hierarchy, builds category_overrides feedback table, and wires everything into the categoriser orchestrator. Validation gate: 80%+ of sample data categorised at HIGH or MEDIUM confidence. 12+ passing unit tests.",
+  "decisions": {
+    "pass_order": "6 passes in strict order. Each pass only runs on items not yet classified above confidence threshold. Stops as soon as confidence >= 0.60 (MEDIUM). Items below 0.60 after all passes go to review queue.",
+    "confidence_cap_llm": "LLM results always capped at 0.70 confidence regardless of model output — per spec.",
+    "internal_category_hierarchy": "3-level internal taxonomy (L1/L2/L3) stored in data/reference/internal_category_hierarchy.csv. Created in this sprint. Maps to UNSPSC segments. L1 examples: IT, Facilities, Logistics, Office Supplies, Marketing, HR, Finance, Professional Services.",
+    "category_seed_mappings": "data/reference/category_seed_mappings.csv already exists from Phase 1 (200+ rows with SUPPLIER, GL, KEYWORD mapping_type). Phase 3 uses this as starting point for passes 1-3.",
+    "unspsc_loader": "data/reference/unspsc_v24.csv already exists from Phase 1. Phase 3 loads it and builds category description embeddings for Pass 4.",
+    "keyword_rules_yaml": "Keyword rules stored in data/reference/keyword_rules.yaml (created this sprint) — configurable outside code. Each rule: pattern (regex), l1, l2, l3, unspsc_segment_code, confidence.",
+    "category_overrides": "category_overrides_table already defined in src/models/database.py (Phase 1). Phase 3 reads from it as the highest-priority override (effectively Pass 0).",
+    "embedding_cache": "Category description embeddings cached to data/cache/category_embeddings.pkl — same pattern as Phase 2 supplier embeddings.",
+    "idempotency": "Running categoriser twice on same transactions: skips rows already classified at >= MEDIUM confidence unless --force flag passed.",
+    "phase_foundation": "Phases 1 and 2 are complete. transactions table populated with canonical supplier IDs. src/models/schema.py has CategoryMethod enum. config.yaml has categorisation thresholds."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "All canonical fields including category columns (unspsc_segment/family/class/commodity, internal_category_l1/l2/l3, category_confidence, category_method) — these get populated by the categoriser. Also has canonical_supplier_id from Phase 2.",
+      "category_overrides": "id, canonical_supplier_id, gl_account, override_l1, override_l2, override_l3, unspsc_code, reviewer, reason, created_at — defined in src/models/database.py, read as Pass 0 override"
+    },
+    "key_files": [
+      "src/models/schema.py - CategoryMethod enum (DETERMINISTIC_GL, DETERMINISTIC_SUPPLIER, KEYWORD, EMBEDDING, LLM, MANUAL), ConfidenceBand (Phase 1)",
+      "src/models/database.py - category_overrides_table, transactions_table, get_engine(), get_transactions() (Phase 1)",
+      "src/config.py - load_config() with categorisation section: confidence_high=0.85, confidence_medium=0.60, embedding_threshold=0.80, llm_fallback_threshold=0.60 (Phase 1)",
+      "config.yaml - categorisation section thresholds (Phase 1)",
+      "data/reference/unspsc_v24.csv - ~500 commodity UNSPSC reference (Phase 1)",
+      "data/reference/category_seed_mappings.csv - 200+ SUPPLIER/GL/KEYWORD mappings (Phase 1)",
+      "data/reference/category_seed_mappings.csv - SUPPLIER rows with canonical_supplier_name→category (Phase 1)",
+      "src/categorisation/deterministic.py - placeholder (Phase 1, implement now)",
+      "src/categorisation/embedding_classifier.py - placeholder (Phase 1, implement now)",
+      "src/categorisation/llm_classifier.py - placeholder (Phase 1, implement now)",
+      "src/categorisation/categoriser.py - placeholder (Phase 1, implement now)",
+      "tests/test_categorisation.py - placeholder (Phase 1, implement now)"
+    ],
+    "patterns_to_follow": [
+      "Each module independently runnable via CLI — same pattern as Phase 1/2",
+      "Use get_logger_from_config(name, config) from src/utils/logging.py",
+      "Each pass returns (classified_df, unclassified_df) — unclassified passed to next pass",
+      "category_method field always set to the CategoryMethod enum value that produced the classification",
+      "All LLM calls batched (config.llm.batch_size=20), logged via log_llm_call(), skip when dry_run=true",
+      "confidence_high=0.85, confidence_medium=0.60 from config — items below 0.60 after all passes → review queue",
+      "UNSPSC codes stored at segment level minimum; commodity level preferred when deterministic match available"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create internal category hierarchy and keyword rules reference files",
+      "description": "Create the two reference files needed by Phase 3 that don't yet exist: data/reference/internal_category_hierarchy.csv (3-level internal procurement taxonomy) and data/reference/keyword_rules.yaml (regex-based description matching rules). Also update config.yaml to add paths for these files.",
+      "acceptanceCriteria": [
+        "Create data/reference/internal_category_hierarchy.csv with columns: l1_code, l1_name, l2_code, l2_name, l3_code, l3_name, unspsc_segment_code, unspsc_segment_name. Include minimum 60 rows covering L1 categories: IT (Telecoms, Hardware, Software, Cloud Services, IT Services), Facilities (Catering, Cleaning, Security, Building Maintenance, Utilities), Logistics (Freight, Courier, Warehousing, Fleet), Office Supplies (Stationery, Print Consumables, Furniture, Equipment), Marketing (Advertising, Events, Print, Digital), HR (Recruitment, Training, Benefits, Temp Labour), Finance (Banking, Insurance, Audit, Tax Advisory), Professional Services (Legal, Consulting, Engineering, Research), Direct Materials (Raw Materials, Packaging, Components), CAPEX (Equipment, Fit-out, IT Infrastructure).",
+        "Create data/reference/keyword_rules.yaml as a YAML list under key 'rules'. Each rule has: pattern (Python regex, case-insensitive), l1, l2, l3 (optional), unspsc_segment_code, confidence (float). Include minimum 40 rules covering: toner/cartridge/printer→Office Supplies/Print Consumables (conf 0.82), catering/canteen/meal/lunch→Facilities/Catering (0.82), freight/shipping/courier/delivery→Logistics/Freight (0.82), mobile/handset/telecom/phone fleet→IT/Telecoms (0.80), software/licence/subscription/saas→IT/Software (0.80), legal/solicitor/barrister→Professional Services/Legal (0.80), recruit/staffing/temp labour→HR/Recruitment (0.78), cleaning/janitorial→Facilities/Cleaning (0.78), electricity/gas/water/utility→Facilities/Utilities (0.80), office supply/stationery→Office Supplies/Stationery (0.82), signage/banner/display→Marketing/Print (0.75), audit/accounting→Finance/Audit (0.80), consulting/advisory/management consulting→Professional Services/Consulting (0.78), training/workshop/learning→HR/Training (0.78), insurance→Finance/Insurance (0.82), security/guard/patrol→Facilities/Security (0.80), fuel/petrol/diesel→Logistics/Fleet (0.78), packaging/pallet/carton→Direct Materials/Packaging (0.80).",
+        "Edit file: config.yaml — add to paths section: internal_category_hierarchy: data/reference/internal_category_hierarchy.csv and keyword_rules: data/reference/keyword_rules.yaml",
+        "Verify: python -c \"import pandas as pd, yaml; df=pd.read_csv('data/reference/internal_category_hierarchy.csv'); rules=yaml.safe_load(open('data/reference/keyword_rules.yaml')); print(len(df), 'hierarchy rows,', len(rules['rules']), 'keyword rules')\" — prints ≥60 hierarchy rows and ≥40 rules"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Implement deterministic GL and supplier categorisation",
+      "description": "Implement src/categorisation/deterministic.py with two deterministic passes: Pass 1 (GL code mapping) and Pass 2 (supplier mapping). Both use data/reference/category_seed_mappings.csv as lookup. Also implements Pass 0: category_overrides table lookup (highest priority, always checked first).",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/deterministic.py — implement DeterministicCategoriser class",
+        "__init__(self, seed_mappings_path: str, engine, config): loads category_seed_mappings.csv, loads category_overrides from DB via pd.read_sql, loads internal_category_hierarchy.csv for UNSPSC lookup",
+        "Implement apply_overrides(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 0. Checks category_overrides table — matches on canonical_supplier_id OR gl_account. Returns (classified_df with category fields populated, unclassified_df). Confidence=1.0, method='MANUAL'.",
+        "Implement apply_gl_mapping(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 1. For each row, look up gl_account in seed_mappings where mapping_type='GL'. Match on exact GL code first, then on GL prefix (first 4 digits). Assign confidence from seed mapping row. Returns (classified, unclassified).",
+        "Implement apply_supplier_mapping(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: Pass 2. For each row, look up canonical_supplier_name in seed_mappings where mapping_type='SUPPLIER' (case-insensitive). Assign confidence from seed mapping row. Returns (classified, unclassified).",
+        "Each classified row gets: internal_category_l1, internal_category_l2, internal_category_l3, unspsc_segment (from hierarchy lookup), category_confidence, category_method set appropriately.",
+        "GL prefix matching: normalise GL codes by stripping leading zeros, try exact match then try first-4-digits prefix (e.g. gl_account='6420100' → try '6420100' then '6420').",
+        "CLI: python src/categorisation/deterministic.py — loads sample transactions, runs all 3 passes, prints classification counts per pass and method"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Implement keyword rule-based categorisation",
+      "description": "Implement Pass 3 of the categorisation pipeline in src/categorisation/deterministic.py (extending the existing class): keyword/regex rule matching against cleaned_description and raw_line_description. Rules loaded from data/reference/keyword_rules.yaml.",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/deterministic.py — add apply_keyword_rules(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame] method to DeterministicCategoriser",
+        "Load keyword_rules.yaml in __init__ (already has path from config). Store as list of compiled regex patterns with associated category fields.",
+        "For each unclassified row: apply each rule's pattern against the combined text of cleaned_description + ' ' + raw_line_description (lowercased). Use re.search (not match). First rule that matches wins.",
+        "Assign: internal_category_l1/l2/l3 from rule, unspsc_segment from rule, category_confidence from rule's confidence value, category_method='KEYWORD'.",
+        "If multiple rules match, use the highest-confidence rule.",
+        "Verify against sample data: 'Office supplies - toner cartridges HP' row should match toner/cartridge rule → Office Supplies/Print Consumables, 'Catering - Q1 events' → Facilities/Catering, 'Staff canteen March' → Facilities/Catering, 'International freight - Shanghai to Melb' → Logistics/Freight, 'Mobile fleet - Feb 2024 (450 handsets)' → IT/Telecoms, 'Ad hoc signage for conference' → Marketing/Print",
+        "CLI: python src/categorisation/deterministic.py — after adding keyword pass, verify 6 of the 10 sample rows are classified by passes 1-3 combined"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Implement embedding-based category classifier",
+      "description": "Implement src/categorisation/embedding_classifier.py as Pass 4: encode transaction descriptions with sentence-transformers and compare against category description embeddings. Only invoked for transactions not classified by passes 1-3.",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/embedding_classifier.py — implement EmbeddingCategoriser class",
+        "__init__(self, hierarchy_path: str, model_name: str = 'all-MiniLM-L6-v2', cache_path: str = 'data/cache/category_embeddings.pkl', config=None): loads internal_category_hierarchy.csv, builds category descriptions by concatenating l1_name + ' ' + l2_name + ' ' + l3_name for each unique L2. Loads or computes embeddings for all category descriptions, caches to data/cache/category_embeddings.pkl.",
+        "Implement classify(self, description: str, config) -> tuple[str | None, str | None, str | None, str | None, float, str, str]: encodes description, computes cosine similarity against all category embeddings. Returns (l1, l2, l3, unspsc_segment, confidence, method, evidence). If top similarity >= config.categorisation.embedding_threshold (0.80): confidence = top_similarity * 0.9, method='EMBEDDING'. If top-2 similarities within 0.05 of each other AND both above 0.70: flag as ambiguous → confidence = top_similarity * 0.75 (pushes toward review queue). Below threshold → (None, None, None, None, top_similarity, 'EMBEDDING_REJECT', evidence).",
+        "Implement classify_batch(self, df: pd.DataFrame, config) -> tuple[pd.DataFrame, pd.DataFrame]: batch version. Returns (classified_df, unclassified_df) where unclassified = rows where confidence < config.categorisation.confidence_medium.",
+        "evidence string: f'cosine={top_similarity:.3f} top_category={best_category} second={second_similarity:.3f}'",
+        "If sentence-transformers unavailable: log warning, return all rows as unclassified (pass-through to LLM)",
+        "CLI: python src/categorisation/embedding_classifier.py — encodes sample descriptions, prints top-3 category matches with similarity scores for each"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Implement LLM fallback categoriser",
+      "description": "Implement src/categorisation/llm_classifier.py as Pass 5: Claude API batched classification for transactions still unclassified after passes 1-4. Must respect dry_run, batch 20 items per call, cap confidence at 0.70, and log all calls for auditability.",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/llm_classifier.py — implement LLMCategoriser class",
+        "__init__(self, config, hierarchy_path: str): loads config, loads internal_category_hierarchy.csv to build valid category list string for prompt context. Initialises anthropic.Anthropic() client only if not dry_run.",
+        "Implement classify_batch(self, items: list[dict], config) -> list[dict]: if dry_run, return list of dicts with all category fields None, confidence=0.0, method='DRY_RUN' for each item. Each item dict has keys: transaction_id, description, supplier_name, gl_account.",
+        "When not dry_run: split items into batches of config.llm.batch_size (20). For each batch, build prompt: 'You are a procurement spend categorisation expert. Classify each transaction into the most appropriate category from the provided taxonomy. Return a JSON array.\\n\\nValid L1 categories: {l1_list}\\n\\nTransactions to classify:\\n{transactions_json}\\n\\nFor each transaction return: transaction_id, internal_category_l1, internal_category_l2 (or null), internal_category_l3 (or null), unspsc_segment_code (or null), confidence (0.0-1.0), reasoning (one sentence).'",
+        "Use model=config.llm.model, max_tokens=2000, temperature=0.",
+        "Parse JSON response. Cap all confidence values at 0.70. Set method='LLM'. Handle malformed JSON gracefully (log error, skip batch items).",
+        "Log every call via log_llm_call() from src/utils/logging.py with prompt, response, model.",
+        "Implement classify_dataframe(self, df: pd.DataFrame, config) -> tuple[pd.DataFrame, pd.DataFrame]: wraps classify_batch for DataFrame input. Returns (classified_df, unclassified_df) — unclassified = items where LLM returned None or confidence=0.",
+        "CLI: python src/categorisation/llm_classifier.py — with dry_run=true, prints 'DRY RUN' and sample items that would be sent to LLM"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Implement categoriser orchestrator",
+      "description": "Implement src/categorisation/categoriser.py as the main orchestrator that runs all 6 passes in strict order, produces the review queue, and updates the transactions table with category assignments. This is the main entry point for the categorisation phase.",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/categoriser.py — implement SpendCategoriser class",
+        "__init__(self, config, engine): initialises DeterministicCategoriser, EmbeddingCategoriser, LLMCategoriser",
+        "Implement categorise(self, transactions_df: pd.DataFrame) -> pd.DataFrame: runs passes in strict order. Pass 0: overrides. Pass 1: GL mapping. Pass 2: supplier mapping. Pass 3: keyword rules. Pass 4: embedding classifier. Pass 5: LLM (only items still below llm_fallback_threshold=0.60 after pass 4). After all passes: any remaining unclassified rows get category_confidence=0.0, category_method=None. Returns full transactions_df with all category fields populated.",
+        "Implement get_review_queue(self, transactions_df: pd.DataFrame) -> pd.DataFrame: returns rows where category_confidence < config.categorisation.confidence_medium (0.60), sorted by abs(base_amount) descending (highest spend reviewed first).",
+        "Implement update_transactions_in_db(self, transactions_df: pd.DataFrame, engine) -> int: updates transactions table rows with new category fields (UPDATE WHERE transaction_id=?). Returns count of rows updated.",
+        "Implement apply_feedback(self, overrides: list[dict], engine) -> None: inserts new rows into category_overrides_table. Each override: canonical_supplier_id or gl_account, l1/l2/l3, unspsc_code, reviewer, reason.",
+        "Log pass-by-pass summary: e.g. 'Pass 1 (GL): 2 classified, 8 remaining. Pass 2 (Supplier): 1 classified, 7 remaining...'",
+        "CLI: python src/categorisation/categoriser.py --db data/db/spend_cube.db: loads transactions, runs full categorisation, prints: total rows, classified by pass breakdown, review queue size, % at HIGH/MEDIUM/LOW confidence"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Integrate categoriser with Makefile and validate against sample data",
+      "description": "Wire the categoriser into the Makefile categorise target and run end-to-end on sample data to verify the Phase 3 validation gate: 80%+ of sample transactions at HIGH or MEDIUM confidence.",
+      "acceptanceCriteria": [
+        "Edit file: Makefile — update categorise target to: python src/categorisation/categoriser.py --db data/db/spend_cube.db",
+        "End-to-end validation: ensure data/db/spend_cube.db has transactions from ingest + harmonise (from Phase 1/2). Run python src/categorisation/categoriser.py --db data/db/spend_cube.db on the 10-row sample data.",
+        "Verify categorisation results for sample data: 'Office supplies - toner cartridges HP' classified as Office Supplies (any pass), 'Catering - Q1 events' classified as Facilities/Catering (any pass), 'Staff canteen March' classified as Facilities/Catering (any pass), 'International freight - Shanghai to Melb' classified as Logistics/Freight (any pass), 'Mobile fleet - Feb 2024' classified as IT/Telecoms (any pass), 'Ad hoc signage for conference' classified as Marketing (any pass)",
+        "Verify: out of 10 sample rows, at least 8 (80%) have category_confidence >= 0.60 (MEDIUM or HIGH). Note: TAX-ADJ-001 (GST adjustment) and INTERCOMPANY rows are legitimately hard to categorise.",
+        "Verify: review queue contains ≤ 2 rows from sample data",
+        "Verify: python src/categorisation/categoriser.py --db data/db/spend_cube.db exits 0 and prints pass-by-pass summary",
+        "Run the full pipeline sequence to confirm end-to-end works: python src/ingestion/ingest.py --file data/input/sample.csv --db data/db/spend_cube.db && python src/suppliers/harmoniser.py --db data/db/spend_cube.db && python src/categorisation/categoriser.py --db data/db/spend_cube.db"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Write Phase 3 unit tests",
+      "description": "Write comprehensive unit tests for all categorisation modules in tests/test_categorisation.py. Minimum 12 tests covering all 3 deterministic passes, embedding classifier, LLM dry-run mode, and the orchestrator. All tests must pass.",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_categorisation.py — write minimum 12 test functions",
+        "Test DeterministicCategoriser: test_gl_mapping_6420_returns_office_supplies, test_gl_mapping_prefix_fallback (6420100 matches GL prefix 6420), test_supplier_mapping_telstra_returns_it_telecoms, test_supplier_mapping_dhl_returns_logistics, test_keyword_toner_returns_office_supplies, test_keyword_catering_returns_facilities, test_keyword_freight_returns_logistics, test_keyword_mobile_fleet_returns_it",
+        "Test EmbeddingCategoriser: test_embedding_classify_returns_tuple_of_correct_shape, test_embedding_unavailable_returns_passthrough (mock ImportError)",
+        "Test LLMCategoriser: test_dry_run_returns_empty_classifications (all items get method=DRY_RUN), test_dry_run_makes_no_api_calls",
+        "Test SpendCategoriser orchestrator: test_categorise_sample_data_80pct_medium_or_high_confidence, test_review_queue_sorted_by_spend_desc",
+        "Use in_memory_engine fixture from tests/conftest.py. Add a categorised_sample_df fixture that runs the full ingestion + harmonise + categorise pipeline on sample.csv.",
+        "Run: pytest tests/test_categorisation.py -v — all tests pass",
+        "Run: pytest tests/test_categorisation.py --cov=src/categorisation --cov-report=term-missing — coverage >= 70% on src/categorisation/"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Update CLAUDE.md with Phase 3 patterns",
+      "description": "Update CLAUDE.md to document the categorisation pipeline architecture, pass order, confidence rules, and LLM usage policy for future Claude sessions.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add section '## Phase 3: Spend Categorisation' documenting: 6-pass order (overrides → GL → supplier → keyword → embedding → LLM), confidence caps per method (MANUAL=1.0, GL/supplier=0.85-0.95, keyword=0.75-0.85, embedding=similarity*0.9, LLM max=0.70), review queue threshold (confidence < 0.60), LLM only invoked when dry_run=false and item below llm_fallback_threshold=0.60 after pass 4, category_overrides table as feedback mechanism",
+        "Update '## Phase Status': Phase 1 Complete, Phase 2 Complete, Phase 3 Complete, Phases 4-6 Planned",
+        "Update '## Running the Pipeline' section to show full 3-stage pipeline: make ingest && make harmonise && make categorise",
+        "Verify: CLAUDE.md contains 'DETERMINISTIC_GL' and 'llm_fallback_threshold'"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_hierarchy": "python -c \"import pandas as pd; df=pd.read_csv('data/reference/internal_category_hierarchy.csv'); print(len(df), 'hierarchy rows')\" — ≥60",
+      "check_keyword_rules": "python -c \"import yaml; r=yaml.safe_load(open('data/reference/keyword_rules.yaml')); print(len(r['rules']), 'rules')\" — ≥40",
+      "check_categoriser": "python src/categorisation/categoriser.py --db data/db/spend_cube.db — prints pass-by-pass summary",
+      "check_80pct": "python -c \"import pandas as pd; from sqlalchemy import create_engine; e=create_engine('sqlite:///data/db/spend_cube.db'); df=pd.read_sql('SELECT category_confidence FROM transactions', e); pct=len(df[df.category_confidence>=0.6])/len(df); print(f'{pct:.0%} at MEDIUM+ confidence')\" — ≥80%",
+      "run_tests": "pytest tests/test_categorisation.py -v — all green"
+    },
+    "expected_counts": {
+      "sample_rows_total": 10,
+      "sample_rows_medium_or_high_confidence_minimum": 8,
+      "review_queue_maximum": 2,
+      "keyword_rules_minimum": 40,
+      "hierarchy_rows_minimum": 60,
+      "minimum_unit_tests": 12
+    },
+    "checks": [
+      "data/reference/internal_category_hierarchy.csv exists with ≥60 rows",
+      "data/reference/keyword_rules.yaml exists with ≥40 rules",
+      "config.yaml updated with internal_category_hierarchy and keyword_rules paths",
+      "Toner row classified as Office Supplies",
+      "Catering row classified as Facilities/Catering",
+      "Freight row classified as Logistics/Freight",
+      "Mobile fleet row classified as IT/Telecoms",
+      "≥8 of 10 sample rows at MEDIUM or HIGH confidence",
+      "dry_run=true means no LLM API calls (tested in unit tests)",
+      "pytest tests/test_categorisation.py — all green"
+    ]
+  },
+  "risks": [
+    "GL prefix matching edge cases: some GL codes have leading zeros stripped (Phase 1 handles normalisation). DeterministicCategoriser must normalise GL codes consistently before lookup — strip non-numeric, do not zero-pad.",
+    "Keyword rule order matters: more specific rules should be checked before generic ones. YAML rules loaded in order — document that specificity ordering is important.",
+    "Embedding model cold start: first run downloads all-MiniLM-L6-v2 if not cached. Same model as Phase 2 — likely already downloaded.",
+    "Intercompany and tax rows: these are legitimately hard to categorise into procurement categories. Acceptable for them to land in review queue — they should be flagged as non-addressable spend anyway.",
+    "80% threshold with 10-row sample: 8/10 rows must reach MEDIUM+ confidence. TAX-ADJ-001 (GST line) and INTERCOMPANY - LEGAL are the expected review queue candidates — both have is_tax_line/is_intercompany flags set from Phase 1."
+  ],
+  "outOfScope": [
+    "Spend cube construction (Phase 4 sprint)",
+    "Streamlit dashboards (Phase 5 sprint)",
+    "Recommendation engine (Phase 6 sprint)",
+    "Category review UI (Phase 6 review workstation)",
+    "UNSPSC commodity-level classification (segment-level sufficient for v1)",
+    "Multi-language description support",
+    "ML model training — embedding similarity is sufficient for v1"
+  ]
+}

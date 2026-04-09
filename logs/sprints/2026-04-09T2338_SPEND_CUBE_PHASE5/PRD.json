@@ -1,0 +1,217 @@
+{
+  "project": {
+    "id": "SPEND-CUBE-PHASE5-2026-04",
+    "name": "SpendCube Phase 5 - Streamlit Dashboards",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5",
+    "track": "code"
+  },
+  "summary": "Phase 5 of 6. Builds the full Streamlit dashboard suite on top of the Phase 4 spend cube and diagnostics. Implements: shared components (charts, filters, tables), dashboard app shell with navigation, spend overview page, category deep dive, supplier deep dive, payment terms deep dive, and data quality page. Validation gate: all 5 dashboard pages render with test data, filters work, drill-downs function.",
+  "decisions": {
+    "data_loading": "Dashboard loads from data/output/transactions.parquet (built by Phase 4). Falls back to loading from SQLite if Parquet not found. Uses st.cache_data for all data loads.",
+    "shared_filters": "Global filter sidebar in dashboard/components/filters.py — date range, business unit, category L1, supplier — applied consistently across all pages via session_state.",
+    "chart_library": "Plotly Express for all charts (already in requirements.txt). No Altair, no Matplotlib.",
+    "page_structure": "Streamlit multipage app — dashboard/app.py is the entry point with navigation. Pages in dashboard/pages/ follow Streamlit naming convention (01_spend_overview.py etc.).",
+    "kpi_cards": "KPI cards implemented as st.metric() components arranged in st.columns(). Consistent styling across all pages.",
+    "no_auth": "Single-user local app — no authentication layer per spec.",
+    "phase_foundation": "Phase 4 complete. data/output/transactions.parquet, by_supplier.parquet, by_category.parquet, by_month.parquet exist. CubeMetrics and DataQualityDiagnostics importable from src/."
+  },
+  "context": {
+    "existing_tables": {},
+    "key_files": [
+      "data/output/transactions.parquet - full transaction-level cube (Phase 4)",
+      "data/output/by_supplier.parquet - supplier aggregations (Phase 4)",
+      "data/output/by_category.parquet - category aggregations (Phase 4)",
+      "data/output/by_month.parquet - monthly aggregations (Phase 4)",
+      "data/output/quality_scorecard.json - diagnostics output (Phase 4)",
+      "src/cube/metrics.py - CubeMetrics class (Phase 4)",
+      "src/diagnostics/quality.py - DataQualityDiagnostics class (Phase 4)",
+      "dashboard/app.py - placeholder, implement as Streamlit entry point",
+      "dashboard/components/charts.py - placeholder, implement reusable chart functions",
+      "dashboard/components/filters.py - placeholder, implement shared filter sidebar",
+      "dashboard/components/tables.py - placeholder, implement reusable table components",
+      "dashboard/pages/01_spend_overview.py - placeholder, implement",
+      "dashboard/pages/02_category_deep_dive.py - placeholder, implement",
+      "dashboard/pages/03_supplier_deep_dive.py - placeholder, implement",
+      "dashboard/pages/04_payment_terms.py - placeholder, implement",
+      "dashboard/pages/05_data_quality.py - placeholder, implement"
+    ],
+    "patterns_to_follow": [
+      "All data loads use @st.cache_data decorator",
+      "Shared filters in st.sidebar via dashboard/components/filters.py",
+      "All monetary values formatted as f'{value:,.0f} AUD' or similar",
+      "Plotly figures use consistent colour palette",
+      "Each page is self-contained — imports from src/ for data access",
+      "st.set_page_config called in app.py only (not individual pages)"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Implement shared dashboard components",
+      "description": "Implement dashboard/components/ — the shared building blocks used by all dashboard pages: reusable chart functions, filter sidebar, and table components.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/components/filters.py — implement render_filters(df: pd.DataFrame) -> pd.DataFrame: renders st.sidebar with date range picker (invoice_date), business unit multiselect, category L1 multiselect, supplier search text input. Returns filtered DataFrame. Uses st.session_state to persist filter values.",
+        "Edit file: dashboard/components/charts.py — implement these functions using plotly.express: bar_chart(df, x, y, title, color=None) -> go.Figure; horizontal_bar(df, x, y, title, max_rows=20) -> go.Figure; treemap(df, path, values, title) -> go.Figure; line_chart(df, x, y, title) -> go.Figure; donut_chart(df, names, values, title) -> go.Figure; pareto_chart(df, x, y, title) -> go.Figure (bar + cumulative % line on secondary y-axis); heatmap(df, x, y, values, title) -> go.Figure. All figures use consistent layout: white background, no gridlines on y-axis, font_size=12.",
+        "Edit file: dashboard/components/tables.py — implement: styled_dataframe(df, format_cols: dict = None) -> None: calls st.dataframe with column formatting. format_monetary(df, cols: list) -> pd.DataFrame: formats monetary columns as '{:,.0f}'. kpi_row(metrics: dict) -> None: renders a row of st.metric() cards from a dict of {label: (value, delta_optional)}.",
+        "Verify: python -c 'from dashboard.components import charts, filters, tables; print(\"Components OK\")' — exits 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Implement dashboard app shell and data loader",
+      "description": "Implement dashboard/app.py as the Streamlit entry point with page navigation and a shared data loading function used by all pages.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/app.py — implement the main Streamlit app entry point",
+        "Set page config: st.set_page_config(page_title='SpendCube', page_icon='💰', layout='wide', initial_sidebar_state='expanded')",
+        "Implement load_cube_data() -> dict[str, pd.DataFrame] decorated with @st.cache_data: loads transactions.parquet, by_supplier.parquet, by_category.parquet, by_month.parquet from data/output/. If any Parquet not found, shows st.error with instructions to run make build-cube.",
+        "Implement load_quality_scorecard() -> dict decorated with @st.cache_data: loads data/output/quality_scorecard.json. Returns empty dict if not found.",
+        "Home page content: title 'SpendCube — Procurement Analytics', brief description, quick stats (total spend, supplier count, invoice count) if data available, link to run pipeline if no data found.",
+        "Import and expose load_cube_data and load_quality_scorecard for use by page modules.",
+        "Run: streamlit run dashboard/app.py --server.headless true -- 2>&1 | head -5 — should start without import errors (may show 'You can now view...' or similar)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Implement spend overview dashboard page",
+      "description": "Implement dashboard/pages/01_spend_overview.py — the main high-level spend overview page with KPI cards, spend trends, category breakdown, top suppliers, and Pareto curve.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/01_spend_overview.py — implement full spend overview page",
+        "Row 1 — KPI cards (st.columns(6)): Total Spend (AUD), Supplier Count, Invoice Count, Avg Transaction Size, Contract Coverage %, Tail Spend %",
+        "Row 2 — Spend by month (bar chart, full width): x=invoice_month, y=sum(base_amount). Add 3-month rolling average trend line.",
+        "Row 3 left — Spend by category L1 (horizontal bar, top 10). Row 3 right — Spend by business unit (horizontal bar).",
+        "Row 4 — Top 20 suppliers (horizontal bar with canonical_supplier_name). Overlay cumulative spend % as secondary line.",
+        "Row 5 left — Pareto curve (supplier rank vs cumulative % spend). Row 5 right — Direct vs Indirect split donut (spend_type) OR Managed vs Unmanaged donut (managed_status). Use whichever has more non-null data.",
+        "Row 6 — Data quality scorecard mini-view: show 9 check statuses as coloured badges.",
+        "Apply filters from render_filters() in sidebar. All charts update when filters change.",
+        "Page title: 'Spend Overview'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Implement category deep dive page",
+      "description": "Implement dashboard/pages/02_category_deep_dive.py — drill-down from L1 to L2 to L3 category with spend trends, supplier fragmentation, and savings lever flags.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/02_category_deep_dive.py — implement category deep dive page",
+        "Category selector: st.selectbox for L1 → st.selectbox for L2 (filtered by L1) → st.selectbox for L3 (filtered by L2). Show 'All' option at each level.",
+        "KPI row for selected category: Total Spend, Supplier Count, Invoice Count, Contract Coverage %, Maverick Spend %, Avg Payment Terms",
+        "Spend trend: monthly spend bar chart for selected category",
+        "Top suppliers in category: horizontal bar (top 10 by spend)",
+        "Supplier fragmentation: show supplier count, HHI for category, top-1 supplier share %",
+        "Payment terms distribution: histogram of payment_terms_days for transactions in category",
+        "Savings lever flags panel: show applicable flags as st.info() boxes — e.g. if supplier_count > 5: 'Consolidation opportunity: {n} suppliers', if maverick_pct > 15%: 'High maverick spend ({pct}%)', if avg_terms < 30: 'Short payment terms opportunity'",
+        "Page title: 'Category Deep Dive'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Implement supplier deep dive page",
+      "description": "Implement dashboard/pages/03_supplier_deep_dive.py — supplier search and drill-down with spend breakdown, related entities, and payment terms.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — implement supplier deep dive page",
+        "Supplier selector: st.selectbox with list of canonical_supplier_names sorted by spend desc. Show spend next to name: 'Telstra Corporation (AUD 22,500)'.",
+        "KPI row: Total Spend, Invoice Count, Avg Transaction Size, Payment Terms (days), Contract Coverage %",
+        "Spend trend: monthly spend for selected supplier",
+        "Spend by category: horizontal bar (top categories for this supplier)",
+        "Spend by business unit / site: horizontal bar",
+        "Related entities panel: show other suppliers with same parent_company_name (if any), show suppliers with similar names (fuzzy matches from supplier_match_log with review_status=PENDING)",
+        "Risk flags: if supplier_spend / total_spend > 0.20: 'High concentration: {pct}% of total spend', if is_single_category (all spend in one L1): 'Single source risk', if contract_coverage < 0.5: 'Low contract coverage'",
+        "Page title: 'Supplier Deep Dive'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Implement payment terms deep dive page",
+      "description": "Implement dashboard/pages/04_payment_terms.py — weighted average payment terms analysis with working capital opportunity sizing and renegotiation priority list.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/04_payment_terms.py — implement payment terms page",
+        "KPI row: Weighted Avg Payment Terms (days), % Transactions with Terms, Working Capital Opportunity (AUD, at target 45 days, WACC 8%), # Suppliers on Short Terms (<30 days)",
+        "Distribution histogram: payment_terms_days distribution across all transactions (plotly histogram, bin size 5 days)",
+        "Heatmap: top 15 suppliers × payment terms bucket (0-14, 15-30, 31-45, 46-60, 60+) — colour = spend",
+        "Working capital table: for each supplier with terms < config target (45 days), show: Supplier, Current Terms, Target Terms, Annual Spend, WC Opportunity (AUD). Sorted by WC Opportunity desc. Formula: (target - current) / 365 * annual_spend * wacc.",
+        "Non-standard terms: show suppliers with payment_terms_days not in (14, 30, 45, 60, 90) as anomaly list",
+        "st.number_input for target payment days (default 45) and WACC % (default 8) — recalculates WC opportunity dynamically",
+        "Page title: 'Payment Terms'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Implement data quality dashboard page",
+      "description": "Implement dashboard/pages/05_data_quality.py — the data quality scorecard page showing all 9 diagnostic checks with drill-down into problematic records.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/05_data_quality.py — implement data quality page",
+        "Overall quality score: st.metric('Overall Data Quality', f'{score}/100') as a large header metric",
+        "Scorecard table: st.dataframe showing all 9 checks with columns: Check, Value, Status (coloured), Green Threshold, Amber Threshold, Remediation. Use pandas Styler to colour Status column (green/amber/red).",
+        "Drill-down expandable sections (st.expander) for each RED or AMBER check: show the actual problematic rows. E.g. for 'Missing supplier name': show transactions where raw_supplier_name is null. For 'Duplicate invoice risk': show the duplicate invoice pairs.",
+        "Export button: st.download_button to download quality_scorecard.json",
+        "Refresh button: st.button('Re-run diagnostics') — clears st.cache_data and reloads",
+        "Page title: 'Data Quality'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Update Makefile serve target and validate all pages render",
+      "description": "Ensure make serve-dashboard works, all 5 pages import cleanly, and validate the dashboard runs without errors on sample data.",
+      "acceptanceCriteria": [
+        "Edit file: Makefile — update serve-dashboard target to: streamlit run dashboard/app.py",
+        "Validate all page imports: python -c 'import dashboard.pages.01_spend_overview' fails due to numeric prefix — use importlib instead. Instead verify: python -c 'import importlib.util; [importlib.util.spec_from_file_location(f, f\"dashboard/pages/{f}\") for f in [\"01_spend_overview.py\",\"02_category_deep_dive.py\",\"03_supplier_deep_dive.py\",\"04_payment_terms.py\",\"05_data_quality.py\"]]; print(\"All pages loadable\")'",
+        "Verify no import errors: python -c 'from dashboard.components.charts import bar_chart, horizontal_bar, treemap, line_chart, donut_chart, pareto_chart, heatmap; print(\"Charts OK\")'",
+        "Verify: python -c 'from dashboard.components.filters import render_filters; from dashboard.components.tables import kpi_row, styled_dataframe; print(\"Components OK\")'",
+        "Verify: python -c 'from dashboard.app import load_cube_data, load_quality_scorecard; print(\"App loader OK\")'",
+        "Run: streamlit run dashboard/app.py --server.headless true &> /tmp/streamlit_test.log & sleep 5 && kill %1 && grep -v 'Warning\\|DeprecationWarning' /tmp/streamlit_test.log | head -10 — should show startup without Python errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Update CLAUDE.md with Phase 5 patterns",
+      "description": "Update CLAUDE.md to document dashboard architecture, data loading patterns, and component structure.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add section '## Phase 5: Streamlit Dashboards' documenting: app shell in dashboard/app.py, @st.cache_data on all data loads, shared filters via render_filters() in sidebar, all charts use Plotly Express, data loaded from data/output/*.parquet (built by Phase 4 cube pipeline), 5 pages (overview/category/supplier/payment_terms/quality)",
+        "Update '## Phase Status': Phases 1-5 Complete, Phase 6 Planned",
+        "Verify: CLAUDE.md contains 'st.cache_data' and 'load_cube_data'"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_components": "python -c 'from dashboard.components.charts import bar_chart; from dashboard.components.filters import render_filters; print(\"OK\")'",
+      "check_app": "python -c 'from dashboard.app import load_cube_data; print(\"App OK\")'",
+      "check_makefile": "make -n serve-dashboard — prints streamlit run dashboard/app.py"
+    },
+    "expected_counts": {
+      "dashboard_pages": 5,
+      "chart_types": 7,
+      "kpi_cards_overview": 6
+    },
+    "checks": [
+      "All 5 page files import without errors",
+      "dashboard/components/charts.py exports 7 chart functions",
+      "dashboard/app.py loads cube data from Parquet",
+      "make serve-dashboard target updated",
+      "Streamlit starts without Python errors"
+    ]
+  },
+  "risks": [
+    "No actual browser test possible in CLI: validate via import checks and streamlit headless startup only.",
+    "Numeric prefix on page files (01_, 02_) prevents standard Python import — validate with importlib.util instead.",
+    "Empty data / small sample: charts must handle DataFrames with <5 rows without throwing. Add guard: if len(df) == 0: st.info('No data matches current filters') instead of rendering chart."
+  ],
+  "outOfScope": [
+    "Recommendations page (Phase 6)",
+    "Review workstation page (Phase 6)",
+    "User authentication",
+    "Mobile responsive design",
+    "PDF export of dashboards"
+  ]
+}

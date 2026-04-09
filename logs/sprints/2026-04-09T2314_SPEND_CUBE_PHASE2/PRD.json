@@ -149,7 +149,8 @@
         "Implement get_review_queue(self, match_log_df: pd.DataFrame) -> pd.DataFrame: returns rows where confidence < config.categorisation.confidence_medium (0.60), sorted by supplier spend desc (requires transactions_df join)",
         "CLI: python src/suppliers/harmoniser.py --db data/db/spend_cube.db: loads transactions from DB, runs full harmonisation pipeline, prints summary: unique raw suppliers, canonical suppliers created, match method breakdown, review queue size"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:43:39Z"
     },
     {
       "id": "US-007",

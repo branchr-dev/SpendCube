@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "SPEND_CUBE_PHASE6-2026-04",
+    "name": "SPEND CUBE PHASE6",
+    "created": "2026-04-09",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6"
+  },
+  "summary": "Phase 6 Recommendations and Review Workstation: rule-based engine, LLM narratives, review queues, audit trail",
+  "decisions": {},
+  "context": {
+    "existing_tables": {},
+    "key_files": [],
+    "patterns_to_follow": []
+  },
+  "userStories": [],
+  "verification": {
+    "queries": {},
+    "expected_counts": {},
+    "checks": []
+  },
+  "risks": [],
+  "outOfScope": []
+}
