@@ -61,7 +61,8 @@
         "Edit file: config.yaml — add to paths section: internal_category_hierarchy: data/reference/internal_category_hierarchy.csv and keyword_rules: data/reference/keyword_rules.yaml",
         "Verify: python -c \"import pandas as pd, yaml; df=pd.read_csv('data/reference/internal_category_hierarchy.csv'); rules=yaml.safe_load(open('data/reference/keyword_rules.yaml')); print(len(df), 'hierarchy rows,', len(rules['rules']), 'keyword rules')\" — prints ≥60 hierarchy rows and ≥40 rules"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:13:23Z"
     },
     {
       "id": "US-002",

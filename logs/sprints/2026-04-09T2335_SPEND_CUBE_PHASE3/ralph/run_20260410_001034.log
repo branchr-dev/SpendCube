@@ -1,0 +1,71 @@
+[2026-04-10 00:10:34] [INFO] Ralph loop starting
+[2026-04-10 00:10:34] [INFO] Created progress file: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 00:10:34 CEST
+PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 00:10:34] [INFO] Starting iteration 1
+[2026-04-10 00:10:34] [INFO] Processing story: US-001
+[2026-04-10 00:10:34] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Create internal category hierarchy and keyword rules reference files
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create the two reference files needed by Phase 3 that don't yet exist: data/reference/internal_category_hierarchy.csv (3-level internal procurement taxonomy) and data/reference/keyword_rules.yaml (regex-based description matching rules). Also update config.yaml to add paths for these files.
+
+## Acceptance Criteria
+- Create data/reference/internal_category_hierarchy.csv with columns: l1_code, l1_name, l2_code, l2_name, l3_code, l3_name, unspsc_segment_code, unspsc_segment_name. Include minimum 60 rows covering L1 categories: IT (Telecoms, Hardware, Software, Cloud Services, IT Services), Facilities (Catering, Cleaning, Security, Building Maintenance, Utilities), Logistics (Freight, Courier, Warehousing, Fleet), Office Supplies (Stationery, Print Consumables, Furniture, Equipment), Marketing (Advertising, Events, Print, Digital), HR (Recruitment, Training, Benefits, Temp Labour), Finance (Banking, Insurance, Audit, Tax Advisory), Professional Services (Legal, Consulting, Engineering, Research), Direct Materials (Raw Materials, Packaging, Components), CAPEX (Equipment, Fit-out, IT Infrastructure).
+- Create data/reference/keyword_rules.yaml as a YAML list under key 'rules'. Each rule has: pattern (Python regex, case-insensitive), l1, l2, l3 (optional), unspsc_segment_code, confidence (float). Include minimum 40 rules covering: toner/cartridge/printer→Office Supplies/Print Consumables (conf 0.82), catering/canteen/meal/lunch→Facilities/Catering (0.82), freight/shipping/courier/delivery→Logistics/Freight (0.82), mobile/handset/telecom/phone fleet→IT/Telecoms (0.80), software/licence/subscription/saas→IT/Software (0.80), legal/solicitor/barrister→Professional Services/Legal (0.80), recruit/staffing/temp labour→HR/Recruitment (0.78), cleaning/janitorial→Facilities/Cleaning (0.78), electricity/gas/water/utility→Facilities/Utilities (0.80), office supply/stationery→Office Supplies/Stationery (0.82), signage/banner/display→Marketing/Print (0.75), audit/accounting→Finance/Audit (0.80), consulting/advisory/management consulting→Professional Services/Consulting (0.78), training/workshop/learning→HR/Training (0.78), insurance→Finance/Insurance (0.82), security/guard/patrol→Facilities/Security (0.80), fuel/petrol/diesel→Logistics/Fleet (0.78), packaging/pallet/carton→Direct Materials/Packaging (0.80).
+- Edit file: config.yaml — add to paths section: internal_category_hierarchy: data/reference/internal_category_hierarchy.csv and keyword_rules: data/reference/keyword_rules.yaml
+- Verify: python -c "import pandas as pd, yaml; df=pd.read_csv('data/reference/internal_category_hierarchy.csv'); rules=yaml.safe_load(open('data/reference/keyword_rules.yaml')); print(len(df), 'hierarchy rows,', len(rules['rules']), 'keyword rules')" — prints ≥60 hierarchy rows and ≥40 rules
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Create internal category hierarchy and keyword rules reference files`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 00:13:23] [OK] Story US-001 completed!
+[2026-04-10 00:13:23] [OK] Marked US-001 as passed
+[2026-04-10 00:13:23] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 00:13:23] [STEP] Committing changes...
