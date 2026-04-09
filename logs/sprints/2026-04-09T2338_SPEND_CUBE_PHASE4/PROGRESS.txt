@@ -103,3 +103,14 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+## US-006 — Write Phase 4 unit tests (2026-04-10)
+- tests/test_cube_builder.py: 22 tests covering builder, metrics, exporter, pipeline
+- tests/test_diagnostics.py: 9 tests covering all 9 quality checks
+- tests/conftest.py: added cube_df() fixture (synthetic transactions → SpendCubeBuilder.build())
+- All 32 tests pass; coverage: src/cube=65%, src/diagnostics=84%, TOTAL=70%
+- Key decisions:
+  - Used synthetic DataFrames directly (no full ingest/harmonise pipeline) for speed and isolation
+  - cube_df() fixture uses insert_transactions() + SpendCubeBuilder.build() on in-memory SQLite
+  - Standard tail spend (n>=10) tested with 12-supplier fixture
+  - Pipeline test uses file-based SQLite in tmp_path
