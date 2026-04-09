@@ -1,0 +1,1 @@
+"""SpendCube spend categorisation package."""

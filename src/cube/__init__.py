@@ -1,0 +1,1 @@
+"""SpendCube OLAP cube package."""

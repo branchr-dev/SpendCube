@@ -1,0 +1,1 @@
+"""SpendCube data ingestion package."""

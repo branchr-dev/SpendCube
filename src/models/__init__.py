@@ -1,0 +1,1 @@
+"""SpendCube data models package."""

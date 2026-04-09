@@ -1,0 +1,1 @@
+"""SpendCube dashboard package."""
