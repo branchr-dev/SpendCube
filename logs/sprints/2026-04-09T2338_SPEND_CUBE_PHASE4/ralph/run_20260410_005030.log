@@ -327,3 +327,64 @@ STORY_COMPLETE: US-005
 [2026-04-10 01:01:42] [OK] Marked US-005 as passed
 [2026-04-10 01:01:42] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 01:01:42] [STEP] Committing changes...
+[2026-04-10 01:01:44] [INFO] Starting iteration 6
+[2026-04-10 01:01:44] [INFO] Processing story: US-006
+[2026-04-10 01:01:44] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Write Phase 4 unit tests
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write unit tests for the cube builder, metrics, and diagnostics in tests/test_cube_builder.py and tests/test_diagnostics.py. All tests must pass.
+
+## Acceptance Criteria
+- Edit file: tests/test_cube_builder.py — write minimum 10 test functions: test_build_returns_expected_keys, test_by_supplier_aggregates_correctly, test_by_month_has_invoice_date_as_yyyy_mm, test_tail_spend_flag_computed, test_spend_concentration_top10_pct_between_0_and_1, test_maverick_spend_excludes_po_rows, test_cube_excludes_intercompany_from_addressable
+- Edit file: tests/test_diagnostics.py — write minimum 8 test functions: test_missing_supplier_returns_correct_pct, test_duplicate_invoice_detects_duplicates, test_weak_description_flags_misc, test_scorecard_generates_without_error, test_all_9_checks_present_in_run_all, test_green_status_on_clean_data, test_red_status_on_dirty_data
+- Add fixtures to tests/conftest.py: cube_df() fixture that runs full pipeline (ingest + harmonise + categorise + build) on sample.csv using in_memory_engine
+- Run: pytest tests/test_cube_builder.py tests/test_diagnostics.py -v — all tests pass
+- Run: pytest tests/test_cube_builder.py tests/test_diagnostics.py --cov=src/cube --cov=src/diagnostics --cov-report=term-missing — coverage >= 70%
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Write Phase 4 unit tests`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 01:11:01] [OK] Story US-006 completed!
+[2026-04-10 01:11:01] [OK] Marked US-006 as passed
+[2026-04-10 01:11:01] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 01:11:01] [STEP] Committing changes...
