@@ -128,3 +128,19 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+## US-007 COMPLETE - 2026-04-09
+- Implemented src/ingestion/date_parser.py with parse_date(value: Any) -> date | None
+- Format chain: ['%d/%m/%Y', '%Y-%m-%d', '%d-%b-%Y', '%m/%d/%Y', '%d-%m-%Y', '%Y/%m/%d'] via pd.to_datetime, then dateutil.parser.parse(dayfirst=True) fallback
+- All 9 sample dates parse correctly (DD/MM/YYYY-first for AU convention)
+- Returns None for: None, '', 'N/A', float('nan'), pd.NaT — no exceptions
+- Excel serials (int/float) converted via date(1899,12,30) + timedelta(days=int(value)); serial 45369 → 2024-03-18
+- Implemented parse_date_series(series) for vectorised batch parsing via Series.map
+- CLI exits 0 with all PASS for 9 sample dates + 5 edge cases; INFO line for Excel serial result
+- Note: Excel serial expected value was NOT specified in AC; formula is as specified
+
+---
+
+### [US-007] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
