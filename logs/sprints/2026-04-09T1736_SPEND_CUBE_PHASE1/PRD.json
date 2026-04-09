@@ -262,7 +262,8 @@
         "Run: pytest tests/test_ingestion.py -v — all tests pass (green)",
         "Run: pytest tests/test_ingestion.py --cov=src/ingestion --cov-report=term-missing — line coverage ≥ 75% on src/ingestion/"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T16:19:33Z"
     },
     {
       "id": "US-014",

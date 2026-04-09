@@ -775,3 +775,67 @@ STORY_COMPLETE: US-012
 [2026-04-09 18:14:07] [OK] Marked US-012 as passed
 [2026-04-09 18:14:07] [INFO] Logged progress for US-012: PASSED
 [2026-04-09 18:14:07] [STEP] Committing changes...
+[2026-04-09 18:14:09] [INFO] Starting iteration 13
+[2026-04-09 18:14:09] [INFO] Processing story: US-013
+[2026-04-09 18:14:09] [STEP] Spawning Claude with prompt for US-013
+--- PROMPT FOR US-013 ---
+You are working on story US-013: Write Phase 1 unit tests
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write comprehensive unit tests for all Phase 1 modules in tests/test_ingestion.py with fixtures in tests/conftest.py. All tests must pass. Requires all prior Phase 1 stories to be complete.
+
+## Acceptance Criteria
+- Edit file: tests/conftest.py — add pytest fixtures: @pytest.fixture def config() loading config from config.yaml; @pytest.fixture def sample_df() returning the 10-row sample as a DataFrame with the same column names as data/input/sample.csv; @pytest.fixture def in_memory_engine() returning an in-memory SQLite engine with all tables initialised via init_db()
+- Edit file: tests/test_ingestion.py — write minimum 15 test functions covering:
+-   Date parser: test_parse_date_ddmmyyyy, test_parse_date_iso, test_parse_date_dd_mon_yyyy, test_parse_date_ambiguous_slash, test_parse_date_none_returns_none, test_parse_date_empty_string_returns_none, test_parse_date_nan_returns_none, test_parse_date_excel_serial
+-   Currency converter: test_same_currency_returns_original, test_usd_to_aud_returns_reasonable_amount, test_unknown_currency_returns_warning, test_missing_month_uses_nearest
+-   Data cleaner: test_whitespace_stripped, test_null_variants_normalised, test_payment_terms_net30, test_payment_terms_NET30_no_space, test_payment_terms_none, test_detect_credit_note_negative_amount, test_detect_credit_note_cn_prefix, test_detect_intercompany, test_detect_tax_line_gst, test_detect_tax_line_gl_balance_sheet
+-   Ingestion: test_ingest_sample_csv_returns_10_rows, test_ingest_cn_row_is_credit_note, test_ingest_intercompany_row_flagged, test_ingest_tax_row_flagged, test_ingest_usd_row_converted_to_aud, test_ingest_all_rows_have_transaction_id
+- Run: pytest tests/test_ingestion.py -v — all tests pass (green)
+- Run: pytest tests/test_ingestion.py --cov=src/ingestion --cov-report=term-missing — line coverage ≥ 75% on src/ingestion/
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-013
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-013: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-013 - Write Phase 1 unit tests`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-013 ---
+STORY_COMPLETE: US-013
+--- END OUTPUT ---
+[2026-04-09 18:19:33] [OK] Story US-013 completed!
+[2026-04-09 18:19:33] [OK] Marked US-013 as passed
+[2026-04-09 18:19:33] [INFO] Logged progress for US-013: PASSED
+[2026-04-09 18:19:33] [STEP] Committing changes...
