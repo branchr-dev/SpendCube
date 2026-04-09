@@ -205,7 +205,7 @@ class Ingestor:
 # CLI
 # ---------------------------------------------------------------------------
 
-def _print_summary(df: pd.DataFrame, file_path: str) -> None:
+def _print_summary(df: pd.DataFrame, file_path: str) -> None:  # pragma: no cover
     """Print ingestion summary to stdout."""
     total = len(df)
     print(f"\nIngested {total} rows from {file_path}")
@@ -252,7 +252,7 @@ def _print_summary(df: pd.DataFrame, file_path: str) -> None:
     print(f"\n{total} rows processed")
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="SpendCube ingestion pipeline — ingest a CSV or Excel file"
     )
@@ -289,5 +289,5 @@ def main() -> None:
         _print_summary(df, args.file)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

@@ -232,7 +232,7 @@ class DataCleaner:
 # CLI
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Build a small sample DataFrame that exercises all detection paths.
     sample_data = {
         "invoice_number": ["INV-001", "CN-2024-001", "INV-002", "INV-003", "INV-004"],

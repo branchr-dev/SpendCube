@@ -77,7 +77,7 @@ class ColumnMapper:
         return [field for field in REQUIRED_CANONICAL_FIELDS if field not in covered]
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Add project root to path so src.config is importable regardless of cwd
     project_root = Path(__file__).resolve().parent.parent.parent
     sys.path.insert(0, str(project_root))

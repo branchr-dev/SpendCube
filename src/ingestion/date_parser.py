@@ -67,7 +67,7 @@ def parse_date_series(series: pd.Series) -> pd.Series:
     return series.map(parse_date)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import sys
 
     samples = [

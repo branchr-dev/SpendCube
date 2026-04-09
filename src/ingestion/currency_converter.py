@@ -92,7 +92,7 @@ class CurrencyConverter:
         return df
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     fx_path = Path(__file__).parent.parent.parent / 'data' / 'reference' / 'fx_rates.csv'
     converter = CurrencyConverter(str(fx_path))
 
