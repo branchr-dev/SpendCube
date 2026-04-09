@@ -1,0 +1,75 @@
+[2026-04-10 00:50:30] [INFO] Ralph loop starting
+[2026-04-10 00:50:30] [INFO] Created progress file: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 00:50:30 CEST
+PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 00:50:30] [INFO] Starting iteration 1
+[2026-04-10 00:50:30] [INFO] Processing story: US-001
+[2026-04-10 00:50:30] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Implement spend cube builder
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/cube/builder.py to build the dimensional spend cube from the canonical transactions table. Loads transactions from SQLite, computes dimension columns (time dimensions, tail spend flag), and materialises pre-aggregated views as DataFrames.
+
+## Acceptance Criteria
+- Edit file: src/cube/builder.py — implement SpendCubeBuilder class
+- __init__(self, config, engine): loads config, engine
+- Implement build(self) -> dict[str, pd.DataFrame]: loads transactions via get_transactions(engine). Returns dict with keys: 'transactions' (full DataFrame), 'by_supplier' (grouped by canonical_supplier_name, parent_company_name — sum base_amount, count invoice_number, count po_number, mean payment_terms_days), 'by_category' (grouped by internal_category_l1, l2, l3 — same measures), 'by_bu' (grouped by business_unit, cost_centre), 'by_month' (grouped by year-month derived from invoice_date — format YYYY-MM), 'by_payment_terms' (grouped by payment_terms_days bucket: 0-14, 15-30, 31-45, 46-60, 60+)
+- Compute time dimensions on transactions DataFrame: invoice_year (int), invoice_month (str YYYY-MM), invoice_quarter (str YYYY-Q1/Q2/Q3/Q4)
+- Compute is_tail_spend flag: (1) sort suppliers by total spend desc, (2) compute cumulative spend %, (3) suppliers beyond top N% of suppliers (where top N% account for 80% of spend) are tail. Mark all transactions for tail suppliers as is_tail_spend=True.
+- Compute spend_concentration: top_10_supplier_pct, top_20_supplier_pct, top_50_supplier_pct as scalar metrics
+- Exclude is_intercompany=True, is_tax_line=True rows from addressable spend metrics (but keep them in full cube)
+- CLI: python src/cube/builder.py --db data/db/spend_cube.db — builds cube, prints dimension shape summary (e.g. '10 transactions, 8 canonical suppliers, 5 categories, 3 business units')
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Implement spend cube builder`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 00:55:05] [OK] Story US-001 completed!
+[2026-04-10 00:55:05] [OK] Marked US-001 as passed
+[2026-04-10 00:55:05] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 00:55:06] [STEP] Committing changes...

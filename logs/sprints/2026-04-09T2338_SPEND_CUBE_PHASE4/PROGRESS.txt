@@ -1,0 +1,24 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+# Created: Fri 10 Apr 2026 00:50:30 CEST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-04-10
+- Implemented SpendCubeBuilder in src/cube/builder.py
+- build() returns 6 views: transactions, by_supplier, by_category, by_bu, by_month, by_payment_terms
+- Time dimensions: invoice_year (Int64), invoice_month (YYYY-MM), invoice_quarter (YYYY-Q#)
+- Tail spend: small dataset fallback (< 10 suppliers → median split); standard uses cumulative spend threshold
+- Spend concentration: top_10/20/50_supplier_pct available on builder.spend_concentration after build()
+- Addressable spend excludes is_intercompany=1 and is_tax_line=1 rows from aggregation views
+- CLI: python src/cube/builder.py --db data/db/spend_cube.db prints shape summary
+- NOTE: venv not present at project start — needed python3 -m venv venv && venv/bin/pip install -r requirements.txt
+- NOTE: DB columns are category_l1/l2/l3 (not internal_category_l1 as in CLAUDE.md docs)
+
+
+---
+
+### [US-001] - 2026-04-10 00:55:05
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
