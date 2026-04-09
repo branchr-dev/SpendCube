@@ -262,3 +262,65 @@ STORY_COMPLETE: US-004
 [2026-04-09 17:51:13] [OK] Marked US-004 as passed
 [2026-04-09 17:51:13] [INFO] Logged progress for US-004: PASSED
 [2026-04-09 17:51:13] [STEP] Committing changes...
+[2026-04-09 17:51:15] [INFO] Starting iteration 5
+[2026-04-09 17:51:15] [INFO] Processing story: US-005
+[2026-04-09 17:51:15] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Create reference data files
+
+## Project Context
+**Project:** SpendCube Phase 1 - Foundation
+**Project ID:** SPEND-CUBE-PHASE1-2026-04
+**PRD:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create all reference data CSV and YAML files in data/reference/. These are bundled with the application. The UNSPSC file should be a representative ~500-commodity subset. FX rates cover 2023-2025 monthly averages for 8 currencies. Seed mappings include ~200 supplier/GL/keyword-to-category mappings.
+
+## Acceptance Criteria
+- Create data/reference/unspsc_v24.csv with columns: segment_code, segment_name, family_code, family_name, class_code, class_name, commodity_code, commodity_name. Minimum 400 rows. Cover segments: 44 (Office/Photo/Film), 43 (IT/Broadcasting), 78 (Transportation/Storage), 80 (Management/Business), 81 (Engineering/R&D), 72 (Building/Construction), 76 (Industrial Cleaning), 51 (Drugs/Pharma/Biotech), 50 (Food/Beverage/Tobacco), 53 (Apparel/Luggage/Personal), 73 (Industrial Production/Manufacturing), 55 (Published Products). Use realistic 8-digit commodity codes following the UNSPSC pattern (segment 2 digits + family 2 + class 2 + commodity 2).
+- Create data/reference/fx_rates.csv with columns: year_month, from_ccy, to_ccy, rate. Cover 2023-01 through 2025-12 for all bidirectional pairs: AUD↔USD, AUD↔EUR, AUD↔GBP, AUD↔SGD, AUD↔NZD, AUD↔JPY, AUD↔CNY. Use realistic rates: AUD/USD ~0.63-0.68, AUD/EUR ~0.58-0.62, AUD/GBP ~0.50-0.54, AUD/SGD ~0.85-0.92, AUD/NZD ~1.07-1.12, AUD/JPY ~90-100, AUD/CNY ~4.5-4.8. Minimum 36 months × 14 pairs = 504 rows.
+- Create data/reference/legal_suffixes.yaml as a YAML list under key 'suffixes'. Include at minimum 40 entries covering: 'Pty Ltd', 'Pty. Ltd.', 'Pty. Ltd', 'P/L', 'P.L.', 'LLC', 'L.L.C.', 'Inc', 'Inc.', 'Incorporated', 'Ltd', 'Ltd.', 'Limited', 'GmbH', 'AG', 'S.A.', 'S.A.S.', 'B.V.', 'N.V.', 'PLC', 'Plc', 'Corp', 'Corp.', 'Corporation', 'Co', 'Co.', 'Company', 'Trust', 'Pty', 'Holdings', 'Group', 'International', 'Trading', 'Services', 'Solutions', 'Aust', 'Australia', 'Global' (as standalone suffix tokens)
+- Create data/reference/abbreviation_map.yaml as key: value YAML mapping. Minimum 30 entries: Aust: Australia, Intl: International, Svcs: Services, Mgt: Management, Mgmt: Management, Dept: Department, Govt: Government, Tech: Technology, Eng: Engineering, Mfg: Manufacturing, Distrib: Distribution, Comms: Communications, Corp: Corporation, Assoc: Association, Fndtn: Foundation, Natl: National, Fed: Federal, Qld: Queensland, NSW: 'New South Wales', Vic: Victoria, SA: 'South Australia', WA: 'Western Australia', Tas: Tasmania, ACT: 'Australian Capital Territory'
+- Create data/reference/category_seed_mappings.csv with columns: mapping_type, source_value, internal_category_l1, internal_category_l2, internal_category_l3, unspsc_segment_code, confidence. Include minimum 200 rows with mapping_type values SUPPLIER, GL, KEYWORD. Examples: SUPPLIER|Telstra|IT|Telecommunications|Mobile Fleet|43, SUPPLIER|DHL|Logistics|Freight|International Freight|78, SUPPLIER|Sodexo|Facilities|Catering|Staff Catering|50, SUPPLIER|Officeworks|Office Supplies|Stationery||44, GL|6420|Office Supplies|Stationery||44, GL|6510|Facilities|Building Services||72, GL|6300|Logistics|Freight||78, GL|6440|IT|Telecommunications||43, KEYWORD|toner|Office Supplies|Print Consumables||44, KEYWORD|catering|Facilities|Catering||50, KEYWORD|freight|Logistics|Freight||78
+- Verify: all files load cleanly — python -c "import pandas as pd, yaml; pd.read_csv('data/reference/unspsc_v24.csv'); pd.read_csv('data/reference/fx_rates.csv'); pd.read_csv('data/reference/category_seed_mappings.csv'); yaml.safe_load(open('data/reference/legal_suffixes.yaml')); yaml.safe_load(open('data/reference/abbreviation_map.yaml')); print('All reference files OK')" — prints 'All reference files OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/PRD.json
+   - Session: logs/sprints/2026-04-09T1736_SPEND_CUBE_PHASE1/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Create reference data files`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-09 17:56:08] [OK] Story US-005 completed!
+[2026-04-09 17:56:08] [OK] Marked US-005 as passed
+[2026-04-09 17:56:08] [INFO] Logged progress for US-005: PASSED
+[2026-04-09 17:56:08] [STEP] Committing changes...

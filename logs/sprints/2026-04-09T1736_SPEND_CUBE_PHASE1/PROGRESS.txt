@@ -90,3 +90,20 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005 Complete - 2026-04-09
+- Created data/reference/unspsc_v24.csv: 402 rows, 12 segments
+- Created data/reference/fx_rates.csv: 504 rows (36 months × 14 pairs, AUD↔7 currencies)
+- Created data/reference/legal_suffixes.yaml: 50 entries
+- Created data/reference/abbreviation_map.yaml: 39 entries
+- Created data/reference/category_seed_mappings.csv: 213 rows (SUPPLIER/GL/KEYWORD)
+- Verification command passes: 'All reference files OK'
+- Generator script at scripts/generate_reference_data.py for reproducibility
+
+
+---
+
+### [US-005] - 2026-04-09 17:56:08
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

@@ -123,7 +123,8 @@
         "Create data/reference/category_seed_mappings.csv with columns: mapping_type, source_value, internal_category_l1, internal_category_l2, internal_category_l3, unspsc_segment_code, confidence. Include minimum 200 rows with mapping_type values SUPPLIER, GL, KEYWORD. Examples: SUPPLIER|Telstra|IT|Telecommunications|Mobile Fleet|43, SUPPLIER|DHL|Logistics|Freight|International Freight|78, SUPPLIER|Sodexo|Facilities|Catering|Staff Catering|50, SUPPLIER|Officeworks|Office Supplies|Stationery||44, GL|6420|Office Supplies|Stationery||44, GL|6510|Facilities|Building Services||72, GL|6300|Logistics|Freight||78, GL|6440|IT|Telecommunications||43, KEYWORD|toner|Office Supplies|Print Consumables||44, KEYWORD|catering|Facilities|Catering||50, KEYWORD|freight|Logistics|Freight||78",
         "Verify: all files load cleanly — python -c \"import pandas as pd, yaml; pd.read_csv('data/reference/unspsc_v24.csv'); pd.read_csv('data/reference/fx_rates.csv'); pd.read_csv('data/reference/category_seed_mappings.csv'); yaml.safe_load(open('data/reference/legal_suffixes.yaml')); yaml.safe_load(open('data/reference/abbreviation_map.yaml')); print('All reference files OK')\" — prints 'All reference files OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T15:56:08Z"
     },
     {
       "id": "US-006",
