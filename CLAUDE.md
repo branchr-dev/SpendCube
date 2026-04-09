@@ -78,13 +78,43 @@ Phase 2 implements a 5-stage supplier harmonisation pipeline in `src/suppliers/`
 
 **Idempotency** — the harmoniser checks `canonical_supplier_id` against the existing `supplier_master` before inserting. Running twice on the same input leaves row counts unchanged.
 
+## Phase 3: Spend Categorisation
+
+Phase 3 implements a 6-pass hybrid categorisation pipeline in `src/categorisation/`. Each pass processes only the transactions not yet classified at or above the confidence threshold (0.60) by earlier passes.
+
+**Pipeline order (strict):** overrides → GL → supplier → keyword → embedding → LLM
+
+| Pass | Method | Module | Description |
+|------|--------|--------|-------------|
+| 0. Overrides | `MANUAL` | `deterministic.py` | Reads `category_overrides` table — matches on `canonical_supplier_id` OR `gl_account`. Highest priority, always checked first. Confidence = 1.0. |
+| 1. GL mapping | `DETERMINISTIC_GL` | `deterministic.py` | Exact GL code match first, then GL prefix (first 4 digits). Uses `category_seed_mappings.csv` rows with `mapping_type='GL'`. Confidence 0.85–0.95. |
+| 2. Supplier mapping | `DETERMINISTIC_SUPPLIER` | `deterministic.py` | Case-insensitive match on `canonical_supplier_name` against seed mappings (`mapping_type='SUPPLIER'`). Confidence 0.85–0.95. |
+| 3. Keyword rules | `KEYWORD` | `deterministic.py` | Regex rules from `data/reference/keyword_rules.yaml` applied to `cleaned_description + raw_line_description`. First (highest-confidence) matching rule wins. Confidence 0.75–0.85. |
+| 4. Embedding similarity | `EMBEDDING` | `embedding_classifier.py` | sentence-transformers `all-MiniLM-L6-v2`, cosine similarity against category description embeddings. Confidence = `top_similarity * 0.9`. Ambiguous (top-2 within 0.05): `top_similarity * 0.75`. Embeddings cached to `data/cache/category_embeddings.pkl`. |
+| 5. LLM fallback | `LLM` | `llm_classifier.py` | Claude API, batched (20 items per call). Only runs when `config.llm.dry_run = false` AND item is still below `llm_fallback_threshold=0.60` after pass 4. Confidence always capped at **0.70** regardless of model output. |
+
+**Confidence caps per method:**
+- `MANUAL` (overrides): 1.0
+- `DETERMINISTIC_GL` / `DETERMINISTIC_SUPPLIER`: 0.85–0.95 (from seed mapping row)
+- `KEYWORD`: 0.75–0.85 (from rule definition in YAML)
+- `EMBEDDING`: `top_similarity * 0.9` (max ~0.90 in practice)
+- `LLM`: capped at 0.70 unconditionally
+
+**Review queue** — any transaction with `category_confidence < 0.60` after all passes is included in the review queue, sorted by `abs(base_amount)` descending (highest spend reviewed first). Items in the review queue have `category_method = None`.
+
+**`category_overrides` as feedback mechanism** — the `category_overrides` table (defined in `src/models/database.py`) stores human-reviewed corrections keyed on `canonical_supplier_id` or `gl_account`. Writing a row here causes Pass 0 to apply it as an override on all future runs. Use `SpendCategoriser.apply_feedback()` to insert overrides programmatically.
+
+**`llm_fallback_threshold`** — configured in `config.yaml` under `categorisation.llm_fallback_threshold` (default 0.60). The LLM is invoked only when `dry_run=false` and the transaction is still below this threshold after pass 4.
+
+**Idempotency** — running categoriser twice on the same transactions skips rows already classified at >= MEDIUM confidence (0.60) unless `--force` is passed.
+
 ## Phase Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **Phase 1** | Foundation: ingestion pipeline, canonical schema, SQLite, reference data, unit tests | **Complete** |
 | **Phase 2** | Supplier harmonisation (name normalisation, fuzzy + embedding matching, parent mapping) | **Complete** |
-| Phase 3 | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | Planned |
+| **Phase 3** | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | **Complete** |
 | Phase 4 | Spend cube construction + data quality diagnostics | Planned |
 | Phase 5 | Streamlit dashboards (overview, category, supplier, payment terms, quality) | Planned |
 | Phase 6 | Recommendation engine + review workstation | Planned |
@@ -108,6 +138,11 @@ make export            # Export cube to CSV/Excel
 For development, the typical Phase 1 loop is:
 ```bash
 make generate-test-data && make ingest && make run-tests
+```
+
+For the full 3-phase pipeline (ingest → harmonise → categorise):
+```bash
+make ingest && make harmonise && make categorise
 ```
 
 ## Reference Data
