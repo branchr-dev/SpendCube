@@ -158,3 +158,30 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+---
+
+## US-006 COMPLETE — 2026-04-09
+Implemented SupplierHarmoniser class in src/suppliers/harmoniser.py.
+
+### Key design decisions
+- **_load_master_from_db() derives normalised_name**: supplier_master_table has no normalised_name column, so it's computed from canonical_name via the normaliser instance at load time. This lets DeterministicMatcher and FuzzyMatcher work against the pre-existing master.
+- **Pre-existing master loaded BEFORE build_supplier_master**: ensures matching stages 5–7 compare against what was already in DB, not the new batch entries.
+- **Match method hierarchy**: intra-batch NORMALISED_NAME_GROUP (>1 raw names same normalised) → EXACT_NORMALISED_NAME (already in DB) → EXACT_VENDOR_ID → FUZZY_AUTO/REVIEW → EMBEDDING_AUTO/REVIEW → NEW_CANONICAL.
+- **Idempotency via pre-check**: existing_logged_names fetched before inserting match_log; only new entries inserted. build_supplier_master already idempotent via SHA256 ID check.
+- **update_transactions drops then re-merges**: drops any existing canonical columns before merging enrichment to avoid suffix conflicts. Adds canonical_supplier_confidence = supplier_match_confidence for DB schema compatibility.
+- **get_review_queue joins transactions**: loads base_amount from transactions_table to sort by total_spend desc; falls back to confidence sort if join fails.
+- **supplier_master_table.update() for parent enrichment**: uses SQLAlchemy Core Table.update() (no separate import needed).
+
+### Validation
+- 10 transactions loaded, 9 unique raw suppliers
+- 5 canonical suppliers created (acme, sodexo australia, intercompany legal, dhl express, bhp billiton)
+- Acme x3 → 1 canonical (822b33ad87c1, canonical_name: "Acme Pty Ltd") ✓
+- Sodexo x3 → 1 canonical (64548bd5c853, canonical_name: "Sodexo Australia Pty Ltd") ✓
+- Idempotency: second run → still 5 supplier_master rows, 9 match_log rows ✓
+- Review queue: 0 items (all confidence=1.0, above 0.60 threshold) ✓
+- CLI: exits 0, prints summary ✓
+
+### [US-006] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
