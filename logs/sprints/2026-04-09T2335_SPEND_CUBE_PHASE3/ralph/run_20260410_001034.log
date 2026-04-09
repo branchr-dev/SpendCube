@@ -324,3 +324,67 @@ STORY_COMPLETE: US-005
 [2026-04-10 00:26:12] [OK] Marked US-005 as passed
 [2026-04-10 00:26:12] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 00:26:12] [STEP] Committing changes...
+[2026-04-10 00:26:14] [INFO] Starting iteration 6
+[2026-04-10 00:26:14] [INFO] Processing story: US-006
+[2026-04-10 00:26:14] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Implement categoriser orchestrator
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/categorisation/categoriser.py as the main orchestrator that runs all 6 passes in strict order, produces the review queue, and updates the transactions table with category assignments. This is the main entry point for the categorisation phase.
+
+## Acceptance Criteria
+- Edit file: src/categorisation/categoriser.py — implement SpendCategoriser class
+- __init__(self, config, engine): initialises DeterministicCategoriser, EmbeddingCategoriser, LLMCategoriser
+- Implement categorise(self, transactions_df: pd.DataFrame) -> pd.DataFrame: runs passes in strict order. Pass 0: overrides. Pass 1: GL mapping. Pass 2: supplier mapping. Pass 3: keyword rules. Pass 4: embedding classifier. Pass 5: LLM (only items still below llm_fallback_threshold=0.60 after pass 4). After all passes: any remaining unclassified rows get category_confidence=0.0, category_method=None. Returns full transactions_df with all category fields populated.
+- Implement get_review_queue(self, transactions_df: pd.DataFrame) -> pd.DataFrame: returns rows where category_confidence < config.categorisation.confidence_medium (0.60), sorted by abs(base_amount) descending (highest spend reviewed first).
+- Implement update_transactions_in_db(self, transactions_df: pd.DataFrame, engine) -> int: updates transactions table rows with new category fields (UPDATE WHERE transaction_id=?). Returns count of rows updated.
+- Implement apply_feedback(self, overrides: list[dict], engine) -> None: inserts new rows into category_overrides_table. Each override: canonical_supplier_id or gl_account, l1/l2/l3, unspsc_code, reviewer, reason.
+- Log pass-by-pass summary: e.g. 'Pass 1 (GL): 2 classified, 8 remaining. Pass 2 (Supplier): 1 classified, 7 remaining...'
+- CLI: python src/categorisation/categoriser.py --db data/db/spend_cube.db: loads transactions, runs full categorisation, prints: total rows, classified by pass breakdown, review queue size, % at HIGH/MEDIUM/LOW confidence
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Implement categoriser orchestrator`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 00:31:12] [OK] Story US-006 completed!
+[2026-04-10 00:31:12] [OK] Marked US-006 as passed
+[2026-04-10 00:31:12] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 00:31:12] [STEP] Committing changes...

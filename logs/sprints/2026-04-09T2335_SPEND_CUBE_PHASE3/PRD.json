@@ -145,7 +145,8 @@
         "Log pass-by-pass summary: e.g. 'Pass 1 (GL): 2 classified, 8 remaining. Pass 2 (Supplier): 1 classified, 7 remaining...'",
         "CLI: python src/categorisation/categoriser.py --db data/db/spend_cube.db: loads transactions, runs full categorisation, prints: total rows, classified by pass breakdown, review queue size, % at HIGH/MEDIUM/LOW confidence"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:31:12Z"
     },
     {
       "id": "US-007",

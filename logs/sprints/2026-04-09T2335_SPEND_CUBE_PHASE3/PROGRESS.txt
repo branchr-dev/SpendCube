@@ -104,3 +104,23 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+## US-006 COMPLETE — 2026-04-10
+- Implemented SpendCategoriser in src/categorisation/categoriser.py
+- __init__: initialises DeterministicCategoriser, EmbeddingCategoriser, LLMCategoriser from config paths
+- categorise(): runs all 6 passes in strict order; each pass receives only unclassified rows from previous pass; reassembles in original index order via pd.concat + result.loc[df.index]
+- Pass 5 (LLM) receives exactly items with confidence < llm_fallback_threshold (0.60) — same as confidence_medium — because classify_batch returns them as unclassified
+- get_review_queue(): filters confidence < confidence_medium (0.60), sorts by abs(base_amount) descending
+- update_transactions_in_db(): one UPDATE per row using SQLAlchemy Core update() WHERE transaction_id=?
+- apply_feedback(): inserts into category_overrides_table with UUID id and UTC created_at timestamp
+- CLI: loads transactions, runs categorise, updates DB, prints pass-by-pass breakdown, review queue size, HIGH/MEDIUM/LOW confidence bands
+- Validation on 10-row sample: 9/10 (90%) at MEDIUM+ confidence (5 GL + 3 keyword + 1 embedding); 1 review queue row
+- EmbeddingCategoriser sometimes returns method="EMBEDDING_REJECT" even when confidence >= 0.60 (similarity above MEDIUM but below embedding_threshold 0.80); CLI counts this under Pass 4
+- Note: .venv/bin/python3 required to run (not system python3)
+
+
+---
+
+### [US-006] - 2026-04-10 00:31:12
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
