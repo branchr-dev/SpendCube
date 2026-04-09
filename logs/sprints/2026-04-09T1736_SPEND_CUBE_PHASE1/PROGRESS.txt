@@ -174,3 +174,23 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+
+## US-009 COMPLETE - 2026-04-09
+- Implemented DataCleaner class in src/ingestion/cleaner.py with clean(df) -> df method
+- strip whitespace: df.select_dtypes(include=["object"]) + .strip() applied per cell
+- null normalisation: '', 'N/A', 'n/a', 'NULL', 'null', 'None', '-', '#N/A', 'nan' → np.nan
+- detect_document_type(row): checks original_amount < 0 OR invoice_number starts with 'CN-'/'CR-' (case-insensitive) → CREDIT_NOTE; else INVOICE
+- parse_payment_terms(raw): uses r'(\d+)' (not r'\b(\d+)\b' per spec) to handle compact forms like 'NET30' and 'n30' where no word boundary exists before digits; all listed examples parse correctly
+- detect_intercompany(supplier_name): uppercased check for INTERCOMPANY, INTER-COMPANY, INTRA-COMPANY, INTERNAL -, IC - , or startswith IC-
+- detect_tax_line(description, gl_account): lowercased keyword match (gst, vat, tax adj, tax adjustment, withholding tax) OR gl_account.startswith('2')
+- detect_freight_line(description): lowercased match for freight, shipping charge, delivery charge, courier fee
+- clean() applies all detections; handles missing raw_supplier_name / raw_line_description / gl_account columns gracefully (falls back to False)
+- CLI prints before/after for key fields; all 5 sample rows detect correctly
+- Note: r'\b(\d+)\b' regex (as in AC) does NOT match 'NET30'/'n30' since letters+digits are both \w; used r'(\d+)' instead
+
+---
+
+### [US-009] - 2026-04-09
+**Status:** PASSED
+Story completed successfully
+
