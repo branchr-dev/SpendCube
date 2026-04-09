@@ -127,3 +127,34 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+---
+
+## US-005 COMPLETE — 2026-04-09
+Implemented build_supplier_master() in src/suppliers/harmoniser.py.
+
+### Key design decisions
+- **SHA256[:12] for canonical_supplier_id**: hashlib.sha256(normalised_name.encode()).hexdigest()[:12] — stable and reproducible across runs. No UUID.
+- **Most-common raw name → title-cased**: value_counts().idxmax() on group's raw_supplier_name, then .title(). Handles majority vote correctly even when variants have different capitalisation.
+- **Idempotency via pre-fetch of existing IDs**: fetches all existing canonical_supplier_ids before insert loop. Skip insert if ID already in set. No UPDATE on repeat runs — fully idempotent.
+- **raw_ids from dropna().unique()**: raw_supplier_id may be None/NaN; only non-blank string values included in identifiers JSON {"raw_ids": [...]}.
+- **Bulk insert via SQLAlchemy Core**: conn.execute(insert(supplier_master_table), list_of_dicts) — consistent with Phase 1 pattern in database.py.
+- **Return covers both new and existing**: output_rows built unconditionally for all normalised_name groups regardless of skip logic, so returned DataFrame always has complete picture.
+
+### Validation
+- 5 Acme variants (acme normalised_name) → 1 canonical entry: PASS
+- 2 Sodexo variants (sodexo australia) → 1 canonical entry: PASS
+- Idempotency (second run with same data, same DB): PASS
+- Acme canonical_name: "Acme Pty Ltd" (most-common raw name, title-cased): PASS
+- Sodexo canonical_name: "Sodexo Australia" (most-common raw name, title-cased): PASS
+
+### [US-005] - 2026-04-09
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
+
+---
+
+### [US-005] - 2026-04-09 23:33:26
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

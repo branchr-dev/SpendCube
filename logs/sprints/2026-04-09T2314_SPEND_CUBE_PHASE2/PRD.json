@@ -133,7 +133,8 @@
         "Return DataFrame of all canonical suppliers (both new and existing) with columns: canonical_supplier_id, canonical_name, normalised_name",
         "Verify: given the 10-row sample data, the 5 Acme/ACME/acme rows produce exactly 1 canonical supplier entry, and the 2 Sodexo rows produce exactly 1 canonical supplier entry"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T21:33:26Z"
     },
     {
       "id": "US-006",

@@ -264,3 +264,67 @@ STORY_COMPLETE: US-004
 [2026-04-09 23:32:03] [OK] Marked US-004 as passed
 [2026-04-09 23:32:03] [INFO] Logged progress for US-004: PASSED
 [2026-04-09 23:32:03] [STEP] Committing changes...
+[2026-04-09 23:32:05] [INFO] Starting iteration 5
+[2026-04-09 23:32:05] [INFO] Processing story: US-005
+[2026-04-09 23:32:05] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Implement supplier master builder
+
+## Project Context
+**Project:** SpendCube Phase 2 - Supplier Harmonisation
+**Project ID:** SPEND-CUBE-PHASE2-2026-04
+**PRD:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the supplier master table builder in src/suppliers/harmoniser.py (partial implementation — the master builder portion). This takes a DataFrame of unique raw supplier names and builds the canonical supplier_master table by deduplicating against any existing entries.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/harmoniser.py — implement build_supplier_master(raw_suppliers: pd.DataFrame, engine, config) -> pd.DataFrame function (not a class yet — just this function)
+- raw_suppliers has columns: raw_supplier_name, raw_supplier_id (may be null), normalised_name (pre-computed)
+- For each unique normalised_name: generate canonical_supplier_id as first 12 chars of SHA256(normalised_name.encode()).hexdigest()
+- Build canonical_name as the most-common raw_supplier_name among all rows sharing the same normalised_name (title-cased)
+- Check if canonical_supplier_id already exists in supplier_master table (get_transactions equivalent for supplier_master). If exists, skip insert (idempotent).
+- Insert new canonical suppliers into supplier_master_table with: canonical_supplier_id, canonical_name, parent_company_id=None, parent_name=None, country=None, identifiers=JSON of {raw_ids: [list of unique raw_supplier_ids]}, created_at=now, updated_at=now
+- Return DataFrame of all canonical suppliers (both new and existing) with columns: canonical_supplier_id, canonical_name, normalised_name
+- Verify: given the 10-row sample data, the 5 Acme/ACME/acme rows produce exactly 1 canonical supplier entry, and the 2 Sodexo rows produce exactly 1 canonical supplier entry
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/PRD.json
+   - Session: logs/sprints/2026-04-09T2314_SPEND_CUBE_PHASE2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Implement supplier master builder`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-09 23:33:26] [OK] Story US-005 completed!
+[2026-04-09 23:33:26] [OK] Marked US-005 as passed
+[2026-04-09 23:33:26] [INFO] Logged progress for US-005: PASSED
+[2026-04-09 23:33:26] [STEP] Committing changes...
