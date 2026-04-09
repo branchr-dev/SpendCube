@@ -58,7 +58,8 @@
         "Edit file: dashboard/components/tables.py — implement: styled_dataframe(df, format_cols: dict = None) -> None: calls st.dataframe with column formatting. format_monetary(df, cols: list) -> pd.DataFrame: formats monetary columns as '{:,.0f}'. kpi_row(metrics: dict) -> None: renders a row of st.metric() cards from a dict of {label: (value, delta_optional)}.",
         "Verify: python -c 'from dashboard.components import charts, filters, tables; print(\"Components OK\")' — exits 0"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T23:13:18Z"
     },
     {
       "id": "US-002",
