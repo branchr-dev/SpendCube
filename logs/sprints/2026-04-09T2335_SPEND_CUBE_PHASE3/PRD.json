@@ -128,7 +128,8 @@
         "Implement classify_dataframe(self, df: pd.DataFrame, config) -> tuple[pd.DataFrame, pd.DataFrame]: wraps classify_batch for DataFrame input. Returns (classified_df, unclassified_df) — unclassified = items where LLM returned None or confidence=0.",
         "CLI: python src/categorisation/llm_classifier.py — with dry_run=true, prints 'DRY RUN' and sample items that would be sent to LLM"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:26:12Z"
     },
     {
       "id": "US-006",

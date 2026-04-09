@@ -259,3 +259,68 @@ STORY_COMPLETE: US-004
 [2026-04-10 00:24:27] [OK] Marked US-004 as passed
 [2026-04-10 00:24:27] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 00:24:27] [STEP] Committing changes...
+[2026-04-10 00:24:29] [INFO] Starting iteration 5
+[2026-04-10 00:24:29] [INFO] Processing story: US-005
+[2026-04-10 00:24:29] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Implement LLM fallback categoriser
+
+## Project Context
+**Project:** SpendCube Phase 3 - Spend Categorisation
+**Project ID:** SPEND-CUBE-PHASE3-2026-04
+**PRD:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/categorisation/llm_classifier.py as Pass 5: Claude API batched classification for transactions still unclassified after passes 1-4. Must respect dry_run, batch 20 items per call, cap confidence at 0.70, and log all calls for auditability.
+
+## Acceptance Criteria
+- Edit file: src/categorisation/llm_classifier.py — implement LLMCategoriser class
+- __init__(self, config, hierarchy_path: str): loads config, loads internal_category_hierarchy.csv to build valid category list string for prompt context. Initialises anthropic.Anthropic() client only if not dry_run.
+- Implement classify_batch(self, items: list[dict], config) -> list[dict]: if dry_run, return list of dicts with all category fields None, confidence=0.0, method='DRY_RUN' for each item. Each item dict has keys: transaction_id, description, supplier_name, gl_account.
+- When not dry_run: split items into batches of config.llm.batch_size (20). For each batch, build prompt: 'You are a procurement spend categorisation expert. Classify each transaction into the most appropriate category from the provided taxonomy. Return a JSON array.\n\nValid L1 categories: {l1_list}\n\nTransactions to classify:\n{transactions_json}\n\nFor each transaction return: transaction_id, internal_category_l1, internal_category_l2 (or null), internal_category_l3 (or null), unspsc_segment_code (or null), confidence (0.0-1.0), reasoning (one sentence).'
+- Use model=config.llm.model, max_tokens=2000, temperature=0.
+- Parse JSON response. Cap all confidence values at 0.70. Set method='LLM'. Handle malformed JSON gracefully (log error, skip batch items).
+- Log every call via log_llm_call() from src/utils/logging.py with prompt, response, model.
+- Implement classify_dataframe(self, df: pd.DataFrame, config) -> tuple[pd.DataFrame, pd.DataFrame]: wraps classify_batch for DataFrame input. Returns (classified_df, unclassified_df) — unclassified = items where LLM returned None or confidence=0.
+- CLI: python src/categorisation/llm_classifier.py — with dry_run=true, prints 'DRY RUN' and sample items that would be sent to LLM
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/PRD.json
+   - Session: logs/sprints/2026-04-09T2335_SPEND_CUBE_PHASE3/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Implement LLM fallback categoriser`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 00:26:12] [OK] Story US-005 completed!
+[2026-04-10 00:26:12] [OK] Marked US-005 as passed
+[2026-04-10 00:26:12] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 00:26:12] [STEP] Committing changes...

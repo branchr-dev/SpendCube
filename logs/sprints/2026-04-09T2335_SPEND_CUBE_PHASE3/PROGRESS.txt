@@ -81,3 +81,26 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+## US-005 COMPLETE — 2026-04-10
+- Implemented LLMCategoriser in src/categorisation/llm_classifier.py
+- __init__: loads hierarchy, builds L1 list string, initialises anthropic.Anthropic() only when dry_run=false
+- classify_batch(): dry_run path returns DRY_RUN dicts immediately (no API calls); live path splits into batches of config.llm.batch_size (20)
+- Prompt template includes L1 list and structured JSON array instruction; uses temperature=0, max_tokens=2000
+- JSON response: strips markdown code fences, parses array, indexes by transaction_id, caps confidence at 0.70
+- Malformed JSON: logs error, returns None/0.0 dicts for all batch items (graceful skip)
+- log_llm_call() called on every API call (success or failure)
+- classify_dataframe(): maps DataFrame rows to item dicts using index as transaction_id, calls classify_batch, writes results back to DataFrame columns (category_l1/l2/l3, unspsc_code, category_confidence, category_method)
+- CLI: dry_run=true → prints 'DRY RUN', sample items that would be sent, then runs classify_batch to demonstrate DRY_RUN method output
+- Note: anthropic SDK import deferred to __init__ to avoid hard import error if not installed
+
+### [US-005] - 2026-04-10 00:26:00
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
+
+---
+
+### [US-005] - 2026-04-10 00:26:12
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
