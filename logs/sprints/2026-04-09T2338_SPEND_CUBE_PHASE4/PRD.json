@@ -75,7 +75,8 @@
         "Compute data_quality_score (0-100): average of individual diagnostic scores from quality module",
         "CLI: python src/cube/metrics.py --db data/db/spend_cube.db — prints all KPIs as formatted table"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-09T22:57:20Z"
     },
     {
       "id": "US-003",

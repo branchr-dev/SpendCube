@@ -73,3 +73,68 @@ STORY_COMPLETE: US-001
 [2026-04-10 00:55:05] [OK] Marked US-001 as passed
 [2026-04-10 00:55:05] [INFO] Logged progress for US-001: PASSED
 [2026-04-10 00:55:06] [STEP] Committing changes...
+[2026-04-10 00:55:08] [INFO] Starting iteration 2
+[2026-04-10 00:55:08] [INFO] Processing story: US-002
+[2026-04-10 00:55:08] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Implement derived metrics computation
+
+## Project Context
+**Project:** SpendCube Phase 4 - Spend Cube and Diagnostics
+**Project ID:** SPEND-CUBE-PHASE4-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/cube/metrics.py to compute all KPI and derived metrics from the cube DataFrames. These metrics power the dashboard KPI cards and benchmarking outputs.
+
+## Acceptance Criteria
+- Edit file: src/cube/metrics.py — implement CubeMetrics class
+- __init__(self, cube: dict[str, pd.DataFrame], config): accepts the dict returned by SpendCubeBuilder.build()
+- Implement compute_all(self) -> dict: returns flat dict of all scalar KPIs
+- Compute: total_spend (sum base_amount, excluding intercompany/tax), total_suppliers (unique canonical_supplier_id count), total_invoices (unique invoice_number count), avg_transaction_size (total_spend / total_invoices), contract_coverage_pct (is_on_contract=True spend / total addressable spend), maverick_spend_pct (spend where po_number is null AND is_on_contract is not True, / total addressable spend), tail_spend_pct (is_tail_spend=True spend / total spend), tail_supplier_count
+- Compute payment terms metrics: weighted_avg_payment_terms (sum(base_amount * payment_terms_days) / sum(base_amount) for rows where payment_terms_days is not null), pct_missing_payment_terms
+- Compute concentration: hhi (Herfindahl-Hirschman Index = sum of (supplier_spend/total_spend)^2 * 10000), top_10_supplier_pct, pareto_80_supplier_count (number of suppliers accounting for 80% of spend)
+- Compute working_capital_opportunity(target_days: int = 45, wacc: float = 0.08) -> float: sum over top-50 suppliers of max(0, (target_days - supplier_avg_terms) / 365 * supplier_spend * wacc)
+- Compute data_quality_score (0-100): average of individual diagnostic scores from quality module
+- CLI: python src/cube/metrics.py --db data/db/spend_cube.db — prints all KPIs as formatted table
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE4/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Implement derived metrics computation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-10 00:57:20] [OK] Story US-002 completed!
+[2026-04-10 00:57:20] [OK] Marked US-002 as passed
+[2026-04-10 00:57:20] [INFO] Logged progress for US-002: PASSED
+[2026-04-10 00:57:20] [STEP] Committing changes...
