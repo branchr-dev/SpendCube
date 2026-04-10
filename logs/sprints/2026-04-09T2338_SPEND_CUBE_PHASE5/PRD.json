@@ -176,7 +176,8 @@
         "Verify: python -c 'from dashboard.app import load_cube_data, load_quality_scorecard; print(\"App loader OK\")'",
         "Run: streamlit run dashboard/app.py --server.headless true &> /tmp/streamlit_test.log & sleep 5 && kill %1 && grep -v 'Warning\\|DeprecationWarning' /tmp/streamlit_test.log | head -10 — should show startup without Python errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:44:01Z"
     },
     {
       "id": "US-009",

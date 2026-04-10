@@ -403,3 +403,74 @@ STORY_COMPLETE: US-007
 [2026-04-10 07:43:05] [OK] Marked US-007 as passed
 [2026-04-10 07:43:05] [INFO] Logged progress for US-007: PASSED
 [2026-04-10 07:43:05] [STEP] Committing changes...
+[2026-04-10 07:43:07] [INFO] Starting iteration 7
+[2026-04-10 07:43:07] [INFO] Processing story: US-008
+[2026-04-10 07:43:07] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Update Makefile serve target and validate all pages render
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Ensure make serve-dashboard works, all 5 pages import cleanly, and validate the dashboard runs without errors on sample data.
+
+## Acceptance Criteria
+- Edit file: Makefile — update serve-dashboard target to: streamlit run dashboard/app.py
+- Validate all page imports: python -c 'import dashboard.pages.01_spend_overview' fails due to numeric prefix — use importlib instead. Instead verify: python -c 'import importlib.util; [importlib.util.spec_from_file_location(f, f"dashboard/pages/{f}") for f in ["01_spend_overview.py","02_category_deep_dive.py","03_supplier_deep_dive.py","04_payment_terms.py","05_data_quality.py"]]; print("All pages loadable")'
+- Verify no import errors: python -c 'from dashboard.components.charts import bar_chart, horizontal_bar, treemap, line_chart, donut_chart, pareto_chart, heatmap; print("Charts OK")'
+- Verify: python -c 'from dashboard.components.filters import render_filters; from dashboard.components.tables import kpi_row, styled_dataframe; print("Components OK")'
+- Verify: python -c 'from dashboard.app import load_cube_data, load_quality_scorecard; print("App loader OK")'
+- Run: streamlit run dashboard/app.py --server.headless true &> /tmp/streamlit_test.log & sleep 5 && kill %1 && grep -v 'Warning\|DeprecationWarning' /tmp/streamlit_test.log | head -10 — should show startup without Python errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Update Makefile serve target and validate all pages render`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+All validations passed:
+
+- **Makefile** — `serve-dashboard` already set to `streamlit run dashboard/app.py` (no change needed)
+- **Page imports** — all 5 pages loadable via `importlib.util.spec_from_file_location`
+- **Charts** — all 7 chart functions import cleanly
+- **Components** — `render_filters`, `kpi_row`, `styled_dataframe` import cleanly
+- **App loader** — `load_cube_data`, `load_quality_scorecard` import cleanly
+- **Streamlit startup** — app starts without Python errors, serves on `localhost:8502`
+
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-10 07:44:01] [OK] Story US-008 completed!
+[2026-04-10 07:44:01] [OK] Marked US-008 as passed
+[2026-04-10 07:44:01] [INFO] Logged progress for US-008: PASSED
+[2026-04-10 07:44:01] [STEP] Committing changes...
