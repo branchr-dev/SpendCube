@@ -160,7 +160,8 @@
         "Verify: grep -n 'SpendAllocator' CLAUDE.md — at least 1 match",
         "Verify: grep -n 'portfolio_summary' CLAUDE.md — at least 1 match"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:25:10Z"
     }
   ],
   "verification": {

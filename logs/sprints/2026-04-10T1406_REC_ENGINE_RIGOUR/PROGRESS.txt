@@ -102,3 +102,28 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+## US-009 COMPLETE — 2026-04-10
+- Updated Phase 6 section of CLAUDE.md with 5 new documentation subsections.
+- Module table expanded: added savings_rates.py (SavingsRates) and deduplicator.py (SpendAllocator).
+- Rule type table updated to note saving percentages now sourced from data/reference/savings_rates.yaml.
+- Added ### Savings Rate Reference Data: documents YAML structure (defaults + categories keys), saving_pct + addressability_pct per entry, lookup order.
+- Added ### Addressability: explains addressable_baseline = baseline_spend * addressability_pct concept.
+- Added ### Double-Counting Prevention: documents SpendAllocator exclusive groups and pool_key mechanism; notes known L1/L2 boundary limitation.
+- Added ### Audit Trail Fields: lists all 4 new fields (baseline_spend, addressability_pct, saving_pct, addressable_baseline).
+- Wrapped JSON export format documented inline.
+- All acceptance criteria pass: savings_rates (5 matches), addressability (8 matches), SpendAllocator (2 matches), portfolio_summary (1 match).
+- Committed: be2ae6f
+
+---
+
+### [US-009] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+
+
+---
+
+### [US-009] - 2026-04-10 14:25:10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+

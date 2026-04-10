@@ -492,3 +492,64 @@ STORY_COMPLETE: US-008
 [2026-04-10 14:23:56] [OK] Marked US-008 as passed
 [2026-04-10 14:23:56] [INFO] Logged progress for US-008: PASSED
 [2026-04-10 14:23:56] [STEP] Committing changes...
+[2026-04-10 14:23:59] [INFO] Starting iteration 9
+[2026-04-10 14:23:59] [INFO] Processing story: US-009
+[2026-04-10 14:23:59] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Update CLAUDE.md with recommendation engine rigour documentation
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md's Phase 6 section to document the new recommendation engine architecture. Read CLAUDE.md first. Find the Phase 6 section and update: (1) Add a subsection '### Savings Rate Reference Data' documenting data/reference/savings_rates.yaml structure (defaults + categories keys, saving_pct + addressability_pct per entry, lookup order). (2) Add a subsection '### Addressability' documenting the concept: addressable_baseline = baseline_spend * addressability_pct, where addressability_pct accounts for spend that is locked-in, regulatory, or otherwise unaddressable by the initiative even though it forms part of the category baseline. (3) Add a subsection '### Double-Counting Prevention' documenting SpendAllocator exclusive groups (SOURCING: SUPPLIER_CONSOLIDATION + COMPETITIVE_TENDER; COVERAGE: CONTRACT_COVERAGE_GAP; WORKING_CAPITAL: PAYMENT_TERM_EXTENSION; PORTFOLIO_TAIL; PORTFOLIO_COMPLIANCE) and the pool_key = (context, exclusive_group) deduplication mechanism. (4) Add a subsection '### Audit Trail Fields' listing the four fields added to every rec dict: baseline_spend, addressability_pct, saving_pct (None for PAYMENT_TERM_EXTENSION), addressable_baseline. (5) Update the existing rule type table to note that saving percentages now come from data/reference/savings_rates.yaml. (6) Document the wrapped JSON export format: {recommendations: [...], portfolio_summary: {total_spend, total_identified_savings, savings_as_pct_of_spend, sanity_check_passed, recommendation_count}}.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — Phase 6 updated with savings_rates.yaml documentation
+- Verify: grep -n 'savings_rates' CLAUDE.md — at least 2 matches
+- Verify: grep -n 'addressability' CLAUDE.md — at least 3 matches
+- Verify: grep -n 'SpendAllocator' CLAUDE.md — at least 1 match
+- Verify: grep -n 'portfolio_summary' CLAUDE.md — at least 1 match
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Update CLAUDE.md with recommendation engine rigour documentation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-04-10 14:25:10] [OK] Story US-009 completed!
+[2026-04-10 14:25:10] [OK] Marked US-009 as passed
+[2026-04-10 14:25:10] [INFO] Logged progress for US-009: PASSED
+[2026-04-10 14:25:10] [STEP] Committing changes...
