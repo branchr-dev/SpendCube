@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data, load_quality_scorecard
-from dashboard.components.charts import horizontal_bar, donut_chart
+from dashboard.components.charts import horizontal_bar, donut_chart, scatter_bubble
 from dashboard.components.filters import render_filters
 
 
@@ -132,10 +132,10 @@ def _category_and_bu(filtered: pd.DataFrame) -> None:
             st.info("No business unit data available.")
 
 
-def _top_suppliers(filtered: pd.DataFrame) -> None:
+def _top_suppliers(filtered: pd.DataFrame) -> list[str]:
     if "canonical_supplier_name" not in filtered.columns or filtered.empty:
         st.info("No supplier data available.")
-        return
+        return []
 
     sup_data = (
         filtered.groupby("canonical_supplier_name")["base_amount"]
@@ -183,7 +183,12 @@ def _top_suppliers(filtered: pd.DataFrame) -> None:
         ),
         legend=dict(orientation="h"),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="overview_top_suppliers", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    selected = [p["y"] for p in points if "y" in p]
+    if selected:
+        st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
+    return selected
 
 
 def _pareto_and_donut(filtered: pd.DataFrame) -> None:
@@ -276,6 +281,38 @@ def _pareto_and_donut(filtered: pd.DataFrame) -> None:
             st.info("No spend type or managed status data available.")
 
 
+def _category_bu_heatmap(filtered: pd.DataFrame) -> None:
+    if filtered.empty or "category_l1" not in filtered.columns or "business_unit" not in filtered.columns:
+        st.info("No category x BU data available.")
+        return
+    pivot = filtered.groupby(["category_l1", "business_unit"])["base_amount"].sum().unstack(fill_value=0)
+    import plotly.express as px
+    fig = px.imshow(pivot, color_continuous_scale="Blues", aspect="auto", title="Spend by Category x Business Unit (AUD)", text_auto=".3s")
+    fig.update_layout(paper_bgcolor="white", font=dict(size=11), xaxis_title="Business Unit", yaxis_title="Category")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _opportunity_scatter(filtered: pd.DataFrame) -> None:
+    if filtered.empty or "category_l1" not in filtered.columns:
+        st.info("No data.")
+        return
+    agg = filtered.groupby("category_l1").agg(
+        total_spend=("base_amount", "sum"),
+        supplier_count=("canonical_supplier_name", "nunique"),
+        txn_count=("transaction_id", "count"),
+    ).reset_index()
+    agg = agg[agg["supplier_count"] >= 2]
+    agg.rename(columns={
+        "category_l1": "Category",
+        "total_spend": "Total Spend (AUD)",
+        "supplier_count": "Supplier Count",
+        "txn_count": "Transaction Count",
+    }, inplace=True)
+    fig = scatter_bubble(agg, x="Total Spend (AUD)", y="Supplier Count", size="Transaction Count", color="Category", label="Category", title="Opportunity Prioritisation: Spend vs Supplier Fragmentation")
+    fig.add_annotation(text="High spend + many suppliers = consolidation opportunity", xref="paper", yref="paper", x=0.01, y=1.08, showarrow=False, font=dict(size=10, color="grey"))
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def _quality_scorecard(scorecard: dict) -> None:
     if not scorecard:
         st.info("No quality scorecard available. Run `make build-cube` to generate.")
@@ -315,19 +352,28 @@ def main() -> None:
 
     st.markdown("---")
 
-    _spend_by_month(filtered)
+    selected_suppliers = _top_suppliers(filtered)
+    cf = filtered[filtered["canonical_supplier_name"].isin(selected_suppliers)] if selected_suppliers else filtered
 
     st.markdown("---")
 
-    _category_and_bu(filtered)
+    _spend_by_month(cf)
 
     st.markdown("---")
 
-    _top_suppliers(filtered)
+    _category_and_bu(cf)
 
     st.markdown("---")
 
     _pareto_and_donut(filtered)
+
+    st.markdown("---")
+    st.subheader("Category x Business Unit Intensity")
+    _category_bu_heatmap(filtered)
+
+    st.markdown("---")
+    st.subheader("Opportunity Prioritisation")
+    _opportunity_scatter(filtered)
 
     st.markdown("---")
 
