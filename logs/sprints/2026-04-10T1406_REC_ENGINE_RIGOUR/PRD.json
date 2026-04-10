@@ -92,7 +92,8 @@
         "Verify: python3 -c \"from src.config import load_config; from src.models.database import get_engine; from src.cube.builder import SpendCubeBuilder; from src.cube.metrics import CubeMetrics; from src.recommendations.rules import RecommendationRules; c=load_config('config.yaml'); e=get_engine('data/db/spend_cube.db'); cube=SpendCubeBuilder(c,e).build(); m=CubeMetrics(cube,c).compute_all(); recs=RecommendationRules(cube,m,c).generate_all(); print(all('baseline_spend' in r and 'addressability_pct' in r for r in recs))\" — prints True",
         "Verify: same script, print(recs[0]['addressable_baseline'] <= recs[0]['baseline_spend']) — prints True (addressable is always <= baseline)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:19:02Z"
     },
     {
       "id": "US-005",

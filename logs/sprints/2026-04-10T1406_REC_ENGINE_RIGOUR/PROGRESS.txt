@@ -36,3 +36,23 @@ Story completed successfully by Ralph loop iteration 2
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+
+## US-004 COMPLETE — 2026-04-10
+- Added `self._rates = SavingsRates()` to `__init__`.
+- All 6 rule methods updated to call `self._rates.get(LEVER_TYPE, category)` and apply `addressability_pct`.
+- 4 audit trail fields added to every rec dict: `baseline_spend`, `addressability_pct`, `saving_pct`, `addressable_baseline`.
+- `rule_competitive_tender` now uses `cfg.competitive_tender_min_spend` (was hardcoded 50_000).
+- `rule_contract_coverage_gap` now uses `cfg.contract_coverage_gap_min_spend` (was hardcoded 20_000).
+- `rule_payment_term_extension` has `saving_pct=None` (WACC formula).
+- `rule_contract_coverage_gap` baseline_spend = total_spend; addressable_baseline = unmanaged_spend * addressability_pct.
+- All acceptance criteria pass: compile OK, audit fields present for all 32 recs, addressable_baseline <= baseline_spend.
+- Committed: 59d874c
+
+
+
+---
+
+### [US-004] - 2026-04-10 14:19:02
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
