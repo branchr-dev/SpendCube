@@ -22,11 +22,30 @@ _CONFIDENCE_COLOURS = {
 
 @st.cache_data
 def _load_recommendations() -> list[dict]:
-    """Load recommendations from JSON. Returns empty list if not found."""
+    """Load recommendations from JSON. Returns empty list if not found.
+
+    Handles both the legacy bare-list format and the new dict format
+    ``{'recommendations': [...], 'portfolio_summary': {...}}``.
+    """
     if not _RECS_PATH.exists():
         return []
     with _RECS_PATH.open(encoding="utf-8") as fh:
-        return json.load(fh)
+        data = json.load(fh)
+    if isinstance(data, dict) and "recommendations" in data:
+        return data["recommendations"]
+    return data
+
+
+@st.cache_data
+def _load_portfolio_summary() -> dict:
+    """Load portfolio summary from JSON. Returns empty dict if not found."""
+    if not _RECS_PATH.exists():
+        return {}
+    with _RECS_PATH.open(encoding="utf-8") as fh:
+        data = json.load(fh)
+    if isinstance(data, dict):
+        return data.get("portfolio_summary", {})
+    return {}
 
 
 def _colour_confidence(val: str) -> str:

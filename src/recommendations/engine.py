@@ -32,6 +32,7 @@ from src.config import load_config
 from src.cube.builder import SpendCubeBuilder
 from src.cube.metrics import CubeMetrics
 from src.models.database import get_engine
+from src.recommendations.deduplicator import SpendAllocator
 from src.recommendations.narratives import NarrativeGenerator
 from src.recommendations.rules import RecommendationRules
 from src.utils.logging import get_logger_from_config
@@ -63,6 +64,7 @@ class RecommendationEngine:
 
         self._cube_builder = SpendCubeBuilder(config, engine)
         self._narrative_generator = NarrativeGenerator(config)
+        self._portfolio_summary: dict = {}
 
     # ------------------------------------------------------------------
     # Public interface
@@ -93,6 +95,29 @@ class RecommendationEngine:
         recommendations = rules.generate_all()
         self.logger.info("Rules generated %d recommendation(s)", len(recommendations))
 
+        recommendations = SpendAllocator().allocate(recommendations)
+        self.logger.info("Deduplication complete — %d recommendation(s) retained", len(recommendations))
+
+        total_savings = sum(r.get("estimated_impact_aud", 0.0) for r in recommendations)
+        total_spend = metrics.get("total_spend", 0.0)
+        savings_pct = total_savings / total_spend if total_spend > 0 else 0.0
+
+        if savings_pct > 0.20:
+            self.logger.warning(
+                "Portfolio sanity check FAILED: savings_pct=%.4f exceeds 20%% threshold", savings_pct
+            )
+            sanity_passed = False
+        else:
+            sanity_passed = True
+
+        self._portfolio_summary = {
+            "total_spend": round(total_spend, 2),
+            "total_identified_savings": round(total_savings, 2),
+            "savings_as_pct_of_spend": round(savings_pct, 4),
+            "sanity_check_passed": sanity_passed,
+            "recommendation_count": len(recommendations),
+        }
+
         recommendations = self._narrative_generator.enrich(recommendations)
         self.logger.info("Narrative enrichment complete")
 
@@ -119,8 +144,12 @@ class RecommendationEngine:
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        payload = {
+            "recommendations": recommendations,
+            "portfolio_summary": self._portfolio_summary,
+        }
         with output_path.open("w", encoding="utf-8") as fh:
-            json.dump(recommendations, fh, indent=2, default=str)
+            json.dump(payload, fh, indent=2, default=str)
 
         self.logger.info("Recommendations exported to %s (%d items)", output_path, len(recommendations))
         return str(output_path)
