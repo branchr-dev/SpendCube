@@ -191,3 +191,48 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+## US-007 COMPLETE — 2026-04-10
+
+### Implemented
+- tests/test_recommendations.py: 22 test functions across 3 test classes
+  - TestRecommendationRules (10 tests): all 6 required tests + 4 additional rule coverage tests
+    - test_generates_at_least_one_recommendation_from_sample (uses cube_df fixture + CubeMetrics)
+    - test_maverick_recommendation_generated_when_po_missing
+    - test_tail_spend_recommendation_generated
+    - test_payment_term_rec_only_for_suppliers_below_target
+    - test_recommendations_sorted_by_impact_desc
+    - test_no_negative_impact_recommendations
+    - test_supplier_consolidation_fires_for_many_suppliers
+    - test_competitive_tender_fires_for_single_source_high_spend
+    - test_contract_coverage_gap_fires_for_low_coverage
+    - test_rules_handle_empty_transactions_gracefully
+  - TestNarrativeGenerator (9 tests): dry_run and LLM-path tests including mock client
+    - test_dry_run_returns_recommendations_unchanged
+    - test_dry_run_makes_no_api_calls
+    - test_enrich_with_no_client_returns_none_narratives
+    - test_parse_response_plain_json / _markdown_fences / _raises_for_non_list
+    - test_enrich_empty_list_returns_immediately
+    - test_enrich_calls_llm_and_merges_narratives (mock client)
+    - test_enrich_handles_llm_api_error_gracefully (mock client raising exception)
+  - TestRecommendationEngine (3 tests)
+    - test_run_returns_list (uses cube_df + in_memory_engine)
+    - test_export_creates_json_file (tmp_path)
+    - test_to_dataframe_has_correct_columns
+- Coverage: 71% (src/recommendations/) — above 70% requirement
+  - rules.py: 77%, narratives.py: 70%, engine.py: 60%
+
+### Learnings
+- test_run_returns_list must use cube_df fixture (not just in_memory_engine) to pre-populate the DB;
+  an empty DB causes diagnostics.quality.py to fail on missing base_amount column.
+- To test _call_llm (LLM success/error paths), MagicMock is used to stub the Anthropic client;
+  set gen._dry_run=False and gen._client=mock_client after init to bypass the dry_run guard.
+- For payment term tests, spend must exceed min_wc_opportunity ($10k). With target=45, current=20,
+  wacc=0.08: need spend >= $1,825,001 per supplier to trigger. Use $2M in tests.
+- Engine CLI code (lines 153-203) and module sys.path guards are excluded from coverage by design.
+
+---
+
+### [US-007] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
