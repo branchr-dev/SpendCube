@@ -1,0 +1,75 @@
+[2026-04-10 10:02:50] [INFO] Ralph loop starting
+[2026-04-10 10:02:50] [INFO] Created progress file: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 10:02:50 CEST
+PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 10:02:50] [INFO] Starting iteration 1
+[2026-04-10 10:02:50] [INFO] Processing story: US-001
+[2026-04-10 10:02:50] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Create Streamlit theme config and client config block in config.yaml
+
+## Project Context
+**Project:** Client Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-04
+**PRD:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Two small setup changes that everything else depends on: (1) create .streamlit/config.toml with a professional dark-navy primary colour theme, and (2) add a 'client:' block to config.yaml with name, engagement, and currency_label fields. These are the foundations for all branding work in subsequent stories.
+
+## Acceptance Criteria
+- Create file: .streamlit/config.toml with content: [theme]\nprimaryColor = "#1B4F72"\nbackgroundColor = "#FFFFFF"\nsecondaryBackgroundColor = "#F4F6F9"\ntextColor = "#1A1A2E"\nfont = "sans serif"
+- Edit file: config.yaml — add the following block at the end of the file (after the column_mappings block):
+- client:
+-   name: ""                          # e.g. Acme Corporation
+-   engagement: "Procurement Spend Diagnostic"
+-   currency_label: "AUD"             # Display label for base currency in dashboard
+- Run: python3 -c "import yaml; c = yaml.safe_load(open('config.yaml')); print(c['client'])" — should print the client dict without error
+- Verify: cat .streamlit/config.toml — should show primaryColor = "#1B4F72"
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Create Streamlit theme config and client config block in config.yaml`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 10:03:30] [OK] Story US-001 completed!
+[2026-04-10 10:03:30] [OK] Marked US-001 as passed
+[2026-04-10 10:03:30] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 10:03:30] [STEP] Committing changes...

@@ -1,0 +1,169 @@
+{
+  "project": {
+    "id": "CLIENT-READY-POLISH-2026-04",
+    "name": "Client Ready Polish",
+    "created": "2026-04-10",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH",
+    "track": "code"
+  },
+  "summary": "Transform the SpendCube dashboard from a developer tool into a client-presentable procurement analytics product. This sprint addresses 10 identified issues: developer-facing strings ('make build-cube', 'dry_run=true') exposed in the UI, no client branding, default Streamlit theme, sparse homepage, no data freshness indicator, absent page descriptions, hardcoded 'AUD' currency labels, and the Review Workstation analyst tool being visible to clients. No auth, data upload, or new analytics features — this sprint is pure polish and professionalism. The result should be a dashboard that can be opened in front of a CPO without embarrassment.",
+  "decisions": {
+    "client_config_location": "Add a 'client:' block to the existing config.yaml (already used for all configuration). A new dashboard/client_config.py module reads this block and exposes helpers used by all dashboard pages. This avoids a separate config file and is consistent with the existing pattern.",
+    "review_workstation_visibility": "Rename dashboard/pages/07_review_workstation.py to dashboard/pages/99_admin_review_workstation.py. Streamlit file-based routing shows pages alphabetically/numerically, so '99_' pushes it to the bottom. Add a prominent red banner at the top of the page: 'INTERNAL ANALYST TOOL — not for client distribution'. This is the simplest reversible approach without auth.",
+    "streamlit_theme": "Create .streamlit/config.toml with a professional dark-navy primary colour (#1B4F72), white background, and light grey secondary background. No logo file — text-based branding only for now. This avoids image asset management.",
+    "developer_string_replacement": "All 'Run make build-cube', 'Run the full pipeline', 'dry_run=true or LLM skipped', and 'Procurement analytics pipeline' strings are replaced with client-appropriate equivalents: 'Data not yet loaded — contact your analyst to refresh.' and 'Narrative not available for this recommendation.'",
+    "data_freshness": "Compute last ingestion date from the max(ingested_at) field in transactions.parquet. Show on homepage as 'Data last refreshed: DD Month YYYY'. ingested_at is stored as ISO string, parse with pd.to_datetime.",
+    "currency_label": "Add base_currency to client_config.py, reading from config.yaml spend_cube.base_currency (already exists, value='AUD'). All hardcoded 'AUD' strings in dashboard pages replaced with the config value."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions_parquet": "data/output/transactions.parquet — 50 columns. Key fields for this sprint: ingested_at (ISO string, use for data freshness), base_currency (string), base_amount. All 5210 rows have same ingested_at = '2026-04-09T22:37:50.234164'.",
+      "config_yaml": "config.yaml — root-level config file. Has 'spend_cube.base_currency: AUD'. Will gain a new 'client:' block with name, engagement, currency_label fields."
+    },
+    "key_files": [
+      "config.yaml — add client: name, engagement, currency_label block",
+      "dashboard/app.py — main entry, homepage, load_cube_data(). Update branding, homepage content, data freshness.",
+      "dashboard/client_config.py — NEW FILE. Reads config.yaml client: block and exposes get_client_name(), get_engagement_title(), get_currency_label(), get_data_freshness_date().",
+      "dashboard/pages/01_spend_overview.py — remove developer strings, add page description, replace AUD with currency label",
+      "dashboard/pages/02_category_deep_dive.py — remove developer strings, add page description",
+      "dashboard/pages/03_supplier_deep_dive.py — remove developer strings, add page description",
+      "dashboard/pages/04_payment_terms.py — remove developer strings, add page description",
+      "dashboard/pages/05_data_quality.py — remove developer strings (make build-cube, data/output path), add page description",
+      "dashboard/pages/06_recommendations.py — remove 'dry_run=true or LLM skipped', remove 'Run make build-cube', add page description",
+      "dashboard/pages/07_review_workstation.py — RENAME to 99_admin_review_workstation.py, add internal banner",
+      ".streamlit/config.toml — NEW FILE. Professional theme."
+    ],
+    "patterns_to_follow": [
+      "config.yaml is the single source of truth for all configuration. New client: block follows the same flat-key YAML pattern as existing blocks.",
+      "dashboard/client_config.py reads config.yaml using the same pyyaml pattern as other src/ modules. Returns defaults if keys are missing.",
+      "All dashboard pages use absolute paths via Path(__file__). client_config.py should use Path(__file__).parent.parent / 'config.yaml' to locate the config.",
+      "Streamlit page titles use st.title() at the top of each page's main() function. Add st.caption() immediately after for the page description — this is the lightest-touch approach.",
+      "The review workstation rename: after renaming to 99_admin_review_workstation.py, the page label in Streamlit sidebar becomes 'Admin Review Workstation'. Add st.error() banner at top of main() to mark it as internal."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create Streamlit theme config and client config block in config.yaml",
+      "description": "Two small setup changes that everything else depends on: (1) create .streamlit/config.toml with a professional dark-navy primary colour theme, and (2) add a 'client:' block to config.yaml with name, engagement, and currency_label fields. These are the foundations for all branding work in subsequent stories.",
+      "acceptanceCriteria": [
+        "Create file: .streamlit/config.toml with content: [theme]\\nprimaryColor = \"#1B4F72\"\\nbackgroundColor = \"#FFFFFF\"\\nsecondaryBackgroundColor = \"#F4F6F9\"\\ntextColor = \"#1A1A2E\"\\nfont = \"sans serif\"",
+        "Edit file: config.yaml — add the following block at the end of the file (after the column_mappings block):\nclient:\n  name: \"\"                          # e.g. Acme Corporation\n  engagement: \"Procurement Spend Diagnostic\"\n  currency_label: \"AUD\"             # Display label for base currency in dashboard",
+        "Run: python3 -c \"import yaml; c = yaml.safe_load(open('config.yaml')); print(c['client'])\" — should print the client dict without error",
+        "Verify: cat .streamlit/config.toml — should show primaryColor = \"#1B4F72\""
+      ],
+      "passes": true,
+      "completed_at": "2026-04-10T08:03:30Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Create dashboard/client_config.py module",
+      "description": "Create a new module dashboard/client_config.py that reads the 'client:' block from config.yaml and exposes clean helper functions used by all dashboard pages. Also computes data freshness date from transactions.parquet. This is the single place all pages call for branding and config values — no page should read config.yaml directly.",
+      "acceptanceCriteria": [
+        "Create file: dashboard/client_config.py with the following functions. All functions return sensible defaults if config.yaml is missing or malformed. Use Path(__file__).parent.parent / 'config.yaml' to locate the config file.\n\n  get_client_name() -> str: returns client.name from config.yaml. If empty string or missing, returns empty string.\n\n  get_engagement_title() -> str: returns client.engagement from config.yaml. Default: 'Procurement Spend Diagnostic'.\n\n  get_currency_label() -> str: returns client.currency_label from config.yaml. Fallback: read spend_cube.base_currency. Default: 'AUD'.\n\n  get_page_header(page_title: str) -> str: if get_client_name() is non-empty, return f'{get_client_name()} — {page_title}', else return page_title.\n\n  get_data_freshness(data_dir: Path = None) -> str: reads data/output/transactions.parquet, gets max(ingested_at), parses with pd.to_datetime, formats as 'DD Month YYYY' (e.g. '09 April 2026'). If file missing or error, returns 'Unknown'. data_dir defaults to Path(__file__).parent.parent / 'data' / 'output'.",
+        "Run: PYTHONPATH=$(pwd) python3 -c \"from dashboard.client_config import get_client_name, get_engagement_title, get_currency_label, get_page_header, get_data_freshness; print(get_engagement_title()); print(get_currency_label()); print(get_page_header('Spend Overview')); print(get_data_freshness())\" — should print without error and show 'Procurement Spend Diagnostic', 'AUD', 'Spend Overview' (no client name set yet), and a date string."
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Redesign app.py homepage with client branding and data freshness",
+      "description": "Update dashboard/app.py to use client_config.py for branding and to show a professional homepage. The current homepage shows 3 bare metrics and a bullet list with a 'Procurement analytics pipeline' heading. Replace this with: (1) client name + engagement title as the page header, (2) data freshness badge, (3) the 3 KPI metrics, (4) a professional navigation guide. Remove all developer-facing language from error/info messages.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/app.py — add import: from dashboard.client_config import get_client_name, get_engagement_title, get_currency_label, get_data_freshness",
+        "Edit file: dashboard/app.py — update st.set_page_config: change page_title to use a dynamic value. Use: title = get_engagement_title(); if get_client_name(): title = f\"{get_client_name()} — {title}\"; st.set_page_config(page_title=title, page_icon='📊', layout='wide', initial_sidebar_bar='expanded'). Note: page_icon changes from 💰 to 📊.",
+        "Edit file: dashboard/app.py — in main(), replace st.title('SpendCube — Procurement Analytics') with: client = get_client_name(); title = get_engagement_title(); if client: st.title(f'{client}'); st.subheader(title); else: st.title(title). Then add immediately after: freshness = get_data_freshness(); st.caption(f'Data last refreshed: {freshness}').",
+        "Edit file: dashboard/app.py — replace the error message in load_cube_data() that says 'Run `make build-cube`...' with: st.error('Spend data not yet loaded. Please contact your analyst to refresh the dataset.')",
+        "Edit file: dashboard/app.py — in main(), replace the st.info() no-data message that shows 'make ingest && make harmonise...' with: st.info('No spend data found. Please contact your analyst to load a dataset.')",
+        "Edit file: dashboard/app.py — replace the st.markdown 'Procurement spend analytics pipeline. Use the sidebar...' line with: st.markdown('Use the sidebar to navigate between analysis views.')",
+        "Edit file: dashboard/app.py — update the navigation list markdown to replace internal names with client-appropriate descriptions: Spend Overview = 'KPIs, monthly trend, category and supplier breakdown', Category Deep Dive = 'Category drill-down from L1 to L3, supplier fragmentation, savings signals', Supplier Deep Dive = 'Per-supplier spend profile, payment terms benchmark, risk flags', Payment Terms = 'Working capital opportunity, terms distribution, supplier benchmark'. Remove Data Quality and Review Workstation from this list — they are internal.",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/app.py && echo 'syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Remove all developer-facing strings from dashboard pages 01–06",
+      "description": "Audit and clean every client-visible developer string across the six analytics/reporting pages. Target strings: 'make build-cube', 'make ingest', 'make harmonise', 'make categorise', 'Run the full pipeline', 'data/output', 'data/db', 'dry_run=true or LLM skipped', 'Run make build-cube'. Replace with professional client-appropriate equivalents. Also replace hardcoded 'AUD' currency strings in KPI labels and chart titles with the currency label from client_config.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/01_spend_overview.py — (a) add import: from dashboard.client_config import get_currency_label (b) replace st.info('No quality scorecard available. Run `make build-cube`...') with st.info('Quality scorecard not available.') (c) replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') (d) replace hardcoded 'Total Spend (AUD)' metric label with f'Total Spend ({get_currency_label()})' (e) replace hardcoded 'AUD' in any other metric labels or chart titles similarly.",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Add import from dashboard.client_config import get_currency_label and replace 'AUD' in metric labels with get_currency_label().",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Replace 'AUD' in metric labels and chart titles with get_currency_label().",
+        "Edit file: dashboard/pages/04_payment_terms.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Replace 'AUD' in metric labels (including 'AUD {total_wc:,.0f}', 'Annual Spend (AUD)', 'WC Opportunity (AUD)') with get_currency_label() where used as a label. Replace 'Working Capital Opportunity', 'AUD' with f'{get_currency_label()} ...' pattern.",
+        "Edit file: dashboard/pages/05_data_quality.py — (a) replace st.warning that mentions 'Run `make build-cube`' and 'data/output/quality_scorecard.json exists' with st.warning('Quality data not available. Please ask your analyst to refresh the diagnostics.') (b) the _SCORECARD_PATH is already an absolute path — leave it, it is not shown to clients.",
+        "Edit file: dashboard/pages/06_recommendations.py — (a) replace st.caption('No narrative available (dry_run=true or LLM skipped).') with st.caption('Narrative not available for this recommendation.') (b) replace st.warning('Run make build-cube to generate recommendations') with st.warning('No recommendations available. Please contact your analyst.') (c) add import from dashboard.client_config import get_currency_label and replace 'AUD' in metric labels ('Total Identified Savings (AUD)', 'Estimated Impact (AUD)') with get_currency_label().",
+        "Run: grep -r 'make build-cube\\|make ingest\\|make harmonise\\|dry_run=true\\|Run the full pipeline' dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py — should return NO matches.",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py && echo 'all syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add page descriptions and rename Review Workstation to admin page",
+      "description": "Two changes: (1) add a brief st.caption() description immediately after st.title() on each of the four analytics pages (01-04) so clients understand the purpose of each page at a glance, (2) rename dashboard/pages/07_review_workstation.py to dashboard/pages/99_admin_review_workstation.py and add a prominent internal-use-only banner at the top of the page. The rename pushes it to the bottom of the Streamlit sidebar and the banner prevents accidental client exposure.",
+      "acceptanceCriteria": [
+        "Rename file: dashboard/pages/07_review_workstation.py → dashboard/pages/99_admin_review_workstation.py. Use: git mv dashboard/pages/07_review_workstation.py dashboard/pages/99_admin_review_workstation.py",
+        "Edit file: dashboard/pages/99_admin_review_workstation.py — in main(), immediately after st.title('Review Workstation'), add: st.error('⚠️ INTERNAL ANALYST TOOL — This page is not intended for client distribution. It allows analysts to review and correct supplier matches and category assignments.')",
+        "Edit file: dashboard/pages/01_spend_overview.py — in main(), immediately after st.title('Spend Overview'), add: st.caption('Total spend by supplier, category, and business unit. Use the charts below to identify concentration, fragmentation, and consolidation opportunities.')",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — in main(), immediately after st.title('Category Deep Dive'), add: st.caption('Drill down from L1 to L3 category. Select a category in the sidebar to filter all charts. Click a supplier bar to cross-filter to that supplier.')",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), immediately after st.title('Supplier Deep Dive'), add: st.caption('Select a supplier to view their full spend profile, payment terms benchmark, and risk flags.')",
+        "Edit file: dashboard/pages/04_payment_terms.py — in main(), immediately after st.title('Payment Terms'), add: st.caption('Working capital opportunity analysis. Identifies suppliers where payment terms can be extended to improve cash flow. Adjust target days and WACC in the sidebar.')",
+        "Verify: ls dashboard/pages/99_admin_review_workstation.py — file exists",
+        "Verify: ls dashboard/pages/07_review_workstation.py — file should NOT exist (exit code 1 is expected here — the old file is gone)",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/99_admin_review_workstation.py dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py && echo 'all syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Update CLAUDE.md with client config pattern",
+      "description": "Document the client configuration system added in this sprint so future Ralph sessions know how branding works.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — in the Phase 5 (Streamlit Dashboards) section, add a subsection '### Client Configuration' with: 'Client branding is controlled by the client: block in config.yaml (name, engagement, currency_label). The dashboard/client_config.py module exposes: get_client_name(), get_engagement_title(), get_currency_label(), get_page_header(page_title), get_data_freshness(). All dashboard pages import from this module — never read config.yaml directly in a page file. To set up for a new client: edit config.yaml client.name and client.engagement fields.'",
+        "Edit file: CLAUDE.md — note that dashboard/pages/99_admin_review_workstation.py is the internal analyst review tool (renamed from 07_review_workstation.py) and should not be shown to clients.",
+        "Verify: grep -n 'client_config' CLAUDE.md — should return at least one match"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "no_developer_strings": "grep -r 'make build-cube\\|make ingest\\|make harmonise\\|make categorise\\|dry_run=true\\|Run the full pipeline' dashboard/pages/ -- should return NO matches",
+      "client_config_imports": "PYTHONPATH=$(pwd) python3 -c \"from dashboard.client_config import get_client_name, get_engagement_title, get_currency_label, get_page_header, get_data_freshness; print('OK')\"",
+      "syntax_all_pages": "PYTHONPATH=$(pwd) python3 -m py_compile dashboard/app.py dashboard/client_config.py dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py dashboard/pages/99_admin_review_workstation.py && echo 'all OK'",
+      "theme_file_exists": "cat .streamlit/config.toml | grep primaryColor",
+      "review_workstation_renamed": "ls dashboard/pages/99_admin_review_workstation.py && echo 'EXISTS' && ! ls dashboard/pages/07_review_workstation.py 2>/dev/null && echo 'OLD FILE GONE'"
+    },
+    "expected_counts": {
+      "developer_string_matches": "0 — grep for 'make build-cube' across all dashboard pages returns nothing",
+      "new_files": "3 — .streamlit/config.toml, dashboard/client_config.py, dashboard/pages/99_admin_review_workstation.py (renamed)",
+      "pages_with_st_caption_description": "4 — pages 01 through 04 each have a st.caption() description after st.title()"
+    },
+    "checks": [
+      ".streamlit/config.toml exists and contains primaryColor = \"#1B4F72\"",
+      "config.yaml has client: block with name, engagement, currency_label keys",
+      "dashboard/client_config.py exists and all 5 functions importable",
+      "dashboard/pages/07_review_workstation.py no longer exists",
+      "dashboard/pages/99_admin_review_workstation.py exists with st.error internal banner",
+      "No 'make build-cube' or 'dry_run=true' strings in any dashboard/pages/ file",
+      "app.py homepage no longer shows 'Procurement analytics pipeline' text",
+      "Streamlit starts cleanly: PYTHONPATH=$(pwd) streamlit run dashboard/app.py --server.port 8510 --server.headless true → HTTP 200"
+    ]
+  },
+  "risks": [
+    "git mv for the review workstation rename — if Ralph uses a plain file rename instead of git mv, git will show it as delete+add rather than a rename. The acceptance criteria explicitly says 'git mv' to avoid this.",
+    "get_currency_label() is used in f-strings inside KPI metric labels. Some labels are formatted like 'Total Spend (AUD)' — straightforward string replacement. But some are dynamic like f'AUD {value:,.0f}' in payment terms table — Ralph must find and update these too. The verification grep for 'AUD' hardcodes would catch any misses, but Ralph should also check dynamically rendered strings.",
+    "st.set_page_config() must be the first Streamlit call in app.py. The current code already does this. client_config imports must not trigger any Streamlit calls — client_config.py must be pure Python with no streamlit import."
+  ],
+  "outOfScope": [
+    "Data upload UI via browser — separate sprint, significant feature",
+    "User authentication / login — out of scope for consulting tool",
+    "Custom logo image file — text-based branding only in this sprint",
+    "PDF or PowerPoint export from dashboard",
+    "Filtering out intercompany/tax rows from totals — data pipeline decision, not a dashboard polish item",
+    "Page 05 Data Quality and Page 06 Recommendations developer string cleanup beyond what is scoped in US-004",
+    "Streamlit Cloud deployment configuration"
+  ]
+}
