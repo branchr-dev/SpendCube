@@ -226,25 +226,99 @@ Phase 6 (final) adds a rule-based recommendation engine and a human review works
 
 ### Recommendation Engine
 
-`src/recommendations/` contains three modules:
+`src/recommendations/` contains five modules:
 
 | Module | Class | Description |
 |--------|-------|-------------|
 | `rules.py` | `RecommendationRules` | 6 deterministic rule methods — generates recommendations from cube metrics with no LLM dependency |
+| `savings_rates.py` | `SavingsRates` | Loads `data/reference/savings_rates.yaml`; provides per-lever × L1-category rate lookup with fallback to defaults |
+| `deduplicator.py` | `SpendAllocator` | Prevents two recommendations from double-counting the same spend pool via exclusive group assignment |
 | `narratives.py` | `NarrativeGenerator` | Optional LLM narrative enrichment (dry_run skips; batches all recs into one Claude call when live) |
-| `engine.py` | `RecommendationEngine` | Orchestrator: builds cube → computes metrics → runs rules → enriches narratives → exports JSON |
+| `engine.py` | `RecommendationEngine` | Orchestrator: builds cube → computes metrics → runs rules → deduplicates → enriches narratives → exports JSON |
 
-**Rule types implemented:**
-- `SUPPLIER_CONSOLIDATION` — categories with > 5 suppliers; estimated saving = 8% of category spend
-- `PAYMENT_TERM_EXTENSION` — top-50 suppliers with avg terms < 45 days; WC opportunity = (target − current) / 365 × spend × WACC
-- `TAIL_SPEND_RATIONALISATION` — tail spend > 5% threshold; estimated saving = 10% of tail spend
-- `CONTRACT_COMPLIANCE` — maverick spend > 15% threshold; estimated saving = 5% of maverick spend
-- `COMPETITIVE_TENDER` — single-source categories with spend > $50,000 AUD; estimated saving = 7%
-- `CONTRACT_COVERAGE_GAP` — L1 categories with contract coverage < 50% and spend > $20,000 AUD; saving = 5%
+**Rule types implemented** (saving percentages sourced from `data/reference/savings_rates.yaml`):
+- `SUPPLIER_CONSOLIDATION` — categories with > 5 suppliers; default saving = 8% of addressable category spend
+- `PAYMENT_TERM_EXTENSION` — top-50 suppliers with avg terms < 45 days; WC opportunity = (target − current) / 365 × addressable spend × WACC
+- `TAIL_SPEND_RATIONALISATION` — tail spend > 5% threshold; default saving = 10% of addressable tail spend
+- `CONTRACT_COMPLIANCE` — maverick spend > 15% threshold; default saving = 5% of addressable maverick spend
+- `COMPETITIVE_TENDER` — single-source categories with spend > `competitive_tender_min_spend`; default saving = 7%
+- `CONTRACT_COVERAGE_GAP` — L1 categories with contract coverage < 50% and spend > `contract_coverage_gap_min_spend`; default saving = 5%
 
-**Output:** `data/output/recommendations.json` — array of recommendation dicts sorted by `estimated_impact_aud` descending. Each dict: `{type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative}`.
+**Output:** `data/output/recommendations.json` — wrapped object with two top-level keys. Each recommendation dict: `{type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative, baseline_spend, addressability_pct, saving_pct, addressable_baseline}`.
+
+**Wrapped JSON export format:**
+```json
+{
+  "recommendations": [...],
+  "portfolio_summary": {
+    "total_spend": 0.0,
+    "total_identified_savings": 0.0,
+    "savings_as_pct_of_spend": 0.0,
+    "sanity_check_passed": true,
+    "recommendation_count": 0
+  }
+}
+```
+The engine emits a WARNING log and sets `sanity_check_passed=False` when `total_identified_savings / total_spend > 0.20`. Dashboard `_load_recommendations()` handles both wrapped and bare-list formats for backwards compatibility.
 
 **CLI:** `python src/recommendations/engine.py --db data/db/spend_cube.db`
+
+### Savings Rate Reference Data
+
+`data/reference/savings_rates.yaml` holds per-lever saving rates and addressability percentages. It has two top-level keys:
+
+- **`defaults`** — one entry per lever type, used as fallback when no category override exists
+- **`categories`** — L1 category name → lever type → rate entry (overrides defaults for that category)
+
+Each rate entry has:
+- `saving_pct` — fraction of addressable baseline to use as estimated saving (omitted for `PAYMENT_TERM_EXTENSION`, which uses a WACC formula)
+- `addressability_pct` — fraction of baseline spend that is addressable (see below)
+
+**Lookup order:** `categories[category_l1][lever_type]` → `defaults[lever_type]` → hardcoded fallback `{saving_pct: None, addressability_pct: 0.70}`.
+
+`SavingsRates.get(lever_type, category_l1=None) -> dict` is the interface. A module-level lazy singleton `get_default_rates()` avoids repeated YAML reads.
+
+### Addressability
+
+Not all spend in a category baseline is actionable. `addressability_pct` accounts for spend that is locked-in, regulatory-mandated, or otherwise unaddressable by the initiative even though it forms part of the category baseline.
+
+Each rule computes:
+
+```
+addressable_baseline = baseline_spend * addressability_pct
+estimated_impact_aud = addressable_baseline * saving_pct   # (or WACC formula)
+```
+
+`addressability_pct` is sourced from `savings_rates.yaml` (category-specific if available, else default for that lever). `_addressable()` in `rules.py` still strips intercompany and tax lines before computing `baseline_spend` — addressability is a separate multiplier applied afterwards.
+
+### Double-Counting Prevention
+
+`SpendAllocator` in `src/recommendations/deduplicator.py` prevents two recommendations from claiming the same spend pool. Each rule type belongs to an exclusive group:
+
+| Exclusive Group | Rule Types |
+|-----------------|-----------|
+| `SOURCING` | `SUPPLIER_CONSOLIDATION`, `COMPETITIVE_TENDER` |
+| `COVERAGE` | `CONTRACT_COVERAGE_GAP` |
+| `WORKING_CAPITAL` | `PAYMENT_TERM_EXTENSION` |
+| `PORTFOLIO_TAIL` | `TAIL_SPEND_RATIONALISATION` |
+| `PORTFOLIO_COMPLIANCE` | `CONTRACT_COMPLIANCE` |
+
+**Deduplication mechanism:** `pool_key = (context, exclusive_group)`. For `PORTFOLIO_*` groups the pool key is `('PORTFOLIO', exclusive_group)` (portfolio-level, not per-category). `allocate(recommendations)` sorts by `estimated_impact_aud` descending, then iterates: if `pool_key` already claimed, the recommendation is zeroed and filtered out; otherwise the pool is claimed. The input list is deep-copied to avoid mutation.
+
+**Known limitation:** `SUPPLIER_CONSOLIDATION` context is the L2 category name; `CONTRACT_COVERAGE_GAP` context is the L1 category name. These rarely share the same string, so cross-deduplication between these two rules at the L1/L2 boundary is incomplete.
+
+### Audit Trail Fields
+
+Four fields are added to every recommendation dict to make the impact calculation fully traceable:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `baseline_spend` | `float` | Total addressable spend before addressability reduction (intercompany/tax already stripped) |
+| `addressability_pct` | `float` | Fraction of baseline that is addressable (sourced from `savings_rates.yaml`) |
+| `saving_pct` | `float \| None` | Saving rate applied to addressable baseline; `None` for `PAYMENT_TERM_EXTENSION` (WACC formula used instead) |
+| `addressable_baseline` | `float` | `baseline_spend × addressability_pct` — the spend the saving rate is applied to |
+
+These fields are display-only and do not affect engine logic. The recommendations dashboard detail cards show a **Calculation Basis** section using these fields.
 
 ### Review Workstation
 
