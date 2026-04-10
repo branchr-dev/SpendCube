@@ -1,0 +1,168 @@
+{
+  "project": {
+    "id": "DASHBOARD-ENHANCEMENTS-V2-2026-04",
+    "name": "Dashboard Enhancements V2",
+    "created": "2026-04-10",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2",
+    "track": "code"
+  },
+  "summary": "Upgrade the SpendCube Streamlit dashboard suite with two major enhancements: (1) PowerBI-style within-page cross-filtering using Streamlit 1.33+ on_select events on Plotly charts, and (2) new analytical chart types aligned to the procurement dashboard blueprint in docs/procurement_spend_cube_v1_dashboard_blueprint.md. The four core analytics pages (Spend Overview, Category Deep Dive, Supplier Deep Dive, Payment Terms) each receive new charts and cross-filter capability. No new backend data is required — all charts work from the existing transactions.parquet (50 columns, 5210 rows). Unit price and quantity fields do not exist in v1 data, so price-per-unit analytics are explicitly out of scope; spend dispersion is used as the proxy for price variation.",
+  "decisions": {
+    "cross_filter_implementation": "Use st.plotly_chart(fig, on_select='rerun', key='unique_key') native Streamlit API (available in Streamlit 1.33+, confirmed in installed 1.56). Each page manages its own cross-filter state from the returned event object. No external package needed. Cross-filter is within-page only — no cross-page state sharing in this sprint.",
+    "no_unit_price_data": "transactions.parquet has no unit_price, quantity, or uom columns. Blueprint charts requiring unit price (price-volume scatter, best-price extrapolation) are out of scope. Transaction-level base_amount distributions are used as the proxy for spend variation.",
+    "dumbbell_chart_metric": "Dumbbell chart on Supplier Deep Dive shows each supplier's avg payment_terms_days vs their category-level median payment_terms_days. This is the most defensible V1 dumbbell given available data — shows which suppliers are on better/worse terms than category peers.",
+    "opportunity_scatter": "Opportunity prioritisation scatter on Spend Overview: x=total spend, y=unique supplier count, bubble_size=transaction count, color=category_l1. High spend + many suppliers = fragmentation opportunity. All values computed from transactions.parquet groupby.",
+    "cross_filter_pattern": "Each page that has cross-filtering follows this exact pattern: (1) render master chart with on_select='rerun' and a unique key, (2) read points = (event or {}).get('selection', {}).get('points', []) from the returned value, (3) extract labels from point dicts using the relevant key (point['y'] for horizontal bars, point.get('text') for scatter), (4) display a st.caption indicator when cross-filter is active, (5) apply the filter to a derived DataFrame used for all secondary charts only. Click on empty chart area clears the selection automatically (Plotly deselects all).",
+    "page_scope": "Only the 4 analytics pages are modified: 01_spend_overview.py, 02_category_deep_dive.py, 03_supplier_deep_dive.py, 04_payment_terms.py. Pages 05-07 (data quality, recommendations, review workstation) are unchanged."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions_parquet": "data/output/transactions.parquet — 5210 rows, 50 columns. Key fields: base_amount, category_l1, category_l2, canonical_supplier_name, canonical_supplier_id, business_unit, plant_site, payment_terms_days, invoice_month, po_number, is_tail_spend. No unit_price or quantity fields.",
+      "by_supplier_parquet": "data/output/by_supplier.parquet — aggregated supplier-level data, 540 rows",
+      "by_category_parquet": "data/output/by_category.parquet — aggregated category-level data, 34 rows"
+    },
+    "key_files": [
+      "dashboard/components/charts.py — existing chart helpers: horizontal_bar, donut_chart, heatmap, pareto_chart, line_chart, bar_chart. _LAYOUT dict has paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis showgrid=False. New functions added in US-001.",
+      "dashboard/components/filters.py — render_filters() returns filtered DataFrame from sidebar date/BU/category/supplier widgets",
+      "dashboard/pages/01_spend_overview.py — currently has: _kpi_cards, _spend_by_month, _category_and_bu, _top_suppliers, _pareto_and_donut, _quality_scorecard. Modified in US-002.",
+      "dashboard/pages/02_category_deep_dive.py — currently has: _category_selectors (sidebar L1/L2/L3), _kpi_row, _spend_trend, _top_suppliers, _supplier_fragmentation, _payment_terms_histogram, _savings_lever_flags. Modified in US-003.",
+      "dashboard/pages/03_supplier_deep_dive.py — currently has: _load_supplier_match_log, _build_supplier_options, _kpi_row, _spend_trend, _spend_by_category, _spend_by_bu, _related_entities, _risk_flags. _DB_PATH uses absolute path via Path(__file__). Modified in US-004.",
+      "dashboard/pages/04_payment_terms.py — currently has: _kpi_row, _terms_histogram, _supplier_terms_heatmap, _working_capital_table, _non_standard_terms. Modified in US-005.",
+      "dashboard/app.py — defines load_cube_data() returning dict with keys: transactions, by_supplier, by_category, by_month"
+    ],
+    "patterns_to_follow": [
+      "All chart functions in dashboard/components/charts.py return go.Figure and never call st.plotly_chart. Rendering happens in page files only.",
+      "Streamlit on_select pattern: event = st.plotly_chart(fig, on_select='rerun', key='unique_str', use_container_width=True). Extract points: points = (event or {}).get('selection', {}).get('points', []). For horizontal bar (y is categorical): values = [p['y'] for p in points if 'y' in p]. For scatter with text=: values = [p.get('text') for p in points if p.get('text')]. Show indicator: if values: st.caption(f'Cross-filter active: {\", \".join(str(v) for v in values[:3])} — click chart background to clear').",
+      "render_filters() from dashboard.components.filters is always called first and returns the globally-filtered DataFrame. Cross-filter is a secondary in-page filter applied to that result.",
+      "Absolute imports: pages import from dashboard.app (load_cube_data) and dashboard.components.charts/filters.",
+      "Style consistency: all charts use paper_bgcolor=white, plot_bgcolor=white, font=dict(size=12) — apply _LAYOUT from charts.py or replicate inline."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add boxplot, scatter_bubble, and dumbbell chart helpers to charts.py",
+      "description": "Extend dashboard/components/charts.py with three new chart helper functions needed by the upgraded pages. These functions follow the existing pattern: accept a DataFrame and named column args, return a go.Figure, never call st.plotly_chart internally. The existing _LAYOUT dict (paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis showgrid=False) should be applied to all new charts.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/components/charts.py — add function boxplot(df: pd.DataFrame, x: str, y: str, title: str) -> go.Figure. For each unique value in df[x], add a go.Box trace with y=df.loc[df[x]==val, y], name=val, boxpoints='outliers'. Apply paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis showgrid=False, showlegend=False, title=title. Return the figure.",
+        "Edit file: dashboard/components/charts.py — add function scatter_bubble(df: pd.DataFrame, x: str, y: str, size: str, color: str, label: str, title: str, hover_name: str = None) -> go.Figure. Use px.scatter(df, x=x, y=y, size=size, color=color, text=label, title=title, hover_name=hover_name or label, size_max=60). Apply paper_bgcolor=white, font size 12. Call fig.update_traces(textposition='top center') and fig.update_traces(selector=dict(mode='markers+text'), textfont_size=9). Return the figure.",
+        "Edit file: dashboard/components/charts.py — add function dumbbell(df: pd.DataFrame, label_col: str, left_col: str, right_col: str, left_name: str, right_name: str, title: str) -> go.Figure. Implementation: create a go.Figure. For each row in df.itertuples(), add a go.Scatter trace with x=[row.left_col_val, row.right_col_val], y=[row.label_col_val, row.label_col_val], mode='lines', line=dict(color='#bdc3c7', width=1.5), showlegend=False. After all lines, add two go.Scatter traces for all dots: left dots (x=df[left_col], y=df[label_col], mode='markers', marker=dict(color='#e74c3c', size=10), name=left_name) and right dots (x=df[right_col], y=df[label_col], mode='markers', marker=dict(color='#2980b9', size=10), name=right_name). Apply paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis=dict(showgrid=False, autorange='reversed'), xaxis=dict(showgrid=True, gridcolor='#f0f0f0'), title=title. Return the figure.",
+        "Run: PYTHONPATH=$(pwd) python3 -c \"from dashboard.components.charts import boxplot, scatter_bubble, dumbbell; import pandas as pd; df = pd.DataFrame({'a':['x','y','x'], 'b':[1,2,3]}); f=boxplot(df,'a','b','t'); print('boxplot OK'); df2=pd.DataFrame({'x':[1,2],'y':[1,2],'s':[10,20],'c':['A','B'],'l':['p','q']}); f2=scatter_bubble(df2,'x','y','s','c','l','t'); print('scatter OK'); df3=pd.DataFrame({'lbl':['A','B'],'left':[10,20],'right':[30,40]}); f3=dumbbell(df3,'lbl','left','right','L','R','t'); print('dumbbell OK')\" — should print all three OK lines"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-10T07:47:41Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Upgrade Spend Overview with category x BU heatmap, opportunity scatter, and cross-filtering",
+      "description": "Enhance dashboard/pages/01_spend_overview.py with two new analytical sections and cross-filtering on the top-suppliers chart. The cross-filter uses on_select so clicking a supplier bar in the top-20 chart filters the monthly trend and category/BU bars to show only that supplier's data. New sections added at the bottom of the page: Category x Business Unit heatmap (7x7 spend intensity matrix) and Opportunity Prioritisation scatter (each category as a bubble: x=total_spend, y=unique_supplier_count, size=transaction_count). The existing _top_suppliers function is modified to emit selections and return selected supplier names.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/01_spend_overview.py — add import: from dashboard.components.charts import horizontal_bar, donut_chart, scatter_bubble (scatter_bubble is new, horizontal_bar and donut_chart are already imported; update the existing import line accordingly).",
+        "Edit file: dashboard/pages/01_spend_overview.py — change signature of _top_suppliers to _top_suppliers(filtered: pd.DataFrame) -> list[str]. At the end of the function, change st.plotly_chart(fig, use_container_width=True) to: event = st.plotly_chart(fig, on_select='rerun', key='overview_top_suppliers', use_container_width=True). Then: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {\", \".join(selected[:3])} — click chart background to clear'); return selected.",
+        "Edit file: dashboard/pages/01_spend_overview.py — add function _category_bu_heatmap(filtered: pd.DataFrame) -> None. Guard: if filtered.empty or 'category_l1' not in filtered.columns or 'business_unit' not in filtered.columns: st.info('No category x BU data available.'); return. Compute: pivot = filtered.groupby(['category_l1','business_unit'])['base_amount'].sum().unstack(fill_value=0). Build: import plotly.express as px; fig = px.imshow(pivot, color_continuous_scale='Blues', aspect='auto', title='Spend by Category x Business Unit (AUD)', text_auto='.3s'). Apply: fig.update_layout(paper_bgcolor='white', font=dict(size=11), xaxis_title='Business Unit', yaxis_title='Category'). Render: st.plotly_chart(fig, use_container_width=True).",
+        "Edit file: dashboard/pages/01_spend_overview.py — add function _opportunity_scatter(filtered: pd.DataFrame) -> None. Guard: if filtered.empty or 'category_l1' not in filtered.columns: st.info('No data.'); return. Compute: agg = filtered.groupby('category_l1').agg(total_spend=('base_amount','sum'), supplier_count=('canonical_supplier_name','nunique'), txn_count=('transaction_id','count')).reset_index(). Filter: agg = agg[agg['supplier_count'] >= 2]. Rename columns to match scatter_bubble args: agg.rename(columns={'category_l1':'Category','total_spend':'Total Spend (AUD)','supplier_count':'Supplier Count','txn_count':'Transaction Count'}, inplace=True). Call: fig = scatter_bubble(agg, x='Total Spend (AUD)', y='Supplier Count', size='Transaction Count', color='Category', label='Category', title='Opportunity Prioritisation: Spend vs Supplier Fragmentation'). Add annotation: fig.add_annotation(text='High spend + many suppliers = consolidation opportunity', xref='paper', yref='paper', x=0.01, y=1.08, showarrow=False, font=dict(size=10, color='grey')). Render: st.plotly_chart(fig, use_container_width=True).",
+        "Edit file: dashboard/pages/01_spend_overview.py — in main(), apply cross-filter. Change the call to _top_suppliers(filtered) to: selected_suppliers = _top_suppliers(filtered). After that line, add: cf = filtered[filtered['canonical_supplier_name'].isin(selected_suppliers)] if selected_suppliers else filtered. Then change the calls to _spend_by_month and _category_and_bu to use cf instead of filtered.",
+        "Edit file: dashboard/pages/01_spend_overview.py — in main(), after the existing _pareto_and_donut section and before _quality_scorecard, add: st.markdown('---'); st.subheader('Category x Business Unit Intensity'); _category_bu_heatmap(filtered); st.markdown('---'); st.subheader('Opportunity Prioritisation'); _opportunity_scatter(filtered).",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py && echo 'syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Upgrade Category Deep Dive with transaction value boxplot and cross-filtering on top suppliers",
+      "description": "Enhance dashboard/pages/02_category_deep_dive.py with a transaction value boxplot showing spend distribution per category, and cross-filtering so clicking a supplier in the top-suppliers bar filters the monthly trend and payment terms histogram. The boxplot is placed after the monthly trend section. The _top_suppliers function is modified to emit on_select events and return selected supplier names. The page already has an _payment_terms_histogram function that will become the cross-filtered secondary chart.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/02_category_deep_dive.py — add import for boxplot: from dashboard.components.charts import horizontal_bar, boxplot (update existing import line).",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — add function _transaction_boxplot(df: pd.DataFrame) -> None. Guard: if df.empty or 'base_amount' not in df.columns: st.info('No data.'); return. Filter: pos_df = df[df['base_amount'] > 0].copy(). Guard: if pos_df.empty: st.info('No positive-value transactions for boxplot.'); return. Call: fig = boxplot(pos_df, x='category_l1', y='base_amount', title='Transaction Value Distribution by Category (AUD)'). Render: st.plotly_chart(fig, use_container_width=True). Add: st.caption('Distribution of individual transaction values (positive spend only). Wide spread indicates purchasing inconsistency or multiple item types within the category.').",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — change _top_suppliers signature from _top_suppliers(df: pd.DataFrame) -> None to _top_suppliers(df: pd.DataFrame) -> list[str]. Inside the function, find the existing st.plotly_chart call and replace it with: event = st.plotly_chart(fig, on_select='rerun', key='cat_top_suppliers', use_container_width=True). Add after: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {\", \".join(selected[:3])} — click chart background to clear'); return selected.",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — in main(), change the call pattern for _top_suppliers. The current code calls _top_suppliers in a st.columns block with col_left and col_right. Change: (a) extract the _top_suppliers call out of the columns block if needed, OR render it full-width above the columns block. New pattern: sup_sel = _top_suppliers(cat_filtered); cf = cat_filtered[cat_filtered['canonical_supplier_name'].isin(sup_sel)] if sup_sel else cat_filtered. Pass cf to _spend_trend and _payment_terms_histogram (the two charts that represent the cross-filter secondary targets). Pass cat_filtered to _supplier_fragmentation and _savings_lever_flags.",
+        "Edit file: dashboard/pages/02_category_deep_dive.py — in main(), add boxplot section after the _spend_trend section: st.markdown('---'); st.subheader('Transaction Value Distribution'); _transaction_boxplot(cat_filtered).",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/02_category_deep_dive.py && echo 'syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Upgrade Supplier Deep Dive with payment terms dumbbell and cross-filtering",
+      "description": "Enhance dashboard/pages/03_supplier_deep_dive.py with a payment terms dumbbell chart and cross-filtering. The dumbbell shows for the selected supplier's top 15 transaction groups (by category or all transactions): for each of the top 15 suppliers by spend within the current filtered view, show their avg payment_terms_days (red, left) vs the median payment_terms_days for their primary category across ALL transactions (blue, right). Cross-filtering: clicking a category in the spend-by-category chart filters the monthly trend to that category. Note: the dumbbell is supplier-level; it shows all selected supplier's data vs category benchmark.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — add import: from dashboard.components.charts import horizontal_bar, dumbbell (update existing import line to include dumbbell).",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — add function _payment_terms_dumbbell(sup_df: pd.DataFrame, all_txn: pd.DataFrame) -> None. Logic: (1) if sup_df.empty or 'payment_terms_days' not in sup_df.columns: st.info('No payment terms data.'); return. (2) Filter sup_df: has_terms = sup_df[sup_df['payment_terms_days'].notna()]. If has_terms.empty: st.info('No payment terms recorded for this supplier.'); return. (3) Compute supplier avg terms: sup_avg = float(has_terms['payment_terms_days'].mean()). (4) Determine primary category: primary_cat = has_terms['category_l1'].mode().iloc[0] if 'category_l1' in has_terms.columns and not has_terms['category_l1'].dropna().empty else None. (5) Compute category median from all_txn: if primary_cat and 'payment_terms_days' in all_txn.columns: cat_median = float(all_txn[all_txn['category_l1']==primary_cat]['payment_terms_days'].dropna().median()) else: cat_median = float(all_txn['payment_terms_days'].dropna().median()) if 'payment_terms_days' in all_txn.columns else None. (6) If cat_median is None: st.info('Category benchmark unavailable.'); return. (7) Build single-row df: row_df = pd.DataFrame({'Supplier': [sup_df['canonical_supplier_name'].iloc[0] if 'canonical_supplier_name' in sup_df.columns else 'Selected Supplier'], 'Avg Terms (days)': [sup_avg], 'Category Median (days)': [cat_median]}). (8) Call: fig = dumbbell(row_df, label_col='Supplier', left_col='Avg Terms (days)', right_col='Category Median (days)', left_name='Supplier Avg', right_name='Category Median', title=f'Payment Terms vs Category Median ({primary_cat or \"All Categories\"})'). (9) Render: st.plotly_chart(fig, use_container_width=True). (10) Add caption: supplier_below = sup_avg < cat_median; msg = f'This supplier is on {\"shorter\" if supplier_below else \"longer\"} terms ({sup_avg:.0f}d) than the {primary_cat or \"overall\"} category median ({cat_median:.0f}d). {\"Working capital opportunity: negotiate extension.\" if supplier_below else \"Terms are favourable.\"}'; st.caption(msg).",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — modify _spend_by_category(df: pd.DataFrame) -> None to return list[str]. Rename to keep same function name. Change the st.plotly_chart call to: event = st.plotly_chart(fig, on_select='rerun', key='supplier_spend_by_cat', use_container_width=True). Add: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {\", \".join(selected[:3])} — click chart background to clear'); return selected.",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), change the _spend_by_category call. Currently it is in a col_left block. Change to: cat_sel = _spend_by_category(sup_txn). Add after: cf_sup = sup_txn[sup_txn['category_l1'].isin(cat_sel)] if cat_sel else sup_txn. Pass cf_sup to _spend_trend. Pass sup_txn to _spend_by_bu, _related_entities, _risk_flags.",
+        "Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), add dumbbell section after the risk flags section: st.markdown('---'); st.subheader('Payment Terms Benchmark'); _payment_terms_dumbbell(sup_txn, filtered). The second arg filtered is the pre-supplier-filtered DataFrame from render_filters, so category medians are computed across all suppliers in the filtered view.",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/03_supplier_deep_dive.py && echo 'syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Upgrade Payment Terms with spend vs terms scatter and cross-filtering",
+      "description": "Enhance dashboard/pages/04_payment_terms.py with a supplier spend vs payment terms scatter chart (the key 'large suppliers on short terms' view from the blueprint) and cross-filtering. The scatter shows every supplier as a bubble: x=annual_spend, y=avg_payment_terms_days, size=transaction_count, color=category_l1. Clicking a bubble cross-filters the working capital table and non-standard terms table to show only that supplier. The scatter is placed between the KPI row and the existing histogram.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/04_payment_terms.py — add import: from dashboard.components.charts import scatter_bubble (add to existing import line from dashboard.components.charts).",
+        "Edit file: dashboard/pages/04_payment_terms.py — add function _spend_terms_scatter(df: pd.DataFrame) -> list[str]. Logic: (1) Guard: if df.empty or 'payment_terms_days' not in df.columns: st.info('No data.'); return []. (2) Filter: has_terms = df[df['payment_terms_days'].notna() & (df['base_amount'] > 0)]. If has_terms.empty: return []. (3) Aggregate: agg = has_terms.groupby('canonical_supplier_name').agg(annual_spend=('base_amount','sum'), avg_terms=('payment_terms_days','mean'), txn_count=('transaction_id','count'), primary_cat=('category_l1', lambda x: x.mode().iloc[0] if not x.dropna().empty else 'Other')).reset_index(). (4) Rename: agg.rename(columns={'canonical_supplier_name':'Supplier','annual_spend':'Annual Spend (AUD)','avg_terms':'Avg Payment Terms (days)','txn_count':'Transaction Count','primary_cat':'Category'}, inplace=True). (5) Call: fig = scatter_bubble(agg, x='Annual Spend (AUD)', y='Avg Payment Terms (days)', size='Transaction Count', color='Category', label='Supplier', title='Supplier Spend vs Payment Terms', hover_name='Supplier'). (6) Add reference lines: fig.add_hline(y=30, line_dash='dash', line_color='grey', annotation_text='30d', annotation_position='right'); fig.add_hline(y=45, line_dash='dash', line_color='orange', annotation_text='45d target', annotation_position='right'). (7) Render with: event = st.plotly_chart(fig, on_select='rerun', key='pt_spend_scatter', use_container_width=True). (8) Extract selections: points = (event or {}).get('selection', {}).get('points', []); selected = [p.get('text') for p in points if p.get('text')]; if selected: st.caption(f'Cross-filter active: {\", \".join(selected[:3])} — click chart background to clear'). (9) Return selected.",
+        "Edit file: dashboard/pages/04_payment_terms.py — in main(), call the scatter and set up cross-filter. After the _kpi_row call, insert: st.markdown('---'); st.subheader('Supplier Spend vs Payment Terms'); selected_suppliers = _spend_terms_scatter(filtered); cf = filtered[filtered['canonical_supplier_name'].isin(selected_suppliers)] if selected_suppliers else filtered.",
+        "Edit file: dashboard/pages/04_payment_terms.py — in main(), change _working_capital_table and _non_standard_terms to use cf instead of filtered. Keep _terms_histogram and _supplier_terms_heatmap using filtered (they show the full distribution, not cross-filtered).",
+        "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/04_payment_terms.py && echo 'syntax OK'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Update CLAUDE.md with cross-filtering pattern and new chart helpers",
+      "description": "Update CLAUDE.md to document the cross-filtering architecture and new chart helper functions added in this sprint. Future Ralph agents and developers working on dashboard pages need to know the on_select pattern and the boxplot/scatter_bubble/dumbbell API.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — in the Phase 5 section (Streamlit Dashboards), after the 'Chart Library' subsection, add a new subsection '### Cross-Filtering Pattern' with this content: 'Pages use Streamlit on_select events for within-page cross-filtering. Pattern: (1) event = st.plotly_chart(fig, on_select=\"rerun\", key=\"unique_page_key\", use_container_width=True). (2) points = (event or {}).get(\"selection\", {}).get(\"points\", []). (3) For horizontal bars: selected = [p[\"y\"] for p in points if \"y\" in p]. For scatter with text=: selected = [p.get(\"text\") for p in points if p.get(\"text\")]. (4) if selected: st.caption(f\"Cross-filter active: {...} — click chart background to clear\"). (5) cf = df[df[col].isin(selected)] if selected else df. Apply cf to secondary charts only. Cross-filter is within-page only — no cross-page state sharing.'",
+        "Edit file: CLAUDE.md — in the Chart Library subsection (which currently says 'All charts use Plotly Express'), add after the existing description: 'Chart helpers in dashboard/components/charts.py: horizontal_bar(df, x, y, title, max_rows), donut_chart(df, names, values, title), heatmap(df, x, y, values, title), pareto_chart(df, x, y, title), line_chart(df, x, y, title), bar_chart(df, x, y, title, color), boxplot(df, x, y, title) — box plot grouped by x, boxplot(df, x, y, title) — box plot grouped by x, scatter_bubble(df, x, y, size, color, label, title, hover_name) — bubble scatter, dumbbell(df, label_col, left_col, right_col, left_name, right_name, title) — dumbbell/lollipop for benchmark comparison.'",
+        "Verify: grep -n 'Cross-Filtering' CLAUDE.md — should return at least one matching line",
+        "Verify: grep -n 'dumbbell' CLAUDE.md — should return at least one matching line"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "import_check": "PYTHONPATH=$(pwd) python3 -c \"from dashboard.components.charts import boxplot, scatter_bubble, dumbbell; print('chart imports OK')\"",
+      "syntax_check_all_pages": "PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py && echo 'All syntax OK'",
+      "cross_filter_grep": "grep -l 'on_select' dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py",
+      "streamlit_starts": "PYTHONPATH=$(pwd) streamlit run dashboard/app.py --server.port 8509 --server.headless true & sleep 5; curl -s -o /dev/null -w '%{http_code}' http://localhost:8509; kill %1"
+    },
+    "expected_counts": {
+      "new_chart_functions": "3 new functions in dashboard/components/charts.py: boxplot, scatter_bubble, dumbbell",
+      "pages_with_on_select": "4 pages (01-04) each contain at least one on_select='rerun' call",
+      "new_page_functions": "01: _category_bu_heatmap, _opportunity_scatter; 02: _transaction_boxplot; 03: _payment_terms_dumbbell; 04: _spend_terms_scatter"
+    },
+    "checks": [
+      "dashboard/components/charts.py imports: from dashboard.components.charts import boxplot, scatter_bubble, dumbbell — succeeds",
+      "All 4 modified pages pass python3 -m py_compile with no errors",
+      "grep on_select dashboard/pages/01_spend_overview.py — returns at least 1 match",
+      "grep on_select dashboard/pages/02_category_deep_dive.py — returns at least 1 match",
+      "grep on_select dashboard/pages/03_supplier_deep_dive.py — returns at least 1 match",
+      "grep on_select dashboard/pages/04_payment_terms.py — returns at least 1 match",
+      "grep _category_bu_heatmap dashboard/pages/01_spend_overview.py — returns match",
+      "grep _opportunity_scatter dashboard/pages/01_spend_overview.py — returns match",
+      "grep _transaction_boxplot dashboard/pages/02_category_deep_dive.py — returns match",
+      "grep _payment_terms_dumbbell dashboard/pages/03_supplier_deep_dive.py — returns match",
+      "grep _spend_terms_scatter dashboard/pages/04_payment_terms.py — returns match",
+      "Streamlit launches at port 8509 with HTTP 200"
+    ]
+  },
+  "risks": [
+    "Streamlit on_select returns point data in different shapes depending on chart type. For horizontal bar charts, point['y'] gives the category label. For scatter charts, point.get('text') gives the text= value (supplier name). If the actual event structure differs at runtime, Ralph must inspect the live event dict and adjust the key extraction accordingly.",
+    "The dumbbell chart is a single-row dumbbell when viewing one selected supplier — this is intentional. If Ralph finds the single-row dumbbell too sparse, it should expand to show the top N suppliers in the filtered view each with their own dumbbell row (same function, build agg per supplier).",
+    "scatter_bubble with text= labels may be cluttered when 50+ suppliers are shown. The acceptance criteria include textfont_size=9 and top-center position, but Ralph may also filter to top 30 by spend for label display while keeping all bubbles."
+  ],
+  "outOfScope": [
+    "Cross-page cross-filtering (clicking category on Spend Overview pre-selecting on Category Deep Dive) — requires session_state coordination, future sprint",
+    "Unit price per-unit analytics — no unit_price or quantity fields in v1 data",
+    "Best-price extrapolation scenario chart — requires normalised unit prices",
+    "Price-volume scatter (quantity vs unit price) — no quantity field",
+    "Pages 05-07 (Data Quality, Recommendations, Review Workstation) modifications",
+    "Mobile-responsive layout",
+    "Export to PDF or PowerPoint from dashboard",
+    "Persistent cross-filter state across browser sessions"
+  ]
+}

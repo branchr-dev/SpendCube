@@ -9,7 +9,7 @@ import streamlit as st
 
 from dashboard.app import load_cube_data, load_quality_scorecard
 
-_SCORECARD_PATH = Path("data/output/quality_scorecard.json")
+_SCORECARD_PATH = Path(__file__).parent.parent.parent / "data" / "output" / "quality_scorecard.json"
 
 # Status normalisation: diagnostics uses two naming schemes
 _GOOD_STATUSES = {"GREEN", "INFO"}
@@ -230,7 +230,7 @@ def main() -> None:
     st.subheader("Diagnostic Scorecard")
 
     scorecard_df = _build_scorecard_df(scorecard)
-    styled = scorecard_df.style.applymap(_colour_status, subset=["Status"])
+    styled = scorecard_df.style.map(_colour_status, subset=["Status"])
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
     st.markdown("---")

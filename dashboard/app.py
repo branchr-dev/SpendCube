@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-_DATA_DIR = Path("data/output")
+_DATA_DIR = Path(__file__).parent.parent / "data" / "output"
 _PARQUET_FILES = {
     "transactions": "transactions.parquet",
     "by_supplier": "by_supplier.parquet",

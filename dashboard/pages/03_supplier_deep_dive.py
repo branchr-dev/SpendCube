@@ -12,7 +12,7 @@ from dashboard.app import load_cube_data
 from dashboard.components.charts import horizontal_bar
 from dashboard.components.filters import render_filters
 
-_DB_PATH = Path("data/db/spend_cube.db")
+_DB_PATH = Path(__file__).parent.parent.parent / "data" / "db" / "spend_cube.db"
 
 
 @st.cache_data

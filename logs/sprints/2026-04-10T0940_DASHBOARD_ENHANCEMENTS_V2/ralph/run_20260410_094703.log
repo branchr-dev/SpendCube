@@ -1,0 +1,71 @@
+[2026-04-10 09:47:03] [INFO] Ralph loop starting
+[2026-04-10 09:47:03] [INFO] Created progress file: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 09:47:03 CEST
+PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 09:47:03] [INFO] Starting iteration 1
+[2026-04-10 09:47:03] [INFO] Processing story: US-001
+[2026-04-10 09:47:03] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Add boxplot, scatter_bubble, and dumbbell chart helpers to charts.py
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Extend dashboard/components/charts.py with three new chart helper functions needed by the upgraded pages. These functions follow the existing pattern: accept a DataFrame and named column args, return a go.Figure, never call st.plotly_chart internally. The existing _LAYOUT dict (paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis showgrid=False) should be applied to all new charts.
+
+## Acceptance Criteria
+- Edit file: dashboard/components/charts.py — add function boxplot(df: pd.DataFrame, x: str, y: str, title: str) -> go.Figure. For each unique value in df[x], add a go.Box trace with y=df.loc[df[x]==val, y], name=val, boxpoints='outliers'. Apply paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis showgrid=False, showlegend=False, title=title. Return the figure.
+- Edit file: dashboard/components/charts.py — add function scatter_bubble(df: pd.DataFrame, x: str, y: str, size: str, color: str, label: str, title: str, hover_name: str = None) -> go.Figure. Use px.scatter(df, x=x, y=y, size=size, color=color, text=label, title=title, hover_name=hover_name or label, size_max=60). Apply paper_bgcolor=white, font size 12. Call fig.update_traces(textposition='top center') and fig.update_traces(selector=dict(mode='markers+text'), textfont_size=9). Return the figure.
+- Edit file: dashboard/components/charts.py — add function dumbbell(df: pd.DataFrame, label_col: str, left_col: str, right_col: str, left_name: str, right_name: str, title: str) -> go.Figure. Implementation: create a go.Figure. For each row in df.itertuples(), add a go.Scatter trace with x=[row.left_col_val, row.right_col_val], y=[row.label_col_val, row.label_col_val], mode='lines', line=dict(color='#bdc3c7', width=1.5), showlegend=False. After all lines, add two go.Scatter traces for all dots: left dots (x=df[left_col], y=df[label_col], mode='markers', marker=dict(color='#e74c3c', size=10), name=left_name) and right dots (x=df[right_col], y=df[label_col], mode='markers', marker=dict(color='#2980b9', size=10), name=right_name). Apply paper_bgcolor=white, plot_bgcolor=white, font size 12, yaxis=dict(showgrid=False, autorange='reversed'), xaxis=dict(showgrid=True, gridcolor='#f0f0f0'), title=title. Return the figure.
+- Run: PYTHONPATH=$(pwd) python3 -c "from dashboard.components.charts import boxplot, scatter_bubble, dumbbell; import pandas as pd; df = pd.DataFrame({'a':['x','y','x'], 'b':[1,2,3]}); f=boxplot(df,'a','b','t'); print('boxplot OK'); df2=pd.DataFrame({'x':[1,2],'y':[1,2],'s':[10,20],'c':['A','B'],'l':['p','q']}); f2=scatter_bubble(df2,'x','y','s','c','l','t'); print('scatter OK'); df3=pd.DataFrame({'lbl':['A','B'],'left':[10,20],'right':[30,40]}); f3=dumbbell(df3,'lbl','left','right','L','R','t'); print('dumbbell OK')" — should print all three OK lines
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Add boxplot, scatter_bubble, and dumbbell chart helpers to charts.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 09:47:41] [OK] Story US-001 completed!
+[2026-04-10 09:47:41] [OK] Marked US-001 as passed
+[2026-04-10 09:47:41] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 09:47:41] [STEP] Committing changes...

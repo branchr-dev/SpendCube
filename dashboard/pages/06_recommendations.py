@@ -10,7 +10,7 @@ import streamlit as st
 
 from dashboard.components.charts import heatmap
 
-_RECS_PATH = Path("data/output/recommendations.json")
+_RECS_PATH = Path(__file__).parent.parent.parent / "data" / "output" / "recommendations.json"
 
 _CONFIDENCE_COLOURS = {
     "HIGH": "background-color: #d4edda; color: #155724; font-weight: bold",
@@ -69,7 +69,7 @@ def _recommendations_table(recs: list[dict]) -> None:
         st.info("No recommendations to display.")
         return
 
-    styled = df.style.format({"Estimated Impact (AUD)": "{:,.0f}"}).applymap(
+    styled = df.style.format({"Estimated Impact (AUD)": "{:,.0f}"}).map(
         _colour_confidence, subset=["Confidence"]
     )
     st.dataframe(styled, use_container_width=True, hide_index=True)

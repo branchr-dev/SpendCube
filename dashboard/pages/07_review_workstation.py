@@ -19,7 +19,7 @@ from src.models.database import (
     transactions_table,
 )
 
-_DB_PATH = "data/db/spend_cube.db"
+_DB_PATH = str(Path(__file__).parent.parent.parent / "data" / "db" / "spend_cube.db")
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +271,7 @@ def _override_match(
 # Data loading — category review
 # ---------------------------------------------------------------------------
 
-_UNSPSC_PATH = "data/reference/unspsc_v24.csv"
+_UNSPSC_PATH = str(Path(__file__).parent.parent.parent / "data" / "reference" / "unspsc_v24.csv")
 
 
 @st.cache_data
