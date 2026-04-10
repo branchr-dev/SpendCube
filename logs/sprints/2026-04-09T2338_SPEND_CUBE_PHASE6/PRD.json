@@ -147,7 +147,8 @@
         "Section: 'Audit Trail' — show last 50 audit_log entries as dataframe (table_name, field_name, old_value, new_value, changed_by, changed_at).",
         "Verify: approving a supplier match updates transactions table (check via sqlite query that canonical_supplier_id changes)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T06:02:20Z"
     },
     {
       "id": "US-007",

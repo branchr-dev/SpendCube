@@ -332,3 +332,67 @@ STORY_COMPLETE: US-005
 [2026-04-10 08:00:15] [OK] Marked US-005 as passed
 [2026-04-10 08:00:15] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 08:00:15] [STEP] Committing changes...
+[2026-04-10 08:00:17] [INFO] Starting iteration 6
+[2026-04-10 08:00:17] [INFO] Processing story: US-006
+[2026-04-10 08:00:17] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Implement review workstation — category review queue and overrides
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the category review queue and override editor sections of dashboard/pages/07_review_workstation.py.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/07_review_workstation.py — add category review section (appending to existing file)
+- Section: 'Category Review Queue' with st.subheader
+- Load transactions where category_confidence < 0.60, sort by abs(base_amount) desc (highest spend first). Show top 50.
+- For each row: st.expander(f'{raw_supplier_name} | {raw_line_description[:50]} | AUD {base_amount:,.0f} | conf: {category_confidence:.2f}'). Show: current category (if any), category_method. Two selectboxes: L1 category, L2 category (filtered). Button: 'Override Category'.
+- On override: INSERT into category_overrides_table (canonical_supplier_id, gl_account, override_l1, override_l2, override_l3=None, reviewer='manual', reason='reviewer override'). UPDATE transactions row category fields. INSERT audit_log. Clear cache.
+- Section: 'Category Override Rules' — st.dataframe showing existing category_overrides rows. Button: 'Delete' per row. st.form to add new override rule manually.
+- Section: 'Audit Trail' — show last 50 audit_log entries as dataframe (table_name, field_name, old_value, new_value, changed_by, changed_at).
+- Verify: approving a supplier match updates transactions table (check via sqlite query that canonical_supplier_id changes)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Implement review workstation — category review queue and overrides`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 08:02:20] [OK] Story US-006 completed!
+[2026-04-10 08:02:20] [OK] Marked US-006 as passed
+[2026-04-10 08:02:20] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 08:02:20] [STEP] Committing changes...

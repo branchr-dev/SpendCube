@@ -154,3 +154,40 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+## US-006 COMPLETE — 2026-04-10
+
+### Implemented
+- dashboard/pages/07_review_workstation.py: added 3 sections + updated main()
+  - Category Review Queue: loads transactions WHERE category_confidence < 0.60 (or NULL),
+    sorted by abs(base_amount) desc, top 50. st.expander per row with current category, method,
+    L1 selectbox, L2 selectbox (filtered by L1 from UNSPSC CSV), 'Override Category' button.
+    On override: INSERT category_overrides, UPDATE transactions (category fields + MANUAL/1.0),
+    INSERT audit_log, st.cache_data.clear(), st.rerun().
+  - Category Override Rules: st.dataframe of all category_overrides rows; Delete button per row
+    (DELETE row + audit_log); st.form to add new override rule (canonical_supplier_id or gl_account
+    required, both L1+L2 required).
+  - Audit Trail: last 50 audit_log entries as st.dataframe (table_name, field_name, old/new value,
+    changed_by, changed_at).
+  - main(): calls all 4 sections in order separated by st.divider().
+
+### Learnings
+- 29 transactions in sample DB have category_confidence < 0.60 — good test data available.
+- UNSPSC CSV provides segment_name (L1) and family_name (L2) — used as category options.
+- L2 selectbox must be re-rendered after L1 changes; Streamlit re-renders on each interaction
+  so l1_to_l2[sel_l1] lookup in each loop iteration is correct.
+- category_overrides_table needed explicit import addition (was missing from original imports).
+- delete() from sqlalchemy must be explicitly imported (not in the original import list).
+
+---
+
+### [US-006] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-006] - 2026-04-10 08:02:20
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
