@@ -1,0 +1,190 @@
+{
+  "project": {
+    "id": "REC-ENGINE-RIGOUR-2026-04",
+    "name": "Recommendation Engine Rigour",
+    "created": "2026-04-10",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR",
+    "track": "code"
+  },
+  "summary": "Replace the current flat-rate, double-counting recommendation engine with a rigorous, auditable system. Key changes: (1) category-specific savings rates sourced from a new reference YAML rather than a single global config value, (2) an explicit addressability percentage per lever x category that reduces the baseline to account for locked-in or unaddressable spend, (3) a SpendAllocator that prevents two recommendations from claiming the same spend pool in their impact calculations, (4) four new audit-trail fields on every recommendation dict so analysts can trace exactly how each number was derived, and (5) a portfolio sanity check that flags implausibly high total savings. The dashboard detail cards are updated to display the new fields.",
+  "decisions": {
+    "savings_rates_reference_file": "New data/reference/savings_rates.yaml holds per-lever x L1-category rates. Rates fall back to a 'default' entry when a category is not explicitly listed. This makes rates transparent, version-controlled, and editable without touching Python code.",
+    "addressability_applied_in_rules": "Each rule computes addressable_baseline = baseline_spend * addressability_pct before applying saving_pct. This isolates the addressability assumption close to where it is used rather than as a post-processing step.",
+    "deduplication_via_spend_allocator": "SpendAllocator in deduplicator.py tracks spend claimed per (category_l1, exclusive_group). SUPPLIER_CONSOLIDATION and COMPETITIVE_TENDER share exclusive_group='SOURCING' — logically mutually exclusive by supplier count but allocator enforces it defensively. CONTRACT_COVERAGE_GAP is group='COVERAGE'. PAYMENT_TERM_EXTENSION is group='WORKING_CAPITAL'. TAIL_SPEND_RATIONALISATION and CONTRACT_COMPLIANCE are portfolio-level and do not consume category spend pools.",
+    "audit_trail_fields": "Add baseline_spend, addressability_pct, saving_pct, addressable_baseline to every recommendation dict. These are display-only and do not affect engine logic. They surface the calculation transparently in the dashboard.",
+    "sanity_threshold_20pct": "Engine emits a WARNING log and sets portfolio_summary.sanity_check_passed=False when sum(estimated_impact_aud) / total_spend > 0.20. This is a guard, not a hard cap — the analyst reviews flagged outputs.",
+    "wrapped_json_export": "export() writes a wrapper object: {'recommendations': [...], 'portfolio_summary': {...}} rather than a bare list. _load_recommendations() in the dashboard handles both formats for backwards compatibility.",
+    "config_addressability_defaults": "RecommendationsConfig gains addressability_defaults dict keyed by lever type plus competitive_tender_min_spend and contract_coverage_gap_min_spend to replace hardcoded thresholds in rules.py."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Parquet at data/output/transactions.parquet — key columns: base_amount, category_l1, category_l2, canonical_supplier_id, canonical_supplier_name, payment_terms_days, is_intercompany, is_tax_line, po_number, is_on_contract"
+    },
+    "key_files": [
+      "src/recommendations/rules.py — all six rule methods; _addressable() helper; RecommendationRules class",
+      "src/recommendations/engine.py — RecommendationEngine.run() orchestrator; export() method",
+      "src/recommendations/narratives.py — NarrativeGenerator, NOT changed in this sprint",
+      "src/config.py — RecommendationsConfig pydantic model at line 63",
+      "config.yaml — recommendations: block with existing fields",
+      "data/reference/ — existing reference data directory; savings_rates.yaml goes here",
+      "dashboard/pages/06_recommendations.py — _detail_cards(), _kpi_row(), _load_recommendations(), _build_display_df()",
+      "tests/test_recommendations.py — existing tests to extend"
+    ],
+    "patterns_to_follow": [
+      "Reference YAML files follow the pattern in data/reference/keyword_rules.yaml — top-level keys, nested dicts, loaded with yaml.safe_load()",
+      "Config pydantic models in src/config.py use BaseModel with typed fields; Dict[str, float] is acceptable for the addressability_defaults mapping",
+      "Rule methods return list[dict] and are called by generate_all() — keep this interface unchanged",
+      "All monetary calculations: round(value, 2)",
+      "Existing audit fields in rec dict: type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative — new fields append to this dict",
+      "Existing _addressable() helper filters intercompany and tax — new addressability_pct is a separate multiplier applied after this filter"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create savings_rates.yaml reference file",
+      "description": "Create data/reference/savings_rates.yaml containing per-lever savings rates and addressability percentages. The file has two top-level keys: 'defaults' (one entry per lever type as fallback) and 'categories' (L1 category overrides). Each entry has saving_pct (float 0-1) and addressability_pct (float 0-1). Lever type keys must exactly match the constants in src/recommendations/rules.py: SUPPLIER_CONSOLIDATION, PAYMENT_TERM_EXTENSION, TAIL_SPEND_RATIONALISATION, CONTRACT_COMPLIANCE, COMPETITIVE_TENDER, CONTRACT_COVERAGE_GAP. Default values: SUPPLIER_CONSOLIDATION saving_pct=0.08 addressability_pct=0.70; COMPETITIVE_TENDER saving_pct=0.07 addressability_pct=0.65; CONTRACT_COVERAGE_GAP saving_pct=0.05 addressability_pct=0.80; TAIL_SPEND_RATIONALISATION saving_pct=0.10 addressability_pct=0.50; CONTRACT_COMPLIANCE saving_pct=0.05 addressability_pct=0.75; PAYMENT_TERM_EXTENSION has no saving_pct (uses WACC formula) so omit saving_pct and set addressability_pct=0.80. Category overrides for: 'Information Technology' (SUPPLIER_CONSOLIDATION: saving_pct=0.12 addressability_pct=0.65; COMPETITIVE_TENDER: saving_pct=0.10 addressability_pct=0.60), 'Professional Services' (SUPPLIER_CONSOLIDATION: saving_pct=0.10 addressability_pct=0.55; COMPETITIVE_TENDER: saving_pct=0.08 addressability_pct=0.50), 'Facilities Management' (SUPPLIER_CONSOLIDATION: saving_pct=0.07 addressability_pct=0.72), 'Marketing and Communications' (SUPPLIER_CONSOLIDATION: saving_pct=0.12 addressability_pct=0.60), 'Logistics and Transport' (COMPETITIVE_TENDER: saving_pct=0.09 addressability_pct=0.70).",
+      "acceptanceCriteria": [
+        "Create file: data/reference/savings_rates.yaml",
+        "Verify: python3 -c \"import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); print(list(d.keys()))\" — prints ['defaults', 'categories'] without error",
+        "Verify: python3 -c \"import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); assert 'SUPPLIER_CONSOLIDATION' in d['defaults']\" — passes",
+        "Verify: python3 -c \"import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); assert d['categories']['Information Technology']['SUPPLIER_CONSOLIDATION']['saving_pct'] == 0.12\" — passes"
+      ],
+      "passes": true,
+      "completed_at": "2026-04-10T12:16:01Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Create SavingsRates lookup module",
+      "description": "Create src/recommendations/savings_rates.py containing a SavingsRates class. Constructor takes optional yaml_path argument (default: Path(__file__).resolve().parent.parent.parent / 'data' / 'reference' / 'savings_rates.yaml'). Loads and caches the YAML in __init__. Method get(lever_type: str, category_l1: str | None = None) -> dict returns {'saving_pct': float | None, 'addressability_pct': float}. Lookup order: (1) data['categories'][category_l1][lever_type] if both keys exist, (2) data['defaults'][lever_type], (3) hardcoded fallback {'saving_pct': None, 'addressability_pct': 0.70}. Include module-level lazy singleton: _default_rates = None and get_default_rates() -> SavingsRates function.",
+      "acceptanceCriteria": [
+        "Create file: src/recommendations/savings_rates.py",
+        "Run: python3 -m py_compile src/recommendations/savings_rates.py — succeeds",
+        "Verify: python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('SUPPLIER_CONSOLIDATION','Information Technology'); assert v['saving_pct']==0.12, v\" — passes (IT override)",
+        "Verify: python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('SUPPLIER_CONSOLIDATION','Unknown Category'); assert v['saving_pct']==0.08, v\" — passes (default fallback)",
+        "Verify: python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('PAYMENT_TERM_EXTENSION'); assert v['saving_pct'] is None and v['addressability_pct']==0.80, v\" — passes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Update config with addressability defaults and min-spend thresholds",
+      "description": "Update src/config.py and config.yaml to add new fields to RecommendationsConfig. In src/config.py, add to RecommendationsConfig: addressability_defaults: Dict[str, float] (per-lever fallback addressability), competitive_tender_min_spend: float, contract_coverage_gap_min_spend: float. Import Dict from typing. In config.yaml under recommendations:, add: addressability_defaults block with keys SUPPLIER_CONSOLIDATION: 0.70, PAYMENT_TERM_EXTENSION: 0.80, TAIL_SPEND_RATIONALISATION: 0.50, CONTRACT_COMPLIANCE: 0.75, COMPETITIVE_TENDER: 0.65, CONTRACT_COVERAGE_GAP: 0.80; competitive_tender_min_spend: 50000.0; contract_coverage_gap_min_spend: 20000.0.",
+      "acceptanceCriteria": [
+        "Edit file: src/config.py — RecommendationsConfig has fields addressability_defaults: Dict[str, float], competitive_tender_min_spend: float, contract_coverage_gap_min_spend: float",
+        "Edit file: config.yaml — recommendations block has addressability_defaults with 6 lever keys, competitive_tender_min_spend: 50000.0, contract_coverage_gap_min_spend: 20000.0",
+        "Run: python3 -c \"from src.config import load_config; c=load_config('config.yaml'); print(c.recommendations.addressability_defaults)\" — prints dict with 6 entries",
+        "Run: python3 -m py_compile src/config.py — succeeds"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Update rules.py to use SavingsRates and apply addressability",
+      "description": "Update src/recommendations/rules.py so all rule methods use SavingsRates for rate lookups and apply addressability_pct to the baseline. Read the full file before making changes. (1) In __init__: add self._rates = SavingsRates() (import from src.recommendations.savings_rates). (2) rule_supplier_consolidation: for each category group, call rates_row = self._rates.get('SUPPLIER_CONSOLIDATION', category); saving_pct = rates_row['saving_pct']; addressability_pct = rates_row['addressability_pct']; addressable_baseline = category_spend * addressability_pct; estimated_impact = addressable_baseline * saving_pct. Add fields baseline_spend=round(category_spend,2), addressability_pct=addressability_pct, saving_pct=saving_pct, addressable_baseline=round(addressable_baseline,2), category_l1=category (the L2 here, best available) to the rec dict. Update evidence string to include addressability info. (3) rule_competitive_tender: same pattern with 'COMPETITIVE_TENDER'; use cfg.competitive_tender_min_spend instead of hardcoded 50_000. (4) rule_contract_coverage_gap: same pattern with 'CONTRACT_COVERAGE_GAP'; use cfg.contract_coverage_gap_min_spend instead of hardcoded 20_000; baseline_spend = total_spend, addressable_baseline = unmanaged_spend * addressability_pct. (5) rule_tail_spend_rationalisation: get rates = self._rates.get('TAIL_SPEND_RATIONALISATION'); addressability_pct from rates; baseline_spend = tail_spend_amount; addressable_baseline = baseline_spend * addressability_pct; estimated_impact = addressable_baseline * rates['saving_pct']. (6) rule_maverick_spend: same pattern with 'CONTRACT_COMPLIANCE'. (7) rule_payment_term_extension: get rates = self._rates.get('PAYMENT_TERM_EXTENSION'); addressability_pct from rates; annual_spend_addressable = annual_spend * addressability_pct; estimated_impact = (target - current) / 365.0 * annual_spend_addressable * cfg.wacc; add baseline_spend=round(annual_spend,2), addressability_pct=addressability_pct, saving_pct=None, addressable_baseline=round(annual_spend_addressable,2).",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/rules.py — all 6 rule methods use self._rates.get() and apply addressability_pct",
+        "Run: python3 -m py_compile src/recommendations/rules.py — succeeds",
+        "Verify: python3 -c \"from src.config import load_config; from src.models.database import get_engine; from src.cube.builder import SpendCubeBuilder; from src.cube.metrics import CubeMetrics; from src.recommendations.rules import RecommendationRules; c=load_config('config.yaml'); e=get_engine('data/db/spend_cube.db'); cube=SpendCubeBuilder(c,e).build(); m=CubeMetrics(cube,c).compute_all(); recs=RecommendationRules(cube,m,c).generate_all(); print(all('baseline_spend' in r and 'addressability_pct' in r for r in recs))\" — prints True",
+        "Verify: same script, print(recs[0]['addressable_baseline'] <= recs[0]['baseline_spend']) — prints True (addressable is always <= baseline)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Create SpendAllocator deduplication module",
+      "description": "Create src/recommendations/deduplicator.py containing a SpendAllocator class that prevents two recommendations from double-counting the same spend pool. EXCLUSIVE_GROUPS mapping at module level: {'SUPPLIER_CONSOLIDATION': 'SOURCING', 'COMPETITIVE_TENDER': 'SOURCING', 'CONTRACT_COVERAGE_GAP': 'COVERAGE', 'PAYMENT_TERM_EXTENSION': 'WORKING_CAPITAL', 'TAIL_SPEND_RATIONALISATION': 'PORTFOLIO_TAIL', 'CONTRACT_COMPLIANCE': 'PORTFOLIO_COMPLIANCE'}. SpendAllocator.allocate(recommendations: list[dict]) -> list[dict]: (1) Sort input by estimated_impact_aud descending. (2) For each rec, compute pool_key: for PORTFOLIO_* groups use ('PORTFOLIO', exclusive_group); for all others use (rec['context'], exclusive_group). (3) If pool_key is already in claimed set: set rec['estimated_impact_aud'] = 0.0, set rec['deduplication_note'] = 'Spend pool already claimed by higher-impact recommendation of same exclusive group'. (4) Else: add pool_key to claimed set. (5) After processing all recs, filter out those where estimated_impact_aud == 0.0. (6) Return filtered list. Work on a deep copy of the input list to avoid mutating callers' data.",
+      "acceptanceCriteria": [
+        "Create file: src/recommendations/deduplicator.py",
+        "Run: python3 -m py_compile src/recommendations/deduplicator.py — succeeds",
+        "Verify: python3 -c \"from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'COMPETITIVE_TENDER','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))\" — prints 1 (only higher-impact survives)",
+        "Verify: python3 -c \"from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'CONTRACT_COVERAGE_GAP','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))\" — prints 2 (different groups, both kept)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Wire SpendAllocator and portfolio summary into engine.py",
+      "description": "Update src/recommendations/engine.py to run SpendAllocator deduplication and add a portfolio sanity check with wrapped JSON export. Read the full file before making changes. In RecommendationEngine.run(): after rules.generate_all() and before narrative enrichment, call deduplicated = SpendAllocator().allocate(recommendations) (import SpendAllocator from src.recommendations.deduplicator). After deduplication, compute total_savings = sum(r['estimated_impact_aud'] for r in deduplicated) and total_spend = metrics.get('total_spend', 0.0). Compute savings_pct = total_savings / total_spend if total_spend > 0 else 0.0. If savings_pct > 0.20, log WARNING and set sanity_passed = False, else True. Store self._portfolio_summary = {'total_spend': round(total_spend,2), 'total_identified_savings': round(total_savings,2), 'savings_as_pct_of_spend': round(savings_pct,4), 'sanity_check_passed': sanity_passed, 'recommendation_count': len(deduplicated)} as an instance variable for use by export(). In export(): write {'recommendations': recommendations, 'portfolio_summary': self._portfolio_summary} instead of bare list. Initialise self._portfolio_summary = {} in __init__. Also update dashboard/pages/06_recommendations.py: in _load_recommendations(), if the loaded JSON is a dict with 'recommendations' key, return data['recommendations']; else return data as-is (backwards compat). Add a new @st.cache_data function _load_portfolio_summary() that reads the same file and returns data.get('portfolio_summary', {}) if dict, else {}.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/engine.py — run() calls SpendAllocator().allocate() after generate_all()",
+        "Edit file: src/recommendations/engine.py — export() writes {'recommendations': [...], 'portfolio_summary': {...}}",
+        "Edit file: dashboard/pages/06_recommendations.py — _load_recommendations() handles both list and dict formats",
+        "Run: python3 src/recommendations/engine.py --db data/db/spend_cube.db --config config.yaml --export data/output/recommendations.json — succeeds",
+        "Verify: python3 -c \"import json; d=json.load(open('data/output/recommendations.json')); print(sorted(d.keys()))\" — prints ['portfolio_summary', 'recommendations']",
+        "Verify: python3 -c \"import json; d=json.load(open('data/output/recommendations.json')); ps=d['portfolio_summary']; print(all(k in ps for k in ['total_spend','total_identified_savings','savings_as_pct_of_spend','sanity_check_passed','recommendation_count']))\" — prints True",
+        "Run: python3 -m py_compile dashboard/pages/06_recommendations.py — succeeds"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Update recommendations dashboard to display audit trail",
+      "description": "Update dashboard/pages/06_recommendations.py to show the new audit trail fields and portfolio summary. Read the full file before making changes. (1) In main(): call _load_portfolio_summary() (added in US-006) and pass the result to _kpi_row(). (2) In _kpi_row(recs, portfolio_summary={}): add a 5th metric 'Savings / Total Spend' showing portfolio_summary.get('savings_as_pct_of_spend', 0.0) formatted as percentage. If portfolio_summary.get('sanity_check_passed') is explicitly False, add st.warning('Total identified savings exceed 20% of total spend — review recommendations for overstatement.'). (3) In _build_display_df(): add columns 'Baseline Spend ({currency})' (from baseline_spend field, formatted as {:,.0f}) and 'Addressability' (from addressability_pct field, formatted as {:.0%}). (4) In _detail_cards(): within each expander, after the existing col_left/col_right layout, add a third section (full width) titled '**Calculation Basis**' using st.caption(). Show: Baseline Spend, Addressability (% with note 'of baseline is addressable'), Addressable Baseline, and Saving Rate (formatted as % or 'WACC formula' when saving_pct is None). Use st.caption() for these lines.",
+      "acceptanceCriteria": [
+        "Edit file: dashboard/pages/06_recommendations.py — _kpi_row() accepts portfolio_summary kwarg and shows Savings / Total Spend metric",
+        "Edit file: dashboard/pages/06_recommendations.py — _detail_cards() shows Calculation Basis section",
+        "Edit file: dashboard/pages/06_recommendations.py — _build_display_df() includes Baseline Spend and Addressability columns",
+        "Run: python3 -m py_compile dashboard/pages/06_recommendations.py — succeeds"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Add tests for SavingsRates and SpendAllocator",
+      "description": "Add tests to tests/test_recommendations.py for the new modules. Read the existing test file first to understand fixtures and test patterns. Add class TestSavingsRates with: test_it_override (SUPPLIER_CONSOLIDATION + IT returns saving_pct=0.12), test_default_fallback (SUPPLIER_CONSOLIDATION + unknown category returns saving_pct=0.08), test_payment_term_extension_no_saving_pct (PAYMENT_TERM_EXTENSION returns saving_pct=None, addressability_pct=0.80). Add class TestSpendAllocator with: test_same_sourcing_group_deduplicates (two recs same context, SUPPLIER_CONSOLIDATION + COMPETITIVE_TENDER → only higher-impact survives), test_different_groups_both_kept (SOURCING + COVERAGE on same context → both kept), test_portfolio_deduplication (two PORTFOLIO_TAIL recs → only one survives). Add class TestRulesAuditFields with: test_audit_fields_present (run rule_supplier_consolidation on synthetic cube DataFrame, assert returned recs have baseline_spend, addressability_pct, saving_pct, addressable_baseline keys and that addressable_baseline == baseline_spend * addressability_pct within 1e-6 tolerance).",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_recommendations.py — add TestSavingsRates, TestSpendAllocator, TestRulesAuditFields",
+        "Run: python3 -m pytest tests/test_recommendations.py -v — all tests pass",
+        "Verify: python3 -m pytest tests/test_recommendations.py --collect-only | grep 'test session starts' -A 50 | grep '<Function' | wc -l — at least 6 more test functions than before this sprint"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Update CLAUDE.md with recommendation engine rigour documentation",
+      "description": "Update CLAUDE.md's Phase 6 section to document the new recommendation engine architecture. Read CLAUDE.md first. Find the Phase 6 section and update: (1) Add a subsection '### Savings Rate Reference Data' documenting data/reference/savings_rates.yaml structure (defaults + categories keys, saving_pct + addressability_pct per entry, lookup order). (2) Add a subsection '### Addressability' documenting the concept: addressable_baseline = baseline_spend * addressability_pct, where addressability_pct accounts for spend that is locked-in, regulatory, or otherwise unaddressable by the initiative even though it forms part of the category baseline. (3) Add a subsection '### Double-Counting Prevention' documenting SpendAllocator exclusive groups (SOURCING: SUPPLIER_CONSOLIDATION + COMPETITIVE_TENDER; COVERAGE: CONTRACT_COVERAGE_GAP; WORKING_CAPITAL: PAYMENT_TERM_EXTENSION; PORTFOLIO_TAIL; PORTFOLIO_COMPLIANCE) and the pool_key = (context, exclusive_group) deduplication mechanism. (4) Add a subsection '### Audit Trail Fields' listing the four fields added to every rec dict: baseline_spend, addressability_pct, saving_pct (None for PAYMENT_TERM_EXTENSION), addressable_baseline. (5) Update the existing rule type table to note that saving percentages now come from data/reference/savings_rates.yaml. (6) Document the wrapped JSON export format: {recommendations: [...], portfolio_summary: {total_spend, total_identified_savings, savings_as_pct_of_spend, sanity_check_passed, recommendation_count}}.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — Phase 6 updated with savings_rates.yaml documentation",
+        "Verify: grep -n 'savings_rates' CLAUDE.md — at least 2 matches",
+        "Verify: grep -n 'addressability' CLAUDE.md — at least 3 matches",
+        "Verify: grep -n 'SpendAllocator' CLAUDE.md — at least 1 match",
+        "Verify: grep -n 'portfolio_summary' CLAUDE.md — at least 1 match"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_new_fields_present": "python3 -c \"import json; recs=json.load(open('data/output/recommendations.json'))['recommendations']; print(all('baseline_spend' in r and 'addressability_pct' in r for r in recs))\"",
+      "check_portfolio_summary": "python3 -c \"import json; d=json.load(open('data/output/recommendations.json')); print(d['portfolio_summary'])\"",
+      "check_it_override": "python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); print(r.get('SUPPLIER_CONSOLIDATION','Information Technology'))\"",
+      "check_deduplication": "python3 -c \"import json; recs=json.load(open('data/output/recommendations.json'))['recommendations']; from collections import Counter; groups=[(r['context'], r['type']) for r in recs]; print('No duplicates:', len(groups)==len(set(groups)))\""
+    },
+    "expected_counts": {
+      "new_audit_fields_per_rec": "4 (baseline_spend, addressability_pct, saving_pct, addressable_baseline)",
+      "portfolio_summary_keys": "5 (total_spend, total_identified_savings, savings_as_pct_of_spend, sanity_check_passed, recommendation_count)",
+      "new_tests_added": "at least 6 test functions"
+    },
+    "checks": [
+      "python3 -m pytest tests/test_recommendations.py -v — all pass",
+      "python3 -m py_compile src/recommendations/rules.py src/recommendations/savings_rates.py src/recommendations/deduplicator.py src/recommendations/engine.py dashboard/pages/06_recommendations.py — all succeed",
+      "python3 src/recommendations/engine.py --db data/db/spend_cube.db --config config.yaml --export data/output/recommendations.json — runs without error",
+      "Dashboard Recommendations page loads and shows Baseline Spend + Addressability in detail cards"
+    ]
+  },
+  "risks": [
+    "savings_rates.yaml category names must match L1 categories in actual data — mismatch silently falls back to defaults (acceptable behaviour, no error)",
+    "Wrapped JSON export is a breaking change for external consumers of recommendations.json — mitigated by backwards-compat handling in _load_recommendations()",
+    "SpendAllocator uses context field for pool_key — SUPPLIER_CONSOLIDATION context is L2 category, CONTRACT_COVERAGE_GAP context is L1 category, so they rarely share the same pool_key string; deduplication between these two rules at L1/L2 boundary is incomplete and documented as known limitation"
+  ],
+  "outOfScope": [
+    "LLM narrative enrichment changes — NarrativeGenerator not touched",
+    "UI-driven savings rate editor — rates edited via YAML only",
+    "Per-supplier addressability (e.g. flagging specific locked-in contracts)",
+    "Historical savings tracking or realised vs. identified savings comparison",
+    "Cross-page navigation from recommendation to the relevant supplier or category deep dive page"
+  ]
+}

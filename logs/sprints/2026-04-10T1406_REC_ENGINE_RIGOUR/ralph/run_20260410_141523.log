@@ -1,0 +1,71 @@
+[2026-04-10 14:15:23] [INFO] Ralph loop starting
+[2026-04-10 14:15:23] [INFO] Created progress file: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 14:15:23 CEST
+PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 14:15:23] [INFO] Starting iteration 1
+[2026-04-10 14:15:23] [INFO] Processing story: US-001
+[2026-04-10 14:15:23] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Create savings_rates.yaml reference file
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create data/reference/savings_rates.yaml containing per-lever savings rates and addressability percentages. The file has two top-level keys: 'defaults' (one entry per lever type as fallback) and 'categories' (L1 category overrides). Each entry has saving_pct (float 0-1) and addressability_pct (float 0-1). Lever type keys must exactly match the constants in src/recommendations/rules.py: SUPPLIER_CONSOLIDATION, PAYMENT_TERM_EXTENSION, TAIL_SPEND_RATIONALISATION, CONTRACT_COMPLIANCE, COMPETITIVE_TENDER, CONTRACT_COVERAGE_GAP. Default values: SUPPLIER_CONSOLIDATION saving_pct=0.08 addressability_pct=0.70; COMPETITIVE_TENDER saving_pct=0.07 addressability_pct=0.65; CONTRACT_COVERAGE_GAP saving_pct=0.05 addressability_pct=0.80; TAIL_SPEND_RATIONALISATION saving_pct=0.10 addressability_pct=0.50; CONTRACT_COMPLIANCE saving_pct=0.05 addressability_pct=0.75; PAYMENT_TERM_EXTENSION has no saving_pct (uses WACC formula) so omit saving_pct and set addressability_pct=0.80. Category overrides for: 'Information Technology' (SUPPLIER_CONSOLIDATION: saving_pct=0.12 addressability_pct=0.65; COMPETITIVE_TENDER: saving_pct=0.10 addressability_pct=0.60), 'Professional Services' (SUPPLIER_CONSOLIDATION: saving_pct=0.10 addressability_pct=0.55; COMPETITIVE_TENDER: saving_pct=0.08 addressability_pct=0.50), 'Facilities Management' (SUPPLIER_CONSOLIDATION: saving_pct=0.07 addressability_pct=0.72), 'Marketing and Communications' (SUPPLIER_CONSOLIDATION: saving_pct=0.12 addressability_pct=0.60), 'Logistics and Transport' (COMPETITIVE_TENDER: saving_pct=0.09 addressability_pct=0.70).
+
+## Acceptance Criteria
+- Create file: data/reference/savings_rates.yaml
+- Verify: python3 -c "import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); print(list(d.keys()))" — prints ['defaults', 'categories'] without error
+- Verify: python3 -c "import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); assert 'SUPPLIER_CONSOLIDATION' in d['defaults']" — passes
+- Verify: python3 -c "import yaml; d=yaml.safe_load(open('data/reference/savings_rates.yaml')); assert d['categories']['Information Technology']['SUPPLIER_CONSOLIDATION']['saving_pct'] == 0.12" — passes
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Create savings_rates.yaml reference file`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 14:16:01] [OK] Story US-001 completed!
+[2026-04-10 14:16:02] [OK] Marked US-001 as passed
+[2026-04-10 14:16:02] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 14:16:02] [STEP] Committing changes...

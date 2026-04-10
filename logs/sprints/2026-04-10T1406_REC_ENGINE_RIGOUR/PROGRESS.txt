@@ -1,0 +1,20 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+# Created: Fri 10 Apr 2026 14:15:23 CEST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-04-10
+- Created data/reference/savings_rates.yaml with 'defaults' and 'categories' top-level keys.
+- All 6 lever types present in defaults; PAYMENT_TERM_EXTENSION omits saving_pct (uses WACC formula).
+- 5 L1 category overrides: Information Technology, Professional Services, Facilities Management, Marketing and Communications, Logistics and Transport.
+- All 4 acceptance criteria pass.
+- Committed: 22634ca
+
+
+---
+
+### [US-001] - 2026-04-10 14:16:02
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
