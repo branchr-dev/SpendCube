@@ -18,3 +18,23 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+
+---
+
+### [US-003] - 2026-04-10
+**Status:** PASSED
+Story completed successfully.
+- Added `_transaction_boxplot` function using the `boxplot` chart helper from charts.py.
+- Modified `_top_suppliers` to return `list[str]` and use `on_select='rerun'` with key `cat_top_suppliers`.
+- Extracted `_top_suppliers` from the columns block; now rendered full-width before the trend/histogram.
+- Cross-filter `cf` wired to `_spend_trend` and `_payment_terms_histogram`; `cat_filtered` used for fragmentation and savings flags.
+- Boxplot section added after `_spend_trend` section.
+- Syntax check: `python3 -m py_compile` passes.
+
+
+---
+
+### [US-003] - 2026-04-10 09:49:54
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+

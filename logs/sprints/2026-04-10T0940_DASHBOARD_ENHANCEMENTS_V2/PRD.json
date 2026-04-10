@@ -82,7 +82,8 @@
         "Edit file: dashboard/pages/02_category_deep_dive.py — in main(), add boxplot section after the _spend_trend section: st.markdown('---'); st.subheader('Transaction Value Distribution'); _transaction_boxplot(cat_filtered).",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/02_category_deep_dive.py && echo 'syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T07:49:54Z"
     },
     {
       "id": "US-004",

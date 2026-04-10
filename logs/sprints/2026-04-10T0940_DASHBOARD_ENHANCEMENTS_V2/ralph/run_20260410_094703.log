@@ -132,3 +132,65 @@ STORY_COMPLETE: US-002
 [2026-04-10 09:48:59] [OK] Marked US-002 as passed
 [2026-04-10 09:48:59] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 09:48:59] [STEP] Committing changes...
+[2026-04-10 09:49:01] [INFO] Starting iteration 3
+[2026-04-10 09:49:01] [INFO] Processing story: US-003
+[2026-04-10 09:49:01] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Upgrade Category Deep Dive with transaction value boxplot and cross-filtering on top suppliers
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance dashboard/pages/02_category_deep_dive.py with a transaction value boxplot showing spend distribution per category, and cross-filtering so clicking a supplier in the top-suppliers bar filters the monthly trend and payment terms histogram. The boxplot is placed after the monthly trend section. The _top_suppliers function is modified to emit on_select events and return selected supplier names. The page already has an _payment_terms_histogram function that will become the cross-filtered secondary chart.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/02_category_deep_dive.py — add import for boxplot: from dashboard.components.charts import horizontal_bar, boxplot (update existing import line).
+- Edit file: dashboard/pages/02_category_deep_dive.py — add function _transaction_boxplot(df: pd.DataFrame) -> None. Guard: if df.empty or 'base_amount' not in df.columns: st.info('No data.'); return. Filter: pos_df = df[df['base_amount'] > 0].copy(). Guard: if pos_df.empty: st.info('No positive-value transactions for boxplot.'); return. Call: fig = boxplot(pos_df, x='category_l1', y='base_amount', title='Transaction Value Distribution by Category (AUD)'). Render: st.plotly_chart(fig, use_container_width=True). Add: st.caption('Distribution of individual transaction values (positive spend only). Wide spread indicates purchasing inconsistency or multiple item types within the category.').
+- Edit file: dashboard/pages/02_category_deep_dive.py — change _top_suppliers signature from _top_suppliers(df: pd.DataFrame) -> None to _top_suppliers(df: pd.DataFrame) -> list[str]. Inside the function, find the existing st.plotly_chart call and replace it with: event = st.plotly_chart(fig, on_select='rerun', key='cat_top_suppliers', use_container_width=True). Add after: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear'); return selected.
+- Edit file: dashboard/pages/02_category_deep_dive.py — in main(), change the call pattern for _top_suppliers. The current code calls _top_suppliers in a st.columns block with col_left and col_right. Change: (a) extract the _top_suppliers call out of the columns block if needed, OR render it full-width above the columns block. New pattern: sup_sel = _top_suppliers(cat_filtered); cf = cat_filtered[cat_filtered['canonical_supplier_name'].isin(sup_sel)] if sup_sel else cat_filtered. Pass cf to _spend_trend and _payment_terms_histogram (the two charts that represent the cross-filter secondary targets). Pass cat_filtered to _supplier_fragmentation and _savings_lever_flags.
+- Edit file: dashboard/pages/02_category_deep_dive.py — in main(), add boxplot section after the _spend_trend section: st.markdown('---'); st.subheader('Transaction Value Distribution'); _transaction_boxplot(cat_filtered).
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/02_category_deep_dive.py && echo 'syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Upgrade Category Deep Dive with transaction value boxplot and cross-filtering on top suppliers`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 09:49:54] [OK] Story US-003 completed!
+[2026-04-10 09:49:54] [OK] Marked US-003 as passed
+[2026-04-10 09:49:54] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 09:49:54] [STEP] Committing changes...
