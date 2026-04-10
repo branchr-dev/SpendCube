@@ -71,3 +71,18 @@ US-006 complete - SpendAllocator wired into engine.py, portfolio_summary added t
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+## US-007 COMPLETE — 2026-04-10
+- _kpi_row() now accepts portfolio_summary kwarg and renders 5th metric: Savings / Total Spend (formatted as %).
+- Sanity check warning added: if portfolio_summary['sanity_check_passed'] is explicitly False, st.warning() fires.
+- _build_display_df() adds 'Baseline Spend ({currency})' and 'Addressability' columns; table formatter updated accordingly.
+- _detail_cards() adds 'Calculation Basis' section (full width) using st.caption() for baseline_spend, addressability_pct, addressable_baseline, saving_pct (or 'WACC formula').
+- main() calls _load_portfolio_summary() and passes result to _kpi_row().
+- py_compile check passes. Committed: fdb7dd1
+
+
+---
+
+### [US-007] - 2026-04-10 14:21:48
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+

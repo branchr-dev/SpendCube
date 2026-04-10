@@ -134,7 +134,8 @@
         "Edit file: dashboard/pages/06_recommendations.py — _build_display_df() includes Baseline Spend and Addressability columns",
         "Run: python3 -m py_compile dashboard/pages/06_recommendations.py — succeeds"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:21:48Z"
     },
     {
       "id": "US-008",
