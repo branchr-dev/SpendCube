@@ -5,9 +5,20 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from dashboard.client_config import (
+    get_client_name,
+    get_currency_label,
+    get_data_freshness,
+    get_engagement_title,
+)
+
+title = get_engagement_title()
+if get_client_name():
+    title = f"{get_client_name()} — {title}"
+
 st.set_page_config(
-    page_title="SpendCube",
-    page_icon="💰",
+    page_title=title,
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -31,8 +42,7 @@ def load_cube_data() -> dict[str, pd.DataFrame]:
     ]
     if missing:
         st.error(
-            f"Missing Parquet files: {', '.join(missing)}. "
-            "Run `make build-cube` to generate the spend cube before launching the dashboard."
+            "Spend data not yet loaded. Please contact your analyst to refresh the dataset."
         )
         return {}
 
@@ -53,42 +63,43 @@ def load_quality_scorecard() -> dict:
 
 
 def main() -> None:
-    st.title("SpendCube — Procurement Analytics")
-    st.markdown(
-        "Procurement spend analytics pipeline. "
-        "Use the sidebar to navigate between dashboards."
-    )
+    client = get_client_name()
+    title = get_engagement_title()
+    if client:
+        st.title(client)
+        st.subheader(title)
+    else:
+        st.title(title)
+
+    freshness = get_data_freshness()
+    st.caption(f"Data last refreshed: {freshness}")
 
     cube = load_cube_data()
 
     if not cube:
-        st.info(
-            "No data found. Run the full pipeline first:\n\n"
-            "```bash\nmake ingest && make harmonise && make categorise && make build-cube\n```"
-        )
+        st.info("No spend data found. Please contact your analyst to load a dataset.")
         return
 
     txn = cube.get("transactions", pd.DataFrame())
     suppliers = cube.get("by_supplier", pd.DataFrame())
 
+    currency = get_currency_label()
     total_spend = float(txn["base_amount"].sum()) if "base_amount" in txn.columns else 0.0
     supplier_count = len(suppliers) if not suppliers.empty else 0
     invoice_count = len(txn)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Spend (AUD)", f"{total_spend:,.0f}")
+    col1.metric(f"Total Spend ({currency})", f"{total_spend:,.0f}")
     col2.metric("Suppliers", f"{supplier_count:,}")
     col3.metric("Invoices", f"{invoice_count:,}")
 
     st.markdown("---")
+    st.markdown("Use the sidebar to navigate between analysis views.")
     st.markdown(
-        "Navigate to a dashboard page using the sidebar on the left, "
-        "or select from the pages listed below:\n\n"
-        "- **Spend Overview** — KPIs, trends, category and supplier breakdown\n"
-        "- **Category Deep Dive** — L1 → L2 → L3 drill-down with savings levers\n"
-        "- **Supplier Deep Dive** — per-supplier spend, risk flags, related entities\n"
-        "- **Payment Terms** — working capital opportunity analysis\n"
-        "- **Data Quality** — 9-check scorecard with drill-down into issues\n"
+        "- **Spend Overview** — KPIs, monthly trend, category and supplier breakdown\n"
+        "- **Category Deep Dive** — Category drill-down from L1 to L3, supplier fragmentation, savings signals\n"
+        "- **Supplier Deep Dive** — Per-supplier spend profile, payment terms benchmark, risk flags\n"
+        "- **Payment Terms** — Working capital opportunity, terms distribution, supplier benchmark\n"
     )
 
 
