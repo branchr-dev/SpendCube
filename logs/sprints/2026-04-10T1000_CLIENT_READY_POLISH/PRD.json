@@ -65,7 +65,8 @@
         "Create file: dashboard/client_config.py with the following functions. All functions return sensible defaults if config.yaml is missing or malformed. Use Path(__file__).parent.parent / 'config.yaml' to locate the config file.\n\n  get_client_name() -> str: returns client.name from config.yaml. If empty string or missing, returns empty string.\n\n  get_engagement_title() -> str: returns client.engagement from config.yaml. Default: 'Procurement Spend Diagnostic'.\n\n  get_currency_label() -> str: returns client.currency_label from config.yaml. Fallback: read spend_cube.base_currency. Default: 'AUD'.\n\n  get_page_header(page_title: str) -> str: if get_client_name() is non-empty, return f'{get_client_name()} — {page_title}', else return page_title.\n\n  get_data_freshness(data_dir: Path = None) -> str: reads data/output/transactions.parquet, gets max(ingested_at), parses with pd.to_datetime, formats as 'DD Month YYYY' (e.g. '09 April 2026'). If file missing or error, returns 'Unknown'. data_dir defaults to Path(__file__).parent.parent / 'data' / 'output'.",
         "Run: PYTHONPATH=$(pwd) python3 -c \"from dashboard.client_config import get_client_name, get_engagement_title, get_currency_label, get_page_header, get_data_freshness; print(get_engagement_title()); print(get_currency_label()); print(get_page_header('Spend Overview')); print(get_data_freshness())\" — should print without error and show 'Procurement Spend Diagnostic', 'AUD', 'Spend Overview' (no client name set yet), and a date string."
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T08:04:19Z"
     },
     {
       "id": "US-003",
