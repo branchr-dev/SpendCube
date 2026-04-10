@@ -87,3 +87,16 @@ US-005 complete: renamed 07_review_workstation.py → 99_admin_review_workstatio
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+US-006 complete: added '### Client Configuration' subsection to Phase 5 in CLAUDE.md documenting client_config.py module and usage pattern. Updated Review Workstation reference to note rename to 99_admin_review_workstation.py and client visibility restriction. grep for 'client_config' returns 1 match. Committed.
+
+### [US-006] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
+
+---
+
+### [US-006] - 2026-04-10 10:12:36
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+

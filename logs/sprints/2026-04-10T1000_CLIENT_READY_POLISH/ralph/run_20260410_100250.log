@@ -343,3 +343,62 @@ STORY_COMPLETE: US-005
 [2026-04-10 10:11:39] [OK] Marked US-005 as passed
 [2026-04-10 10:11:39] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 10:11:39] [STEP] Committing changes...
+[2026-04-10 10:11:41] [INFO] Starting iteration 6
+[2026-04-10 10:11:41] [INFO] Processing story: US-006
+[2026-04-10 10:11:41] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Update CLAUDE.md with client config pattern
+
+## Project Context
+**Project:** Client Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-04
+**PRD:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Document the client configuration system added in this sprint so future Ralph sessions know how branding works.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — in the Phase 5 (Streamlit Dashboards) section, add a subsection '### Client Configuration' with: 'Client branding is controlled by the client: block in config.yaml (name, engagement, currency_label). The dashboard/client_config.py module exposes: get_client_name(), get_engagement_title(), get_currency_label(), get_page_header(page_title), get_data_freshness(). All dashboard pages import from this module — never read config.yaml directly in a page file. To set up for a new client: edit config.yaml client.name and client.engagement fields.'
+- Edit file: CLAUDE.md — note that dashboard/pages/99_admin_review_workstation.py is the internal analyst review tool (renamed from 07_review_workstation.py) and should not be shown to clients.
+- Verify: grep -n 'client_config' CLAUDE.md — should return at least one match
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Update CLAUDE.md with client config pattern`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 10:12:36] [OK] Story US-006 completed!
+[2026-04-10 10:12:36] [OK] Marked US-006 as passed
+[2026-04-10 10:12:36] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 10:12:36] [STEP] Committing changes...
