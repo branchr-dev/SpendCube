@@ -184,6 +184,20 @@ def load_cube_data() -> dict[str, pd.DataFrame]:
 
 All charts use **Plotly Express** (`import plotly.express as px`). No Altair, Bokeh, or Matplotlib. This keeps chart styling consistent and enables interactivity (hover, zoom, click-to-filter) without extra dependencies.
 
+Chart helpers in `dashboard/components/charts.py`: `horizontal_bar(df, x, y, title, max_rows)`, `donut_chart(df, names, values, title)`, `heatmap(df, x, y, values, title)`, `pareto_chart(df, x, y, title)`, `line_chart(df, x, y, title)`, `bar_chart(df, x, y, title, color)`, `boxplot(df, x, y, title)` — box plot grouped by x, `scatter_bubble(df, x, y, size, color, label, title, hover_name)` — bubble scatter, `dumbbell(df, label_col, left_col, right_col, left_name, right_name, title)` — dumbbell/lollipop for benchmark comparison.
+
+### Cross-Filtering Pattern
+
+Pages use Streamlit `on_select` events for within-page cross-filtering. Pattern:
+
+1. `event = st.plotly_chart(fig, on_select="rerun", key="unique_page_key", use_container_width=True)`
+2. `points = (event or {}).get("selection", {}).get("points", [])`
+3. For horizontal bars: `selected = [p["y"] for p in points if "y" in p]`. For scatter with `text=`: `selected = [p.get("text") for p in points if p.get("text")]`
+4. `if selected: st.caption(f"Cross-filter active: {...} — click chart background to clear")`
+5. `cf = df[df[col].isin(selected)] if selected else df`. Apply `cf` to secondary charts only.
+
+Cross-filter is within-page only — no cross-page state sharing.
+
 ### Pages
 
 | Page module | Route label | Description |
