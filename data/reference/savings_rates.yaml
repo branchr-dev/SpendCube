@@ -1,0 +1,56 @@
+# Savings rates and addressability percentages per lever type and L1 category.
+# Lookup order: categories[category_l1][lever_type] → defaults[lever_type] → hardcoded fallback.
+# saving_pct: fraction of addressable baseline estimated as savings (0–1).
+# addressability_pct: fraction of category baseline considered actionable (0–1).
+# PAYMENT_TERM_EXTENSION has no saving_pct — impact is calculated via WACC formula.
+
+defaults:
+  SUPPLIER_CONSOLIDATION:
+    saving_pct: 0.08
+    addressability_pct: 0.70
+  COMPETITIVE_TENDER:
+    saving_pct: 0.07
+    addressability_pct: 0.65
+  CONTRACT_COVERAGE_GAP:
+    saving_pct: 0.05
+    addressability_pct: 0.80
+  TAIL_SPEND_RATIONALISATION:
+    saving_pct: 0.10
+    addressability_pct: 0.50
+  CONTRACT_COMPLIANCE:
+    saving_pct: 0.05
+    addressability_pct: 0.75
+  PAYMENT_TERM_EXTENSION:
+    addressability_pct: 0.80
+
+categories:
+  Information Technology:
+    SUPPLIER_CONSOLIDATION:
+      saving_pct: 0.12
+      addressability_pct: 0.65
+    COMPETITIVE_TENDER:
+      saving_pct: 0.10
+      addressability_pct: 0.60
+
+  Professional Services:
+    SUPPLIER_CONSOLIDATION:
+      saving_pct: 0.10
+      addressability_pct: 0.55
+    COMPETITIVE_TENDER:
+      saving_pct: 0.08
+      addressability_pct: 0.50
+
+  Facilities Management:
+    SUPPLIER_CONSOLIDATION:
+      saving_pct: 0.07
+      addressability_pct: 0.72
+
+  Marketing and Communications:
+    SUPPLIER_CONSOLIDATION:
+      saving_pct: 0.12
+      addressability_pct: 0.60
+
+  Logistics and Transport:
+    COMPETITIVE_TENDER:
+      saving_pct: 0.09
+      addressability_pct: 0.70
