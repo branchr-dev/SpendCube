@@ -252,6 +252,7 @@ def _savings_lever_flags(df: pd.DataFrame) -> None:
 
 def main() -> None:
     st.title("Category Deep Dive")
+    st.caption('Drill down from L1 to L3 category. Select a category in the sidebar to filter all charts. Click a supplier bar to cross-filter to that supplier.')
 
     cube = load_cube_data()
     if not cube:

@@ -675,6 +675,7 @@ def _audit_trail_section() -> None:
 
 def main() -> None:
     st.title("Review Workstation")
+    st.error('⚠️ INTERNAL ANALYST TOOL — This page is not intended for client distribution. It allows analysts to review and correct supplier matches and category assignments.')
 
     engine = _get_engine()
     if engine is None:

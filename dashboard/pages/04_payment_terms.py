@@ -320,6 +320,7 @@ def _spend_terms_scatter(df: pd.DataFrame) -> list[str]:
 
 def main() -> None:
     st.title("Payment Terms")
+    st.caption('Working capital opportunity analysis. Identifies suppliers where payment terms can be extended to improve cash flow. Adjust target days and WACC in the sidebar.')
 
     cube = load_cube_data()
     if not cube:

@@ -326,6 +326,7 @@ def _payment_terms_dumbbell(sup_df: pd.DataFrame, all_txn: pd.DataFrame) -> None
 
 def main() -> None:
     st.title("Supplier Deep Dive")
+    st.caption('Select a supplier to view their full spend profile, payment terms benchmark, and risk flags.')
 
     cube = load_cube_data()
     if not cube:

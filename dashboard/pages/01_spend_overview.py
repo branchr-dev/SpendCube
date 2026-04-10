@@ -333,6 +333,7 @@ def _quality_scorecard(scorecard: dict) -> None:
 
 def main() -> None:
     st.title("Spend Overview")
+    st.caption('Total spend by supplier, category, and business unit. Use the charts below to identify concentration, fragmentation, and consolidation opportunities.')
 
     cube = load_cube_data()
     if not cube:
