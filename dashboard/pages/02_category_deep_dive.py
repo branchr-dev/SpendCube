@@ -148,7 +148,7 @@ def _top_suppliers(df: pd.DataFrame) -> list[str]:
     fig = horizontal_bar(sup_data, x="Spend", y="Supplier", title="Top 10 Suppliers by Spend")
     event = st.plotly_chart(fig, on_select="rerun", key="cat_top_suppliers", use_container_width=True)
     points = (event or {}).get("selection", {}).get("points", [])
-    selected = [p["y"] for p in points if "y" in p]
+    selected = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
     if selected:
         st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
     return selected

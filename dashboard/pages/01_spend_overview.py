@@ -114,7 +114,7 @@ def _category_and_bu(filtered: pd.DataFrame) -> tuple[list[str], list[str]]:
                 fig = horizontal_bar(cat_data, x="Spend", y="Category L1", title="Spend by Category L1 (Top 10)")
                 event = st.plotly_chart(fig, on_select="rerun", key="overview_cat_bar", use_container_width=True)
                 points = (event or {}).get("selection", {}).get("points", [])
-                selected_cats = [p["y"] for p in points if "y" in p]
+                selected_cats = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
                 if selected_cats:
                     st.caption(f"Cross-filter active: {', '.join(selected_cats[:3])} — click chart background to clear")
         else:
@@ -136,7 +136,7 @@ def _category_and_bu(filtered: pd.DataFrame) -> tuple[list[str], list[str]]:
                 fig = horizontal_bar(bu_data, x="Spend", y="Business Unit", title="Spend by Business Unit")
                 event = st.plotly_chart(fig, on_select="rerun", key="overview_bu_bar", use_container_width=True)
                 points = (event or {}).get("selection", {}).get("points", [])
-                selected_bus = [p["y"] for p in points if "y" in p]
+                selected_bus = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
                 if selected_bus:
                     st.caption(f"Cross-filter active: {', '.join(selected_bus[:3])} — click chart background to clear")
         else:
@@ -198,7 +198,7 @@ def _top_suppliers(filtered: pd.DataFrame) -> list[str]:
     )
     event = st.plotly_chart(fig, on_select="rerun", key="overview_top_suppliers", use_container_width=True)
     points = (event or {}).get("selection", {}).get("points", [])
-    selected = [p["y"] for p in points if "y" in p]
+    selected = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
     if selected:
         st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
     return selected

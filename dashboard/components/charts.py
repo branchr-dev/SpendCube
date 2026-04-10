@@ -35,11 +35,50 @@ def bar_chart(df: pd.DataFrame, x: str, y: str, title: str, color: str = None) -
     return _apply_layout(fig)
 
 
-def horizontal_bar(df: pd.DataFrame, x: str, y: str, title: str, max_rows: int = 20) -> go.Figure:
-    """Horizontal bar chart, capped at max_rows."""
-    data = df.nlargest(max_rows, x) if len(df) > max_rows else df
-    fig = px.bar(data, x=x, y=y, title=title, orientation="h", color_discrete_sequence=BLUE_PALETTE)
-    fig.update_layout(**{**_LAYOUT, "yaxis": dict(gridcolor=_GRID_COLOR, showgrid=False, autorange="reversed")})
+def horizontal_bar(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    title: str,
+    max_rows: int = 20,
+    other_bucket: bool = True,
+) -> go.Figure:
+    """Horizontal bar chart. Tail rows beyond max_rows grouped into an 'Other' bar.
+    Hover over 'Other' to see which items were bucketed."""
+    if other_bucket and len(df) > max_rows:
+        top = df.nlargest(max_rows, x).copy()
+        tail = df[~df[y].isin(top[y])].sort_values(x, ascending=False)
+        top["_hover"] = ""
+        if not tail.empty:
+            tail_labels = tail[y].astype(str).tolist()
+            preview = "<br>".join(tail_labels[:30])
+            suffix = f"<br>… and {len(tail_labels) - 30} more" if len(tail_labels) > 30 else ""
+            other_hover = f"<br><i>Includes ({len(tail_labels)}):<br>{preview}{suffix}</i>"
+            other_row = pd.DataFrame({y: ["Other"], x: [tail[x].sum()], "_hover": [other_hover]})
+            data = pd.concat([top, other_row], ignore_index=True)
+        else:
+            data = top
+    else:
+        data = df.nlargest(max_rows, x) if len(df) > max_rows else df.copy()
+        data = data.assign(_hover="")
+
+    colors = [BLUE_PALETTE[0] if str(v) != "Other" else "#95a5a6" for v in data[y]]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=data[x].tolist(),
+        y=data[y].tolist(),
+        orientation="h",
+        customdata=data["_hover"].tolist(),
+        hovertemplate="%{y}: %{x:,.0f}%{customdata}<extra></extra>",
+        marker=dict(color=colors),
+        name="",
+    ))
+    fig.update_layout(**{
+        **_LAYOUT,
+        "yaxis": dict(gridcolor=_GRID_COLOR, showgrid=False, autorange="reversed"),
+        "title": title,
+    })
     return fig
 
 

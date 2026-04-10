@@ -137,7 +137,7 @@ def _spend_by_category(df: pd.DataFrame) -> list[str]:
     fig = horizontal_bar(cat_data, x="Spend", y="Category", title="Spend by Category (L1)")
     event = st.plotly_chart(fig, on_select="rerun", key="supplier_spend_by_cat", use_container_width=True)
     points = (event or {}).get("selection", {}).get("points", [])
-    selected = [p["y"] for p in points if "y" in p]
+    selected = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
     if selected:
         st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear')
     return selected
@@ -175,7 +175,7 @@ def _spend_by_bu(df: pd.DataFrame) -> list[str]:
     )
     event = st.plotly_chart(fig, on_select="rerun", key="supplier_spend_by_bu", use_container_width=True)
     points = (event or {}).get("selection", {}).get("points", [])
-    selected = [p["y"] for p in points if "y" in p]
+    selected = [p["y"] for p in points if "y" in p and p["y"] != "Other"]
     if selected:
         st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
     return selected

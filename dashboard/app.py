@@ -24,6 +24,7 @@ st.set_page_config(
 )
 
 _DATA_DIR = Path(__file__).parent.parent / "data" / "output"
+_PAGES_DIR = Path(__file__).parent / "pages"
 _PARQUET_FILES = {
     "transactions": "transactions.parquet",
     "by_supplier": "by_supplier.parquet",
@@ -62,14 +63,14 @@ def load_quality_scorecard() -> dict:
         return json.load(f)
 
 
-def main() -> None:
+def _cover() -> None:
     client = get_client_name()
-    title = get_engagement_title()
+    engagement = get_engagement_title()
     if client:
         st.title(client)
-        st.subheader(title)
+        st.subheader(engagement)
     else:
-        st.title(title)
+        st.title(engagement)
 
     freshness = get_data_freshness()
     st.caption(f"Data last refreshed: {freshness}")
@@ -103,5 +104,14 @@ def main() -> None:
     )
 
 
-if __name__ == "__main__":
-    main()
+pg = st.navigation([
+    st.Page(_cover, title="Cover", icon="📊", default=True),
+    st.Page(str(_PAGES_DIR / "01_spend_overview.py"), title="Spend Overview"),
+    st.Page(str(_PAGES_DIR / "02_category_deep_dive.py"), title="Category Deep Dive"),
+    st.Page(str(_PAGES_DIR / "03_supplier_deep_dive.py"), title="Supplier Deep Dive"),
+    st.Page(str(_PAGES_DIR / "04_payment_terms.py"), title="Payment Terms"),
+    st.Page(str(_PAGES_DIR / "05_data_quality.py"), title="Data Quality"),
+    st.Page(str(_PAGES_DIR / "06_recommendations.py"), title="Recommendations"),
+    st.Page(str(_PAGES_DIR / "99_admin_review_workstation.py"), title="Review Workstation"),
+])
+pg.run()
