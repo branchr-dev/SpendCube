@@ -81,3 +81,68 @@ STORY_COMPLETE: US-002
 [2026-04-10 07:32:53] [OK] Marked US-002 as passed
 [2026-04-10 07:32:53] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 07:32:53] [STEP] Committing changes...
+[2026-04-10 07:32:55] [INFO] Starting iteration 2
+[2026-04-10 07:32:55] [INFO] Processing story: US-003
+[2026-04-10 07:32:55] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement spend overview dashboard page
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/01_spend_overview.py — the main high-level spend overview page with KPI cards, spend trends, category breakdown, top suppliers, and Pareto curve.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/01_spend_overview.py — implement full spend overview page
+- Row 1 — KPI cards (st.columns(6)): Total Spend (AUD), Supplier Count, Invoice Count, Avg Transaction Size, Contract Coverage %, Tail Spend %
+- Row 2 — Spend by month (bar chart, full width): x=invoice_month, y=sum(base_amount). Add 3-month rolling average trend line.
+- Row 3 left — Spend by category L1 (horizontal bar, top 10). Row 3 right — Spend by business unit (horizontal bar).
+- Row 4 — Top 20 suppliers (horizontal bar with canonical_supplier_name). Overlay cumulative spend % as secondary line.
+- Row 5 left — Pareto curve (supplier rank vs cumulative % spend). Row 5 right — Direct vs Indirect split donut (spend_type) OR Managed vs Unmanaged donut (managed_status). Use whichever has more non-null data.
+- Row 6 — Data quality scorecard mini-view: show 9 check statuses as coloured badges.
+- Apply filters from render_filters() in sidebar. All charts update when filters change.
+- Page title: 'Spend Overview'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement spend overview dashboard page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 07:35:36] [OK] Story US-003 completed!
+[2026-04-10 07:35:36] [OK] Marked US-003 as passed
+[2026-04-10 07:35:36] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 07:35:36] [STEP] Committing changes...

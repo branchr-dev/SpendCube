@@ -92,7 +92,8 @@
         "Apply filters from render_filters() in sidebar. All charts update when filters change.",
         "Page title: 'Spend Overview'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:35:36Z"
     },
     {
       "id": "US-004",
