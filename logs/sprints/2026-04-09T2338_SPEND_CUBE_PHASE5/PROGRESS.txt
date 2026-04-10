@@ -56,3 +56,21 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+## US-004 COMPLETE — 2026-04-10
+- Implemented dashboard/pages/02_category_deep_dive.py: full category deep dive page
+- Category selectors in sidebar: L1 → L2 (filtered by L1) → L3 (filtered by L2), each with 'All' option
+- KPI row (6 cols): Total Spend, Supplier Count, Invoice Count, Contract Coverage %, Maverick Spend %, Avg Payment Terms
+- Spend trend: monthly bar chart (no rolling avg — category drill-down makes rolling avg less meaningful)
+- Top 10 suppliers: horizontal_bar from shared chart components
+- Supplier fragmentation: supplier count, HHI (sum of squared share %), top-1 share %; concentration warning if HHI > 1500
+- Payment terms distribution: plotly Histogram (nbinsx=20)
+- Savings lever flags: 4 checks — consolidation (>5 suppliers), maverick (>15%), short terms (<30 days avg), top supplier concentration (>60%)
+- Discovery: is_maverick not in parquet schema — computed from po_number IS NULL as proxy
+- All sections guard against empty DataFrames with st.info() fallback
+
+---
+
+### [US-004] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
