@@ -28,6 +28,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from src.config import load_config
 from src.models.database import get_engine
+from src.recommendations.savings_rates import SavingsRates
 from src.utils.logging import get_logger_from_config
 
 # ---------------------------------------------------------------------------
@@ -57,6 +58,7 @@ class RecommendationRules:
         self.config = config
         self.logger = get_logger_from_config(__name__, config)
         self._rec_cfg = config.recommendations
+        self._rates = SavingsRates()
 
     # ------------------------------------------------------------------
     # Public interface
@@ -130,14 +132,20 @@ class RecommendationRules:
 
             supplier_spend = group.groupby("canonical_supplier_id")["base_amount"].sum()
             top_pct = round(float(supplier_spend.max() / category_spend) * 100, 1)
-            estimated_impact = category_spend * cfg.consolidation_saving_pct
+
+            rates_row = self._rates.get(SUPPLIER_CONSOLIDATION, str(category))
+            saving_pct = rates_row["saving_pct"]
+            addressability_pct = rates_row["addressability_pct"]
+            addressable_baseline = category_spend * addressability_pct
+            estimated_impact = addressable_baseline * saving_pct
 
             recs.append({
                 "type": SUPPLIER_CONSOLIDATION,
                 "context": str(category),
                 "evidence": (
                     f"{n_suppliers} suppliers in {category}, "
-                    f"top supplier = {top_pct}%"
+                    f"top supplier = {top_pct}%; "
+                    f"{addressability_pct:.0%} addressable"
                 ),
                 "estimated_impact_aud": round(estimated_impact, 2),
                 "confidence": "HIGH",
@@ -146,6 +154,11 @@ class RecommendationRules:
                     f"to 2-3 preferred vendors"
                 ),
                 "lever": "Supplier Consolidation",
+                "baseline_spend": round(category_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": saving_pct,
+                "addressable_baseline": round(addressable_baseline, 2),
+                "category_l1": str(category),
             })
 
         return recs
@@ -188,6 +201,8 @@ class RecommendationRules:
         )
 
         target = float(cfg.target_payment_days)
+        rates_row = self._rates.get(PAYMENT_TERM_EXTENSION)
+        addressability_pct = rates_row["addressability_pct"]
         recs: list[dict] = []
 
         for _, row in supplier_stats.iterrows():
@@ -196,7 +211,8 @@ class RecommendationRules:
                 continue
 
             annual_spend = float(row["annual_spend"])
-            estimated_impact = (target - current) / 365.0 * annual_spend * cfg.wacc
+            annual_spend_addressable = annual_spend * addressability_pct
+            estimated_impact = (target - current) / 365.0 * annual_spend_addressable * cfg.wacc
 
             if estimated_impact <= cfg.min_wc_opportunity:
                 continue
@@ -218,6 +234,10 @@ class RecommendationRules:
                     f"{target:.0f} days with {supplier_name}"
                 ),
                 "lever": "Working Capital",
+                "baseline_spend": round(annual_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": None,
+                "addressable_baseline": round(annual_spend_addressable, 2),
             })
 
         return recs
@@ -235,7 +255,10 @@ class RecommendationRules:
 
         total_spend = float(self.metrics.get("total_spend", 0.0))
         tail_spend_amount = total_spend * tail_spend_pct
-        estimated_impact = tail_spend_amount * 0.10
+        rates = self._rates.get(TAIL_SPEND_RATIONALISATION)
+        addressability_pct = rates["addressability_pct"]
+        addressable_baseline = tail_spend_amount * addressability_pct
+        estimated_impact = addressable_baseline * rates["saving_pct"]
         pct_str = f"{tail_spend_pct:.1%}"
 
         return [{
@@ -249,6 +272,10 @@ class RecommendationRules:
                 "consolidate or eliminate low-value vendors"
             ),
             "lever": "Tail Spend Rationalisation",
+            "baseline_spend": round(tail_spend_amount, 2),
+            "addressability_pct": addressability_pct,
+            "saving_pct": rates["saving_pct"],
+            "addressable_baseline": round(addressable_baseline, 2),
         }]
 
     def rule_maverick_spend(self) -> list[dict]:
@@ -263,7 +290,10 @@ class RecommendationRules:
 
         total_spend = float(self.metrics.get("total_spend", 0.0))
         maverick_spend = total_spend * maverick_spend_pct
-        estimated_impact = maverick_spend * 0.05
+        rates = self._rates.get(CONTRACT_COMPLIANCE)
+        addressability_pct = rates["addressability_pct"]
+        addressable_baseline = maverick_spend * addressability_pct
+        estimated_impact = addressable_baseline * rates["saving_pct"]
         pct_str = f"{maverick_spend_pct:.1%}"
 
         return [{
@@ -279,6 +309,10 @@ class RecommendationRules:
                 "for maverick spend categories"
             ),
             "lever": "Contract Compliance",
+            "baseline_spend": round(maverick_spend, 2),
+            "addressability_pct": addressability_pct,
+            "saving_pct": rates["saving_pct"],
+            "addressable_baseline": round(addressable_baseline, 2),
         }]
 
     def rule_competitive_tender(self) -> list[dict]:
@@ -302,6 +336,7 @@ class RecommendationRules:
         if addr_cat.empty:
             return []
 
+        cfg = self._rec_cfg
         recs: list[dict] = []
         for category, group in addr_cat.groupby("category_l2"):
             n_suppliers = int(group["canonical_supplier_id"].nunique())
@@ -309,10 +344,14 @@ class RecommendationRules:
                 continue
 
             category_spend = float(group["base_amount"].sum())
-            if category_spend <= 50_000:
+            if category_spend <= cfg.competitive_tender_min_spend:
                 continue
 
-            estimated_impact = category_spend * 0.07
+            rates_row = self._rates.get(COMPETITIVE_TENDER, str(category))
+            saving_pct = rates_row["saving_pct"]
+            addressability_pct = rates_row["addressability_pct"]
+            addressable_baseline = category_spend * addressability_pct
+            estimated_impact = addressable_baseline * saving_pct
 
             if "canonical_supplier_name" in group.columns:
                 supplier_name = str(group["canonical_supplier_name"].dropna().iloc[0])
@@ -324,7 +363,8 @@ class RecommendationRules:
                 "context": str(category),
                 "evidence": (
                     f"Single source: all {category} spend "
-                    f"(${category_spend:,.0f}) with {supplier_name}"
+                    f"(${category_spend:,.0f}) with {supplier_name}; "
+                    f"{addressability_pct:.0%} addressable"
                 ),
                 "estimated_impact_aud": round(estimated_impact, 2),
                 "confidence": "HIGH",
@@ -333,6 +373,11 @@ class RecommendationRules:
                     f"currently single-sourced from {supplier_name}"
                 ),
                 "lever": "Competitive Sourcing",
+                "baseline_spend": round(category_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": saving_pct,
+                "addressable_baseline": round(addressable_baseline, 2),
+                "category_l1": str(category),
             })
 
         return recs
@@ -358,12 +403,13 @@ class RecommendationRules:
         if addr_cat.empty:
             return []
 
+        cfg = self._rec_cfg
         has_contract_col = "is_on_contract" in addr_cat.columns
         recs: list[dict] = []
 
         for category, group in addr_cat.groupby("category_l1"):
             total_spend = float(group["base_amount"].sum())
-            if total_spend <= 20_000:
+            if total_spend <= cfg.contract_coverage_gap_min_spend:
                 continue
 
             if has_contract_col:
@@ -378,7 +424,11 @@ class RecommendationRules:
                 continue
 
             unmanaged_spend = total_spend * (1.0 - coverage_pct)
-            estimated_impact = unmanaged_spend * 0.05
+            rates_row = self._rates.get(CONTRACT_COVERAGE_GAP, str(category))
+            saving_pct = rates_row["saving_pct"]
+            addressability_pct = rates_row["addressability_pct"]
+            addressable_baseline = unmanaged_spend * addressability_pct
+            estimated_impact = addressable_baseline * saving_pct
             coverage_str = f"{coverage_pct:.0%}"
 
             recs.append({
@@ -386,7 +436,8 @@ class RecommendationRules:
                 "context": str(category),
                 "evidence": (
                     f"{coverage_str} contract coverage in {category} "
-                    f"(${total_spend:,.0f} total spend)"
+                    f"(${total_spend:,.0f} total spend); "
+                    f"{addressability_pct:.0%} of unmanaged addressable"
                 ),
                 "estimated_impact_aud": round(estimated_impact, 2),
                 "confidence": "MEDIUM",
@@ -395,6 +446,10 @@ class RecommendationRules:
                     "target 80% contract coverage"
                 ),
                 "lever": "Contract Coverage",
+                "baseline_spend": round(total_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": saving_pct,
+                "addressable_baseline": round(addressable_baseline, 2),
             })
 
         return recs
