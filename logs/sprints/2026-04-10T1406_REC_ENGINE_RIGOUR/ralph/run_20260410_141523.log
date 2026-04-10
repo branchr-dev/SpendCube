@@ -433,3 +433,62 @@ STORY_COMPLETE: US-007
 [2026-04-10 14:21:48] [OK] Marked US-007 as passed
 [2026-04-10 14:21:48] [INFO] Logged progress for US-007: PASSED
 [2026-04-10 14:21:48] [STEP] Committing changes...
+[2026-04-10 14:21:50] [INFO] Starting iteration 8
+[2026-04-10 14:21:50] [INFO] Processing story: US-008
+[2026-04-10 14:21:50] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Add tests for SavingsRates and SpendAllocator
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add tests to tests/test_recommendations.py for the new modules. Read the existing test file first to understand fixtures and test patterns. Add class TestSavingsRates with: test_it_override (SUPPLIER_CONSOLIDATION + IT returns saving_pct=0.12), test_default_fallback (SUPPLIER_CONSOLIDATION + unknown category returns saving_pct=0.08), test_payment_term_extension_no_saving_pct (PAYMENT_TERM_EXTENSION returns saving_pct=None, addressability_pct=0.80). Add class TestSpendAllocator with: test_same_sourcing_group_deduplicates (two recs same context, SUPPLIER_CONSOLIDATION + COMPETITIVE_TENDER → only higher-impact survives), test_different_groups_both_kept (SOURCING + COVERAGE on same context → both kept), test_portfolio_deduplication (two PORTFOLIO_TAIL recs → only one survives). Add class TestRulesAuditFields with: test_audit_fields_present (run rule_supplier_consolidation on synthetic cube DataFrame, assert returned recs have baseline_spend, addressability_pct, saving_pct, addressable_baseline keys and that addressable_baseline == baseline_spend * addressability_pct within 1e-6 tolerance).
+
+## Acceptance Criteria
+- Edit file: tests/test_recommendations.py — add TestSavingsRates, TestSpendAllocator, TestRulesAuditFields
+- Run: python3 -m pytest tests/test_recommendations.py -v — all tests pass
+- Verify: python3 -m pytest tests/test_recommendations.py --collect-only | grep 'test session starts' -A 50 | grep '<Function' | wc -l — at least 6 more test functions than before this sprint
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Add tests for SavingsRates and SpendAllocator`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-10 14:23:56] [OK] Story US-008 completed!
+[2026-04-10 14:23:56] [OK] Marked US-008 as passed
+[2026-04-10 14:23:56] [INFO] Logged progress for US-008: PASSED
+[2026-04-10 14:23:56] [STEP] Committing changes...

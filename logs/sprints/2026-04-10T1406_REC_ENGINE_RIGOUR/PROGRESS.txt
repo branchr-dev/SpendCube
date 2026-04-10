@@ -86,3 +86,19 @@ Story completed successfully by Ralph loop iteration 6
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+[US-008] 2026-04-10 — Add tests for SavingsRates and SpendAllocator
+  - Added TestSavingsRates (3 tests): IT override, default fallback, PAYMENT_TERM_EXTENSION no saving_pct
+  - Added TestSpendAllocator (3 tests): same SOURCING group deduplicates, different groups both kept, PORTFOLIO_TAIL dedup
+  - Added TestRulesAuditFields (1 test): audit fields present and addressable_baseline math verified
+  - Fixed 2 pre-existing test regressions from earlier stories:
+    * test_payment_term_rec_only_for_suppliers_below_target: increased base_amount to 3M to exceed min_wc_opportunity after addressability_pct=0.80 applied (US-004 regression)
+    * test_export_creates_json_file: updated to unpack wrapped JSON format {'recommendations': [...], 'portfolio_summary': {...}} (US-006 regression)
+  - All 29 tests pass (was 22 before; +7 new functions)
+
+---
+
+### [US-008] - 2026-04-10 14:23:56
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
