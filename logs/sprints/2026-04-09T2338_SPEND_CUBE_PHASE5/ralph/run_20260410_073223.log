@@ -146,3 +146,68 @@ STORY_COMPLETE: US-003
 [2026-04-10 07:35:36] [OK] Marked US-003 as passed
 [2026-04-10 07:35:36] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 07:35:36] [STEP] Committing changes...
+[2026-04-10 07:35:38] [INFO] Starting iteration 3
+[2026-04-10 07:35:38] [INFO] Processing story: US-004
+[2026-04-10 07:35:38] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement category deep dive page
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/02_category_deep_dive.py — drill-down from L1 to L2 to L3 category with spend trends, supplier fragmentation, and savings lever flags.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/02_category_deep_dive.py — implement category deep dive page
+- Category selector: st.selectbox for L1 → st.selectbox for L2 (filtered by L1) → st.selectbox for L3 (filtered by L2). Show 'All' option at each level.
+- KPI row for selected category: Total Spend, Supplier Count, Invoice Count, Contract Coverage %, Maverick Spend %, Avg Payment Terms
+- Spend trend: monthly spend bar chart for selected category
+- Top suppliers in category: horizontal bar (top 10 by spend)
+- Supplier fragmentation: show supplier count, HHI for category, top-1 supplier share %
+- Payment terms distribution: histogram of payment_terms_days for transactions in category
+- Savings lever flags panel: show applicable flags as st.info() boxes — e.g. if supplier_count > 5: 'Consolidation opportunity: {n} suppliers', if maverick_pct > 15%: 'High maverick spend ({pct}%)', if avg_terms < 30: 'Short payment terms opportunity'
+- Page title: 'Category Deep Dive'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement category deep dive page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 07:37:16] [OK] Story US-004 completed!
+[2026-04-10 07:37:16] [OK] Marked US-004 as passed
+[2026-04-10 07:37:16] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 07:37:16] [STEP] Committing changes...

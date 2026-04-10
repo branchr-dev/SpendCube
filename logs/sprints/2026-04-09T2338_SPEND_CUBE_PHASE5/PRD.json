@@ -110,7 +110,8 @@
         "Savings lever flags panel: show applicable flags as st.info() boxes — e.g. if supplier_count > 5: 'Consolidation opportunity: {n} suppliers', if maverick_pct > 15%: 'High maverick spend ({pct}%)', if avg_terms < 30: 'Short payment terms opportunity'",
         "Page title: 'Category Deep Dive'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:37:16Z"
     },
     {
       "id": "US-005",
