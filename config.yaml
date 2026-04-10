@@ -62,3 +62,8 @@ column_mappings:
     PO_NUM: po_number
     BUS_UNIT: business_unit
     SITE: plant_site
+
+client:
+  name: ""                          # e.g. Acme Corporation
+  engagement: "Procurement Spend Diagnostic"
+  currency_label: "AUD"             # Display label for base currency in dashboard
