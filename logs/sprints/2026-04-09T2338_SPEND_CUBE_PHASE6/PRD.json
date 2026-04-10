@@ -62,7 +62,8 @@
         "Each recommendation dict: {type, context (category or supplier name), evidence, estimated_impact_aud (float), confidence ('HIGH'/'MEDIUM'/'LOW'), action (string), lever (string)}",
         "CLI: python src/recommendations/rules.py --db data/db/spend_cube.db — prints all recommendations sorted by impact"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:50:51Z"
     },
     {
       "id": "US-002",

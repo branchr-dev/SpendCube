@@ -1,0 +1,78 @@
+[2026-04-10 07:45:33] [INFO] Ralph loop starting
+[2026-04-10 07:45:33] [INFO] Created progress file: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Fri 10 Apr 2026 07:45:33 CEST
+PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-04-10 07:45:33] [INFO] Starting iteration 1
+[2026-04-10 07:45:33] [INFO] Processing story: US-001
+[2026-04-10 07:45:33] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Implement rule-based recommendation engine
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/recommendations/rules.py with all rule-based recommendation generators. These run deterministically from cube metrics — no LLM. Must generate at least 5 recommendation types from the 10-row sample data.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/rules.py — implement RecommendationRules class
+- __init__(self, cube: dict[str, pd.DataFrame], metrics: dict, config): stores cube and metrics
+- Implement generate_all(self) -> list[dict]: calls all rule methods, returns sorted list of recommendation dicts
+- Implement rule_supplier_consolidation(self) -> list[dict]: for each L2 category with > config.recommendations.consolidation_threshold (5) suppliers, generate SUPPLIER_CONSOLIDATION rec. estimated_impact = category_spend * config.recommendations.consolidation_saving_pct (0.08). Evidence: '{n} suppliers in {category}, top supplier = {pct}%'.
+- Implement rule_payment_term_extension(self) -> list[dict]: for each supplier in top 50 by spend where weighted_avg_terms < config.recommendations.target_payment_days (45), generate PAYMENT_TERM_EXTENSION. estimated_impact = (target - current) / 365 * annual_spend * config.recommendations.wacc. Filter: only if estimated_impact > config.recommendations.min_wc_opportunity (10000). Evidence: 'Current: {n} days, Target: {t} days'.
+- Implement rule_tail_spend_rationalisation(self) -> list[dict]: if tail_spend_pct > config.recommendations.tail_spend_alert_pct (0.05), generate TAIL_SPEND_RATIONALISATION. estimated_impact = tail_spend_amount * 0.10. Evidence: '{n} tail suppliers, {pct} of spend'.
+- Implement rule_maverick_spend(self) -> list[dict]: if maverick_spend_pct > config.recommendations.maverick_alert_pct (0.15), generate CONTRACT_COMPLIANCE. estimated_impact = maverick_spend * 0.05.
+- Implement rule_competitive_tender(self) -> list[dict]: for each L2 category with single supplier (count=1) and spend > 50000 AUD, generate COMPETITIVE_TENDER rec. estimated_impact = category_spend * 0.07.
+- Implement rule_contract_coverage_gap(self) -> list[dict]: for each L1 category where contract_coverage_pct < 0.50 and spend > 20000, generate CONTRACT_COVERAGE_GAP rec.
+- Each recommendation dict: {type, context (category or supplier name), evidence, estimated_impact_aud (float), confidence ('HIGH'/'MEDIUM'/'LOW'), action (string), lever (string)}
+- CLI: python src/recommendations/rules.py --db data/db/spend_cube.db — prints all recommendations sorted by impact
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Implement rule-based recommendation engine`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-04-10 07:50:51] [OK] Story US-001 completed!
+[2026-04-10 07:50:51] [OK] Marked US-001 as passed
+[2026-04-10 07:50:51] [INFO] Logged progress for US-001: PASSED
+[2026-04-10 07:50:51] [STEP] Committing changes...
