@@ -67,7 +67,8 @@
         "Edit file: dashboard/pages/01_spend_overview.py — in main(), after the existing _pareto_and_donut section and before _quality_scorecard, add: st.markdown('---'); st.subheader('Category x Business Unit Intensity'); _category_bu_heatmap(filtered); st.markdown('---'); st.subheader('Opportunity Prioritisation'); _opportunity_scatter(filtered).",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py && echo 'syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T07:48:59Z"
     },
     {
       "id": "US-003",

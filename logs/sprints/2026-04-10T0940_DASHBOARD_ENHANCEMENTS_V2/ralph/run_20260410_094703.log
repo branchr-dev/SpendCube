@@ -69,3 +69,66 @@ STORY_COMPLETE: US-001
 [2026-04-10 09:47:41] [OK] Marked US-001 as passed
 [2026-04-10 09:47:41] [INFO] Logged progress for US-001: PASSED
 [2026-04-10 09:47:41] [STEP] Committing changes...
+[2026-04-10 09:47:43] [INFO] Starting iteration 2
+[2026-04-10 09:47:43] [INFO] Processing story: US-002
+[2026-04-10 09:47:43] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Upgrade Spend Overview with category x BU heatmap, opportunity scatter, and cross-filtering
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance dashboard/pages/01_spend_overview.py with two new analytical sections and cross-filtering on the top-suppliers chart. The cross-filter uses on_select so clicking a supplier bar in the top-20 chart filters the monthly trend and category/BU bars to show only that supplier's data. New sections added at the bottom of the page: Category x Business Unit heatmap (7x7 spend intensity matrix) and Opportunity Prioritisation scatter (each category as a bubble: x=total_spend, y=unique_supplier_count, size=transaction_count). The existing _top_suppliers function is modified to emit selections and return selected supplier names.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/01_spend_overview.py — add import: from dashboard.components.charts import horizontal_bar, donut_chart, scatter_bubble (scatter_bubble is new, horizontal_bar and donut_chart are already imported; update the existing import line accordingly).
+- Edit file: dashboard/pages/01_spend_overview.py — change signature of _top_suppliers to _top_suppliers(filtered: pd.DataFrame) -> list[str]. At the end of the function, change st.plotly_chart(fig, use_container_width=True) to: event = st.plotly_chart(fig, on_select='rerun', key='overview_top_suppliers', use_container_width=True). Then: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear'); return selected.
+- Edit file: dashboard/pages/01_spend_overview.py — add function _category_bu_heatmap(filtered: pd.DataFrame) -> None. Guard: if filtered.empty or 'category_l1' not in filtered.columns or 'business_unit' not in filtered.columns: st.info('No category x BU data available.'); return. Compute: pivot = filtered.groupby(['category_l1','business_unit'])['base_amount'].sum().unstack(fill_value=0). Build: import plotly.express as px; fig = px.imshow(pivot, color_continuous_scale='Blues', aspect='auto', title='Spend by Category x Business Unit (AUD)', text_auto='.3s'). Apply: fig.update_layout(paper_bgcolor='white', font=dict(size=11), xaxis_title='Business Unit', yaxis_title='Category'). Render: st.plotly_chart(fig, use_container_width=True).
+- Edit file: dashboard/pages/01_spend_overview.py — add function _opportunity_scatter(filtered: pd.DataFrame) -> None. Guard: if filtered.empty or 'category_l1' not in filtered.columns: st.info('No data.'); return. Compute: agg = filtered.groupby('category_l1').agg(total_spend=('base_amount','sum'), supplier_count=('canonical_supplier_name','nunique'), txn_count=('transaction_id','count')).reset_index(). Filter: agg = agg[agg['supplier_count'] >= 2]. Rename columns to match scatter_bubble args: agg.rename(columns={'category_l1':'Category','total_spend':'Total Spend (AUD)','supplier_count':'Supplier Count','txn_count':'Transaction Count'}, inplace=True). Call: fig = scatter_bubble(agg, x='Total Spend (AUD)', y='Supplier Count', size='Transaction Count', color='Category', label='Category', title='Opportunity Prioritisation: Spend vs Supplier Fragmentation'). Add annotation: fig.add_annotation(text='High spend + many suppliers = consolidation opportunity', xref='paper', yref='paper', x=0.01, y=1.08, showarrow=False, font=dict(size=10, color='grey')). Render: st.plotly_chart(fig, use_container_width=True).
+- Edit file: dashboard/pages/01_spend_overview.py — in main(), apply cross-filter. Change the call to _top_suppliers(filtered) to: selected_suppliers = _top_suppliers(filtered). After that line, add: cf = filtered[filtered['canonical_supplier_name'].isin(selected_suppliers)] if selected_suppliers else filtered. Then change the calls to _spend_by_month and _category_and_bu to use cf instead of filtered.
+- Edit file: dashboard/pages/01_spend_overview.py — in main(), after the existing _pareto_and_donut section and before _quality_scorecard, add: st.markdown('---'); st.subheader('Category x Business Unit Intensity'); _category_bu_heatmap(filtered); st.markdown('---'); st.subheader('Opportunity Prioritisation'); _opportunity_scatter(filtered).
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py && echo 'syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Upgrade Spend Overview with category x BU heatmap, opportunity scatter, and cross-filtering`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-10 09:48:59] [OK] Story US-002 completed!
+[2026-04-10 09:48:59] [OK] Marked US-002 as passed
+[2026-04-10 09:48:59] [INFO] Logged progress for US-002: PASSED
+[2026-04-10 09:48:59] [STEP] Committing changes...
