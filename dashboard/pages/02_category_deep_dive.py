@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
-from dashboard.components.charts import horizontal_bar
+from dashboard.components.charts import horizontal_bar, boxplot
 from dashboard.components.filters import render_filters
 
 
@@ -112,10 +112,23 @@ def _spend_trend(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _top_suppliers(df: pd.DataFrame) -> None:
+def _transaction_boxplot(df: pd.DataFrame) -> None:
+    if df.empty or "base_amount" not in df.columns:
+        st.info("No data.")
+        return
+    pos_df = df[df["base_amount"] > 0].copy()
+    if pos_df.empty:
+        st.info("No positive-value transactions for boxplot.")
+        return
+    fig = boxplot(pos_df, x="category_l1", y="base_amount", title="Transaction Value Distribution by Category (AUD)")
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Distribution of individual transaction values (positive spend only). Wide spread indicates purchasing inconsistency or multiple item types within the category.")
+
+
+def _top_suppliers(df: pd.DataFrame) -> list[str]:
     if "canonical_supplier_name" not in df.columns or df.empty:
         st.info("No supplier data available.")
-        return
+        return []
 
     sup_data = (
         df.groupby("canonical_supplier_name")["base_amount"]
@@ -129,10 +142,15 @@ def _top_suppliers(df: pd.DataFrame) -> None:
 
     if sup_data.empty:
         st.info("No supplier data for selected category.")
-        return
+        return []
 
     fig = horizontal_bar(sup_data, x="Spend", y="Supplier", title="Top 10 Suppliers by Spend")
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="cat_top_suppliers", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    selected = [p["y"] for p in points if "y" in p]
+    if selected:
+        st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
+    return selected
 
 
 def _supplier_fragmentation(df: pd.DataFrame) -> None:
@@ -258,15 +276,20 @@ def main() -> None:
 
     st.markdown("---")
 
-    _spend_trend(cat_filtered)
+    sup_sel = _top_suppliers(cat_filtered)
+    cf = cat_filtered[cat_filtered["canonical_supplier_name"].isin(sup_sel)] if sup_sel else cat_filtered
 
     st.markdown("---")
 
-    col_left, col_right = st.columns(2)
-    with col_left:
-        _top_suppliers(cat_filtered)
-    with col_right:
-        _payment_terms_histogram(cat_filtered)
+    _spend_trend(cf)
+
+    st.markdown("---")
+    st.subheader("Transaction Value Distribution")
+    _transaction_boxplot(cat_filtered)
+
+    st.markdown("---")
+
+    _payment_terms_histogram(cf)
 
     st.markdown("---")
 
