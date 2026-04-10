@@ -76,3 +76,65 @@ STORY_COMPLETE: US-001
 [2026-04-10 07:50:51] [OK] Marked US-001 as passed
 [2026-04-10 07:50:51] [INFO] Logged progress for US-001: PASSED
 [2026-04-10 07:50:51] [STEP] Committing changes...
+[2026-04-10 07:50:53] [INFO] Starting iteration 2
+[2026-04-10 07:50:53] [INFO] Processing story: US-002
+[2026-04-10 07:50:53] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Implement LLM narrative generation
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/recommendations/narratives.py to optionally enrich rule-based recommendations with consulting-quality narrative text using the Claude API. Must skip when dry_run=true.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/narratives.py — implement NarrativeGenerator class
+- __init__(self, config): loads config, initialises anthropic.Anthropic() only if not dry_run
+- Implement enrich(self, recommendations: list[dict]) -> list[dict]: if dry_run, return recommendations unchanged (narrative field = None). When not dry_run: batch all recommendations into one call. Prompt: 'You are a procurement consultant. For each recommendation, write a concise 2-3 sentence consulting-quality narrative explaining the issue, evidence, and recommended action. Format: JSON array with fields: type, context, narrative.\n\nRecommendations:\n{recs_json}'. Parse response, merge narrative back into each rec dict.
+- Log LLM call via log_llm_call()
+- Handle API errors: log warning, return recommendations without narrative
+- CLI: python src/recommendations/narratives.py — with dry_run=true, prints sample recommendations without narrative enrichment
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Implement LLM narrative generation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-10 07:52:25] [OK] Story US-002 completed!
+[2026-04-10 07:52:25] [OK] Marked US-002 as passed
+[2026-04-10 07:52:25] [INFO] Logged progress for US-002: PASSED
+[2026-04-10 07:52:25] [STEP] Committing changes...

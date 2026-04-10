@@ -33,3 +33,25 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+## US-002 COMPLETE — 2026-04-10
+
+### Implemented
+- src/recommendations/narratives.py: NarrativeGenerator class
+  - __init__ initialises anthropic.Anthropic() only when dry_run=false
+  - enrich() stamps narrative=None when dry_run=true (no API calls)
+  - When live: batches all recommendations into one Claude call using the specified prompt template
+  - Parses JSON array response (strips markdown fences), merges narrative by (type, context) key
+  - Logs LLM call via log_llm_call(); logs warning and returns without narrative on API error
+  - CLI: python3 src/recommendations/narratives.py — prints sample recs with narrative=(not generated) in dry_run mode
+
+### Learnings
+- Used same pattern as llm_classifier.py: import anthropic inside the not-dry_run block to avoid ImportError when SDK not installed
+- Matching parsed narratives back to recommendations via (type, context) tuple is safe because recommendation types are unique per context in the current rule set
+
+
+---
+
+### [US-002] - 2026-04-10 07:52:25
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+

@@ -77,7 +77,8 @@
         "Handle API errors: log warning, return recommendations without narrative",
         "CLI: python src/recommendations/narratives.py — with dry_run=true, prints sample recommendations without narrative enrichment"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:52:25Z"
     },
     {
       "id": "US-003",
