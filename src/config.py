@@ -68,6 +68,9 @@ class RecommendationsConfig(BaseModel):
     min_wc_opportunity: int
     tail_spend_alert_pct: float
     maverick_alert_pct: float
+    addressability_defaults: Dict[str, float]
+    competitive_tender_min_spend: float
+    contract_coverage_gap_min_spend: float
 
 
 class LoggingConfig(BaseModel):

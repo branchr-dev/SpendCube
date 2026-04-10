@@ -42,6 +42,15 @@ recommendations:
   min_wc_opportunity: 10000
   tail_spend_alert_pct: 0.05
   maverick_alert_pct: 0.15
+  addressability_defaults:
+    SUPPLIER_CONSOLIDATION: 0.70
+    PAYMENT_TERM_EXTENSION: 0.80
+    TAIL_SPEND_RATIONALISATION: 0.50
+    CONTRACT_COMPLIANCE: 0.75
+    COMPETITIVE_TENDER: 0.65
+    CONTRACT_COVERAGE_GAP: 0.80
+  competitive_tender_min_spend: 50000.0
+  contract_coverage_gap_min_spend: 20000.0
 
 logging:
   level: INFO
