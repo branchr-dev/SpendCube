@@ -82,7 +82,8 @@
         "Edit file: dashboard/app.py — update the navigation list markdown to replace internal names with client-appropriate descriptions: Spend Overview = 'KPIs, monthly trend, category and supplier breakdown', Category Deep Dive = 'Category drill-down from L1 to L3, supplier fragmentation, savings signals', Supplier Deep Dive = 'Per-supplier spend profile, payment terms benchmark, risk flags', Payment Terms = 'Working capital opportunity, terms distribution, supplier benchmark'. Remove Data Quality and Review Workstation from this list — they are internal.",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/app.py && echo 'syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T08:05:08Z"
     },
     {
       "id": "US-004",

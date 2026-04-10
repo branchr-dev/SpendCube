@@ -141,3 +141,67 @@ STORY_COMPLETE: US-002
 [2026-04-10 10:04:19] [OK] Marked US-002 as passed
 [2026-04-10 10:04:19] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 10:04:19] [STEP] Committing changes...
+[2026-04-10 10:04:21] [INFO] Starting iteration 3
+[2026-04-10 10:04:21] [INFO] Processing story: US-003
+[2026-04-10 10:04:21] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Redesign app.py homepage with client branding and data freshness
+
+## Project Context
+**Project:** Client Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-04
+**PRD:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update dashboard/app.py to use client_config.py for branding and to show a professional homepage. The current homepage shows 3 bare metrics and a bullet list with a 'Procurement analytics pipeline' heading. Replace this with: (1) client name + engagement title as the page header, (2) data freshness badge, (3) the 3 KPI metrics, (4) a professional navigation guide. Remove all developer-facing language from error/info messages.
+
+## Acceptance Criteria
+- Edit file: dashboard/app.py — add import: from dashboard.client_config import get_client_name, get_engagement_title, get_currency_label, get_data_freshness
+- Edit file: dashboard/app.py — update st.set_page_config: change page_title to use a dynamic value. Use: title = get_engagement_title(); if get_client_name(): title = f"{get_client_name()} — {title}"; st.set_page_config(page_title=title, page_icon='📊', layout='wide', initial_sidebar_bar='expanded'). Note: page_icon changes from 💰 to 📊.
+- Edit file: dashboard/app.py — in main(), replace st.title('SpendCube — Procurement Analytics') with: client = get_client_name(); title = get_engagement_title(); if client: st.title(f'{client}'); st.subheader(title); else: st.title(title). Then add immediately after: freshness = get_data_freshness(); st.caption(f'Data last refreshed: {freshness}').
+- Edit file: dashboard/app.py — replace the error message in load_cube_data() that says 'Run `make build-cube`...' with: st.error('Spend data not yet loaded. Please contact your analyst to refresh the dataset.')
+- Edit file: dashboard/app.py — in main(), replace the st.info() no-data message that shows 'make ingest && make harmonise...' with: st.info('No spend data found. Please contact your analyst to load a dataset.')
+- Edit file: dashboard/app.py — replace the st.markdown 'Procurement spend analytics pipeline. Use the sidebar...' line with: st.markdown('Use the sidebar to navigate between analysis views.')
+- Edit file: dashboard/app.py — update the navigation list markdown to replace internal names with client-appropriate descriptions: Spend Overview = 'KPIs, monthly trend, category and supplier breakdown', Category Deep Dive = 'Category drill-down from L1 to L3, supplier fragmentation, savings signals', Supplier Deep Dive = 'Per-supplier spend profile, payment terms benchmark, risk flags', Payment Terms = 'Working capital opportunity, terms distribution, supplier benchmark'. Remove Data Quality and Review Workstation from this list — they are internal.
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/app.py && echo 'syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Redesign app.py homepage with client branding and data freshness`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 10:05:08] [OK] Story US-003 completed!
+[2026-04-10 10:05:08] [OK] Marked US-003 as passed
+[2026-04-10 10:05:08] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 10:05:08] [STEP] Committing changes...
