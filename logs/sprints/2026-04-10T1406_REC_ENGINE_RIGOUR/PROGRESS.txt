@@ -63,3 +63,11 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+US-006 complete - SpendAllocator wired into engine.py, portfolio_summary added to export, dashboard updated for backwards compat
+
+---
+
+### [US-006] - 2026-04-10 14:20:43
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+

@@ -121,7 +121,8 @@
         "Verify: python3 -c \"import json; d=json.load(open('data/output/recommendations.json')); ps=d['portfolio_summary']; print(all(k in ps for k in ['total_spend','total_identified_savings','savings_as_pct_of_spend','sanity_check_passed','recommendation_count']))\" — prints True",
         "Run: python3 -m py_compile dashboard/pages/06_recommendations.py — succeeds"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:20:43Z"
     },
     {
       "id": "US-007",

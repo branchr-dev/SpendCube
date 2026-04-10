@@ -310,3 +310,66 @@ STORY_COMPLETE: US-005
 [2026-04-10 14:19:38] [OK] Marked US-005 as passed
 [2026-04-10 14:19:38] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 14:19:38] [STEP] Committing changes...
+[2026-04-10 14:19:40] [INFO] Starting iteration 6
+[2026-04-10 14:19:40] [INFO] Processing story: US-006
+[2026-04-10 14:19:40] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Wire SpendAllocator and portfolio summary into engine.py
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update src/recommendations/engine.py to run SpendAllocator deduplication and add a portfolio sanity check with wrapped JSON export. Read the full file before making changes. In RecommendationEngine.run(): after rules.generate_all() and before narrative enrichment, call deduplicated = SpendAllocator().allocate(recommendations) (import SpendAllocator from src.recommendations.deduplicator). After deduplication, compute total_savings = sum(r['estimated_impact_aud'] for r in deduplicated) and total_spend = metrics.get('total_spend', 0.0). Compute savings_pct = total_savings / total_spend if total_spend > 0 else 0.0. If savings_pct > 0.20, log WARNING and set sanity_passed = False, else True. Store self._portfolio_summary = {'total_spend': round(total_spend,2), 'total_identified_savings': round(total_savings,2), 'savings_as_pct_of_spend': round(savings_pct,4), 'sanity_check_passed': sanity_passed, 'recommendation_count': len(deduplicated)} as an instance variable for use by export(). In export(): write {'recommendations': recommendations, 'portfolio_summary': self._portfolio_summary} instead of bare list. Initialise self._portfolio_summary = {} in __init__. Also update dashboard/pages/06_recommendations.py: in _load_recommendations(), if the loaded JSON is a dict with 'recommendations' key, return data['recommendations']; else return data as-is (backwards compat). Add a new @st.cache_data function _load_portfolio_summary() that reads the same file and returns data.get('portfolio_summary', {}) if dict, else {}.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/engine.py — run() calls SpendAllocator().allocate() after generate_all()
+- Edit file: src/recommendations/engine.py — export() writes {'recommendations': [...], 'portfolio_summary': {...}}
+- Edit file: dashboard/pages/06_recommendations.py — _load_recommendations() handles both list and dict formats
+- Run: python3 src/recommendations/engine.py --db data/db/spend_cube.db --config config.yaml --export data/output/recommendations.json — succeeds
+- Verify: python3 -c "import json; d=json.load(open('data/output/recommendations.json')); print(sorted(d.keys()))" — prints ['portfolio_summary', 'recommendations']
+- Verify: python3 -c "import json; d=json.load(open('data/output/recommendations.json')); ps=d['portfolio_summary']; print(all(k in ps for k in ['total_spend','total_identified_savings','savings_as_pct_of_spend','sanity_check_passed','recommendation_count']))" — prints True
+- Run: python3 -m py_compile dashboard/pages/06_recommendations.py — succeeds
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Wire SpendAllocator and portfolio summary into engine.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 14:20:43] [OK] Story US-006 completed!
+[2026-04-10 14:20:43] [OK] Marked US-006 as passed
+[2026-04-10 14:20:43] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 14:20:43] [STEP] Committing changes...
