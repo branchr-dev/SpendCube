@@ -52,21 +52,31 @@ def _colour_confidence(val: str) -> str:
     return _CONFIDENCE_COLOURS.get(val, "")
 
 
-def _kpi_row(recs: list[dict]) -> None:
+def _kpi_row(recs: list[dict], portfolio_summary: dict | None = None) -> None:
+    if portfolio_summary is None:
+        portfolio_summary = {}
     total_savings = sum(r.get("estimated_impact_aud", 0.0) for r in recs)
     total_count = len(recs)
     high_count = sum(1 for r in recs if r.get("confidence") == "HIGH")
     medium_count = sum(1 for r in recs if r.get("confidence") == "MEDIUM")
+    savings_pct = portfolio_summary.get("savings_as_pct_of_spend", 0.0)
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric(f"Total Identified Savings ({get_currency_label()})", f"{total_savings:,.0f}")
     c2.metric("Recommendation Count", str(total_count))
     c3.metric("HIGH Confidence", str(high_count))
     c4.metric("MEDIUM Confidence", str(medium_count))
+    c5.metric("Savings / Total Spend", f"{savings_pct:.1%}")
+
+    if portfolio_summary.get("sanity_check_passed") is False:
+        st.warning(
+            "Total identified savings exceed 20% of total spend — review recommendations for overstatement."
+        )
 
 
 def _build_display_df(recs: list[dict]) -> pd.DataFrame:
     impact_col = f"Estimated Impact ({get_currency_label()})"
+    baseline_col = f"Baseline Spend ({get_currency_label()})"
     rows = []
     for i, r in enumerate(recs, 1):
         rows.append(
@@ -78,9 +88,12 @@ def _build_display_df(recs: list[dict]) -> pd.DataFrame:
                 impact_col: r.get("estimated_impact_aud", 0.0),
                 "Confidence": r.get("confidence", ""),
                 "Lever": r.get("lever", ""),
+                baseline_col: r.get("baseline_spend", 0.0),
+                "Addressability": r.get("addressability_pct", 0.0),
             }
         )
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    return df
 
 
 def _recommendations_table(recs: list[dict]) -> None:
@@ -91,9 +104,10 @@ def _recommendations_table(recs: list[dict]) -> None:
         return
 
     impact_col = f"Estimated Impact ({get_currency_label()})"
-    styled = df.style.format({impact_col: "{:,.0f}"}).map(
-        _colour_confidence, subset=["Confidence"]
-    )
+    baseline_col = f"Baseline Spend ({get_currency_label()})"
+    styled = df.style.format(
+        {impact_col: "{:,.0f}", baseline_col: "{:,.0f}", "Addressability": "{:.0%}"}
+    ).map(_colour_confidence, subset=["Confidence"])
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
 
@@ -169,6 +183,21 @@ def _detail_cards(recs: list[dict]) -> None:
                     else:
                         st.markdown(str(assumptions))
 
+            # Calculation Basis (full width)
+            st.markdown("**Calculation Basis**")
+            baseline_spend = r.get("baseline_spend", 0.0) or 0.0
+            addressability_pct = r.get("addressability_pct", 0.0) or 0.0
+            addressable_baseline = r.get("addressable_baseline", 0.0) or 0.0
+            saving_pct = r.get("saving_pct")
+            currency = get_currency_label()
+            st.caption(f"Baseline Spend: {currency} {baseline_spend:,.0f}")
+            st.caption(f"Addressability: {addressability_pct:.0%} of baseline is addressable")
+            st.caption(f"Addressable Baseline: {currency} {addressable_baseline:,.0f}")
+            if saving_pct is None:
+                st.caption("Saving Rate: WACC formula")
+            else:
+                st.caption(f"Saving Rate: {saving_pct:.0%}")
+
 
 def _excel_download(recs: list[dict]) -> None:
     df = _build_display_df(recs)
@@ -192,6 +221,7 @@ def main() -> None:
     st.title("Recommendations")
 
     recs = _load_recommendations()
+    portfolio_summary = _load_portfolio_summary()
 
     if not recs:
         st.warning("No recommendations available. Please contact your analyst.")
@@ -214,7 +244,7 @@ def main() -> None:
     recs = sorted(recs, key=lambda r: r.get("estimated_impact_aud", 0.0), reverse=True)
 
     # --- KPI row ---
-    _kpi_row(recs)
+    _kpi_row(recs, portfolio_summary=portfolio_summary)
 
     st.markdown("---")
 
