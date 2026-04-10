@@ -202,3 +202,68 @@ STORY_COMPLETE: US-003
 [2026-04-10 07:56:00] [OK] Marked US-003 as passed
 [2026-04-10 07:56:00] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 07:56:00] [STEP] Committing changes...
+[2026-04-10 07:56:02] [INFO] Starting iteration 4
+[2026-04-10 07:56:03] [INFO] Processing story: US-004
+[2026-04-10 07:56:03] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Implement recommendations dashboard page
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/06_recommendations.py — the recommendations page showing all generated recommendations with evidence, impact sizing, and savings heatmap.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/06_recommendations.py — implement recommendations page
+- Load recommendations: load data/output/recommendations.json with @st.cache_data. If not found, show st.warning('Run make build-cube to generate recommendations').
+- KPI row: Total Identified Savings (AUD, sum estimated_impact_aud), Recommendation Count, # HIGH confidence, # MEDIUM confidence
+- Recommendations table: st.dataframe showing all recommendations with columns: Rank, Type, Context, Evidence, Estimated Impact (AUD formatted), Confidence (coloured), Lever. Sorted by impact desc.
+- Savings heatmap: plotly heatmap with recommendation type on y-axis, lever category on x-axis, colour = estimated_impact_aud. Use dashboard/components/charts.heatmap().
+- Expandable detail cards (st.expander) for each recommendation: show full evidence, action, narrative (if available), assumptions.
+- Filter by confidence level: st.multiselect(['HIGH', 'MEDIUM', 'LOW'], default all)
+- Download button: export recommendations as Excel
+- Page title: 'Recommendations'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Implement recommendations dashboard page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 07:57:15] [OK] Story US-004 completed!
+[2026-04-10 07:57:15] [OK] Marked US-004 as passed
+[2026-04-10 07:57:15] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 07:57:15] [STEP] Committing changes...

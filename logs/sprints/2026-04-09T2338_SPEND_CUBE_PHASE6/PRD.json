@@ -112,7 +112,8 @@
         "Download button: export recommendations as Excel",
         "Page title: 'Recommendations'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:57:15Z"
     },
     {
       "id": "US-005",
