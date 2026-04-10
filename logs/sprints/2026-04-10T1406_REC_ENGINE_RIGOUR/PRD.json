@@ -105,7 +105,8 @@
         "Verify: python3 -c \"from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'COMPETITIVE_TENDER','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))\" — prints 1 (only higher-impact survives)",
         "Verify: python3 -c \"from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'CONTRACT_COVERAGE_GAP','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))\" — prints 2 (different groups, both kept)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:19:38Z"
     },
     {
       "id": "US-006",

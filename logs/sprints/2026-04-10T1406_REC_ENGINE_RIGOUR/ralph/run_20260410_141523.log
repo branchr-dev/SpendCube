@@ -250,3 +250,63 @@ STORY_COMPLETE: US-004
 [2026-04-10 14:19:02] [OK] Marked US-004 as passed
 [2026-04-10 14:19:02] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 14:19:02] [STEP] Committing changes...
+[2026-04-10 14:19:04] [INFO] Starting iteration 5
+[2026-04-10 14:19:04] [INFO] Processing story: US-005
+[2026-04-10 14:19:04] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Create SpendAllocator deduplication module
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create src/recommendations/deduplicator.py containing a SpendAllocator class that prevents two recommendations from double-counting the same spend pool. EXCLUSIVE_GROUPS mapping at module level: {'SUPPLIER_CONSOLIDATION': 'SOURCING', 'COMPETITIVE_TENDER': 'SOURCING', 'CONTRACT_COVERAGE_GAP': 'COVERAGE', 'PAYMENT_TERM_EXTENSION': 'WORKING_CAPITAL', 'TAIL_SPEND_RATIONALISATION': 'PORTFOLIO_TAIL', 'CONTRACT_COMPLIANCE': 'PORTFOLIO_COMPLIANCE'}. SpendAllocator.allocate(recommendations: list[dict]) -> list[dict]: (1) Sort input by estimated_impact_aud descending. (2) For each rec, compute pool_key: for PORTFOLIO_* groups use ('PORTFOLIO', exclusive_group); for all others use (rec['context'], exclusive_group). (3) If pool_key is already in claimed set: set rec['estimated_impact_aud'] = 0.0, set rec['deduplication_note'] = 'Spend pool already claimed by higher-impact recommendation of same exclusive group'. (4) Else: add pool_key to claimed set. (5) After processing all recs, filter out those where estimated_impact_aud == 0.0. (6) Return filtered list. Work on a deep copy of the input list to avoid mutating callers' data.
+
+## Acceptance Criteria
+- Create file: src/recommendations/deduplicator.py
+- Run: python3 -m py_compile src/recommendations/deduplicator.py — succeeds
+- Verify: python3 -c "from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'COMPETITIVE_TENDER','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))" — prints 1 (only higher-impact survives)
+- Verify: python3 -c "from src.recommendations.deduplicator import SpendAllocator; recs=[{'type':'SUPPLIER_CONSOLIDATION','context':'IT Services','estimated_impact_aud':100.0,'lever':'x'},{'type':'CONTRACT_COVERAGE_GAP','context':'IT Services','estimated_impact_aud':80.0,'lever':'x'}]; out=SpendAllocator().allocate(recs); print(len(out))" — prints 2 (different groups, both kept)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Create SpendAllocator deduplication module`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 14:19:38] [OK] Story US-005 completed!
+[2026-04-10 14:19:38] [OK] Marked US-005 as passed
+[2026-04-10 14:19:38] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 14:19:38] [STEP] Committing changes...
