@@ -155,6 +155,53 @@ Diagnostics output is written to `data/output/diagnostics.json` and also returne
 
 `make build-cube` is safe to re-run. Parquet files are overwritten on each run. No state is mutated in the SQLite database by Phase 4.
 
+## Phase 5: Streamlit Dashboards
+
+Phase 5 implements a 5-page Streamlit dashboard suite in `dashboard/`. All pages share a common app shell, data loader, and filter sidebar.
+
+### App Shell
+
+`dashboard/app.py` is the entry point. It configures the Streamlit page, renders the sidebar filter panel via `render_filters()`, and routes to the selected page module.
+
+### Data Loading
+
+`dashboard/data_loader.py` exposes `load_cube_data()`, which reads all Parquet files from `data/output/` (built by `make build-cube`). All data-loading functions are decorated with `@st.cache_data` to avoid re-reading Parquet files on every interaction. The cache is keyed on the Parquet file modification time so stale data is never served after a cube rebuild.
+
+```python
+@st.cache_data
+def load_cube_data() -> dict[str, pd.DataFrame]:
+    ...
+```
+
+### Shared Components
+
+`dashboard/components.py` provides:
+- `render_filters(data)` — renders sidebar widgets (date range, business unit, category, supplier) and returns a `FilterState` dataclass
+- `render_kpi_card(label, value, delta, delta_direction)` — renders a styled metric tile
+- `apply_filters(df, filters)` — applies a `FilterState` to a DataFrame and returns the filtered subset
+
+### Chart Library
+
+All charts use **Plotly Express** (`import plotly.express as px`). No Altair, Bokeh, or Matplotlib. This keeps chart styling consistent and enables interactivity (hover, zoom, click-to-filter) without extra dependencies.
+
+### Pages
+
+| Page module | Route label | Description |
+|-------------|-------------|-------------|
+| `dashboard/pages/overview.py` | Spend Overview | KPI tiles, monthly trend, top-10 suppliers, spend-by-category treemap |
+| `dashboard/pages/category.py` | Category Deep Dive | Category hierarchy drill-down, supplier breakdown within category, trend |
+| `dashboard/pages/supplier.py` | Supplier Deep Dive | Supplier search, spend history, category mix, payment terms distribution |
+| `dashboard/pages/payment_terms.py` | Payment Terms | Bucket distribution, working capital opportunity, supplier-level terms table |
+| `dashboard/pages/quality.py` | Data Quality | 9-check diagnostics scorecard with GREEN/AMBER/RED badges, drill-down tables |
+
+### Running the Dashboard
+
+```bash
+make serve-dashboard   # Runs: streamlit run dashboard/app.py
+```
+
+Requires Phase 4 cube outputs (`data/output/*.parquet`) to exist. Run `make build-cube` first if the output directory is empty.
+
 ## Phase Status
 
 | Phase | Description | Status |
@@ -163,10 +210,10 @@ Diagnostics output is written to `data/output/diagnostics.json` and also returne
 | **Phase 2** | Supplier harmonisation (name normalisation, fuzzy + embedding matching, parent mapping) | **Complete** |
 | **Phase 3** | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | **Complete** |
 | **Phase 4** | Spend cube construction + data quality diagnostics | **Complete** |
-| Phase 5 | Streamlit dashboards (overview, category, supplier, payment terms, quality) | Planned |
+| **Phase 5** | Streamlit dashboards (overview, category, supplier, payment terms, quality) | **Complete** |
 | Phase 6 | Recommendation engine + review workstation | Planned |
 
-Each phase is a separate Ralph sprint. Do not implement Phase 5+ logic in Phase 1–4 modules — use `# TODO: Phase N` comments as placeholders where needed.
+Each phase is a separate Ralph sprint. Do not implement Phase 6+ logic in Phase 1–5 modules — use `# TODO: Phase N` comments as placeholders where needed.
 
 ## Running the Pipeline
 
