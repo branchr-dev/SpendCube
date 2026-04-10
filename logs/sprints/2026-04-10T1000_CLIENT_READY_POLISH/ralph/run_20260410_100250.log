@@ -278,3 +278,68 @@ STORY_COMPLETE: US-004
 [2026-04-10 10:10:22] [OK] Marked US-004 as passed
 [2026-04-10 10:10:22] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 10:10:22] [STEP] Committing changes...
+[2026-04-10 10:10:24] [INFO] Starting iteration 5
+[2026-04-10 10:10:24] [INFO] Processing story: US-005
+[2026-04-10 10:10:24] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Add page descriptions and rename Review Workstation to admin page
+
+## Project Context
+**Project:** Client Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-04
+**PRD:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Two changes: (1) add a brief st.caption() description immediately after st.title() on each of the four analytics pages (01-04) so clients understand the purpose of each page at a glance, (2) rename dashboard/pages/07_review_workstation.py to dashboard/pages/99_admin_review_workstation.py and add a prominent internal-use-only banner at the top of the page. The rename pushes it to the bottom of the Streamlit sidebar and the banner prevents accidental client exposure.
+
+## Acceptance Criteria
+- Rename file: dashboard/pages/07_review_workstation.py → dashboard/pages/99_admin_review_workstation.py. Use: git mv dashboard/pages/07_review_workstation.py dashboard/pages/99_admin_review_workstation.py
+- Edit file: dashboard/pages/99_admin_review_workstation.py — in main(), immediately after st.title('Review Workstation'), add: st.error('⚠️ INTERNAL ANALYST TOOL — This page is not intended for client distribution. It allows analysts to review and correct supplier matches and category assignments.')
+- Edit file: dashboard/pages/01_spend_overview.py — in main(), immediately after st.title('Spend Overview'), add: st.caption('Total spend by supplier, category, and business unit. Use the charts below to identify concentration, fragmentation, and consolidation opportunities.')
+- Edit file: dashboard/pages/02_category_deep_dive.py — in main(), immediately after st.title('Category Deep Dive'), add: st.caption('Drill down from L1 to L3 category. Select a category in the sidebar to filter all charts. Click a supplier bar to cross-filter to that supplier.')
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), immediately after st.title('Supplier Deep Dive'), add: st.caption('Select a supplier to view their full spend profile, payment terms benchmark, and risk flags.')
+- Edit file: dashboard/pages/04_payment_terms.py — in main(), immediately after st.title('Payment Terms'), add: st.caption('Working capital opportunity analysis. Identifies suppliers where payment terms can be extended to improve cash flow. Adjust target days and WACC in the sidebar.')
+- Verify: ls dashboard/pages/99_admin_review_workstation.py — file exists
+- Verify: ls dashboard/pages/07_review_workstation.py — file should NOT exist (exit code 1 is expected here — the old file is gone)
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/99_admin_review_workstation.py dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py && echo 'all syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Add page descriptions and rename Review Workstation to admin page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 10:11:39] [OK] Story US-005 completed!
+[2026-04-10 10:11:39] [OK] Marked US-005 as passed
+[2026-04-10 10:11:39] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 10:11:39] [STEP] Committing changes...
