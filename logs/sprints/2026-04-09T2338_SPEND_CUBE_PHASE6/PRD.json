@@ -94,7 +94,8 @@
         "CLI: python src/recommendations/engine.py --db data/db/spend_cube.db — runs full engine, prints recommendations table sorted by impact",
         "Verify: python src/recommendations/engine.py --db data/db/spend_cube.db — generates at least 3 recommendations from the 10-row sample data (maverick, tail spend, contract coverage gap are most likely)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:56:00Z"
     },
     {
       "id": "US-004",

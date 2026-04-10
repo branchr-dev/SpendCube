@@ -55,3 +55,34 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+## US-003 COMPLETE — 2026-04-10
+
+### Implemented
+- src/recommendations/engine.py: RecommendationEngine class
+  - __init__: initialises SpendCubeBuilder, CubeMetrics (via builder), RecommendationRules, NarrativeGenerator
+  - run(): builds cube → computes metrics → runs rules → enriches narratives → sorts by impact desc
+  - export(): saves JSON to data/output/recommendations.json, returns path
+  - to_dataframe(): returns DataFrame with 8 standard columns
+  - CLI: python src/recommendations/engine.py --db data/db/spend_cube.db
+- Makefile: build-cube target now also runs engine.py --db data/db/spend_cube.db
+
+### Learnings
+- 10-row sample data only produces 1 recommendation (tail spend only).
+  Regenerated with 200-row dataset (python3 generate_test_data.py --rows 200 --seed 42) to trigger
+  all rule types — 23 recommendations generated from 200-row dataset.
+- RecommendationRules is instantiated inside run() (not __init__) because it needs cube+metrics
+  which are computed at runtime. CubeMetrics similarly depends on the built cube.
+
+---
+
+### [US-003] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-003] - 2026-04-10 07:56:00
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+

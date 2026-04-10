@@ -138,3 +138,67 @@ STORY_COMPLETE: US-002
 [2026-04-10 07:52:25] [OK] Marked US-002 as passed
 [2026-04-10 07:52:25] [INFO] Logged progress for US-002: PASSED
 [2026-04-10 07:52:25] [STEP] Committing changes...
+[2026-04-10 07:52:27] [INFO] Starting iteration 3
+[2026-04-10 07:52:27] [INFO] Processing story: US-003
+[2026-04-10 07:52:27] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Implement recommendation engine orchestrator and export
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement src/recommendations/engine.py as the orchestrator that runs rules → narratives → exports to data/output/recommendations.json. Also update Makefile.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/engine.py — implement RecommendationEngine class
+- __init__(self, config, engine): initialises SpendCubeBuilder, CubeMetrics, RecommendationRules, NarrativeGenerator
+- Implement run(self) -> list[dict]: builds cube → computes metrics → runs rules → enriches with narratives → returns sorted recommendations list
+- Implement export(self, recommendations: list[dict], path: str = 'data/output/recommendations.json') -> str: saves to JSON, returns path
+- Implement to_dataframe(self, recommendations: list[dict]) -> pd.DataFrame: returns DataFrame with columns: type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative
+- Edit file: Makefile — no separate target needed; recommendations are generated as part of build-cube pipeline. Update build-cube target to also run: python src/recommendations/engine.py --db data/db/spend_cube.db
+- CLI: python src/recommendations/engine.py --db data/db/spend_cube.db — runs full engine, prints recommendations table sorted by impact
+- Verify: python src/recommendations/engine.py --db data/db/spend_cube.db — generates at least 3 recommendations from the 10-row sample data (maverick, tail spend, contract coverage gap are most likely)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Implement recommendation engine orchestrator and export`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-04-10 07:56:00] [OK] Story US-003 completed!
+[2026-04-10 07:56:00] [OK] Marked US-003 as passed
+[2026-04-10 07:56:00] [INFO] Logged progress for US-003: PASSED
+[2026-04-10 07:56:00] [STEP] Committing changes...
