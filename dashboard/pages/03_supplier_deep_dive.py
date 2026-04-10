@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
-from dashboard.components.charts import horizontal_bar
+from dashboard.components.charts import horizontal_bar, dumbbell
 from dashboard.components.filters import render_filters
 
 _DB_PATH = Path(__file__).parent.parent.parent / "data" / "db" / "spend_cube.db"
@@ -113,10 +113,10 @@ def _spend_trend(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _spend_by_category(df: pd.DataFrame) -> None:
+def _spend_by_category(df: pd.DataFrame) -> list[str]:
     if "category_l1" not in df.columns or df.empty:
         st.info("No category data available.")
-        return
+        return []
 
     cat_data = (
         df.groupby("category_l1")["base_amount"]
@@ -129,10 +129,15 @@ def _spend_by_category(df: pd.DataFrame) -> None:
 
     if cat_data.empty:
         st.info("No category spend data.")
-        return
+        return []
 
     fig = horizontal_bar(cat_data, x="Spend", y="Category", title="Spend by Category (L1)")
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="supplier_spend_by_cat", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    selected = [p["y"] for p in points if "y" in p]
+    if selected:
+        st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear')
+    return selected
 
 
 def _spend_by_bu(df: pd.DataFrame) -> None:
@@ -261,6 +266,60 @@ def _risk_flags(df: pd.DataFrame, txn_all: pd.DataFrame, supplier_name: str) -> 
         st.success("No risk flags identified for this supplier.")
 
 
+def _payment_terms_dumbbell(sup_df: pd.DataFrame, all_txn: pd.DataFrame) -> None:
+    if sup_df.empty or "payment_terms_days" not in sup_df.columns:
+        st.info("No payment terms data.")
+        return
+    has_terms = sup_df[sup_df["payment_terms_days"].notna()]
+    if has_terms.empty:
+        st.info("No payment terms recorded for this supplier.")
+        return
+    sup_avg = float(has_terms["payment_terms_days"].mean())
+    primary_cat = (
+        has_terms["category_l1"].mode().iloc[0]
+        if "category_l1" in has_terms.columns and not has_terms["category_l1"].dropna().empty
+        else None
+    )
+    if primary_cat and "payment_terms_days" in all_txn.columns:
+        cat_median = float(
+            all_txn[all_txn["category_l1"] == primary_cat]["payment_terms_days"].dropna().median()
+        )
+    elif "payment_terms_days" in all_txn.columns:
+        cat_median = float(all_txn["payment_terms_days"].dropna().median())
+    else:
+        cat_median = None
+    if cat_median is None:
+        st.info("Category benchmark unavailable.")
+        return
+    supplier_label = (
+        sup_df["canonical_supplier_name"].iloc[0]
+        if "canonical_supplier_name" in sup_df.columns
+        else "Selected Supplier"
+    )
+    row_df = pd.DataFrame({
+        "Supplier": [supplier_label],
+        "Avg Terms (days)": [sup_avg],
+        "Category Median (days)": [cat_median],
+    })
+    fig = dumbbell(
+        row_df,
+        label_col="Supplier",
+        left_col="Avg Terms (days)",
+        right_col="Category Median (days)",
+        left_name="Supplier Avg",
+        right_name="Category Median",
+        title=f"Payment Terms vs Category Median ({primary_cat or 'All Categories'})",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    supplier_below = sup_avg < cat_median
+    msg = (
+        f"This supplier is on {'shorter' if supplier_below else 'longer'} terms "
+        f"({sup_avg:.0f}d) than the {primary_cat or 'overall'} category median ({cat_median:.0f}d). "
+        f"{'Working capital opportunity: negotiate extension.' if supplier_below else 'Terms are favourable.'}"
+    )
+    st.caption(msg)
+
+
 def main() -> None:
     st.title("Supplier Deep Dive")
 
@@ -310,17 +369,19 @@ def main() -> None:
 
     st.markdown("---")
 
-    # --- Spend trend ---
-    _spend_trend(sup_txn)
-
-    st.markdown("---")
-
     # --- Spend by category + by BU side by side ---
     col_left, col_right = st.columns(2)
     with col_left:
-        _spend_by_category(sup_txn)
+        cat_sel = _spend_by_category(sup_txn)
     with col_right:
         _spend_by_bu(sup_txn)
+
+    cf_sup = sup_txn[sup_txn["category_l1"].isin(cat_sel)] if cat_sel else sup_txn
+
+    st.markdown("---")
+
+    # --- Spend trend (cross-filtered by category selection if active) ---
+    _spend_trend(cf_sup)
 
     st.markdown("---")
 
@@ -332,6 +393,10 @@ def main() -> None:
 
     # --- Risk flags ---
     _risk_flags(sup_txn, filtered, selected_name)
+
+    st.markdown("---")
+    st.subheader("Payment Terms Benchmark")
+    _payment_terms_dumbbell(sup_txn, filtered)
 
 
 if __name__ == "__main__":
