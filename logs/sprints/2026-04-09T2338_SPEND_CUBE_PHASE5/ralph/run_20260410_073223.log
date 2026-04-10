@@ -474,3 +474,62 @@ STORY_COMPLETE: US-008
 [2026-04-10 07:44:01] [OK] Marked US-008 as passed
 [2026-04-10 07:44:01] [INFO] Logged progress for US-008: PASSED
 [2026-04-10 07:44:01] [STEP] Committing changes...
+[2026-04-10 07:44:03] [INFO] Starting iteration 8
+[2026-04-10 07:44:03] [INFO] Processing story: US-009
+[2026-04-10 07:44:03] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Update CLAUDE.md with Phase 5 patterns
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md to document dashboard architecture, data loading patterns, and component structure.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — add section '## Phase 5: Streamlit Dashboards' documenting: app shell in dashboard/app.py, @st.cache_data on all data loads, shared filters via render_filters() in sidebar, all charts use Plotly Express, data loaded from data/output/*.parquet (built by Phase 4 cube pipeline), 5 pages (overview/category/supplier/payment_terms/quality)
+- Update '## Phase Status': Phases 1-5 Complete, Phase 6 Planned
+- Verify: CLAUDE.md contains 'st.cache_data' and 'load_cube_data'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Update CLAUDE.md with Phase 5 patterns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-04-10 07:44:47] [OK] Story US-009 completed!
+[2026-04-10 07:44:47] [OK] Marked US-009 as passed
+[2026-04-10 07:44:47] [INFO] Logged progress for US-009: PASSED
+[2026-04-10 07:44:47] [STEP] Committing changes...
