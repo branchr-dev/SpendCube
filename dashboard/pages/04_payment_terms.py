@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
+from dashboard.components.charts import scatter_bubble
 from dashboard.components.filters import render_filters
 
 _STANDARD_TERMS = {14, 30, 45, 60, 90}
@@ -266,6 +267,51 @@ def _non_standard_terms(df: pd.DataFrame) -> None:
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
+def _spend_terms_scatter(df: pd.DataFrame) -> list[str]:
+    if df.empty or "payment_terms_days" not in df.columns:
+        st.info("No data.")
+        return []
+
+    has_terms = df[df["payment_terms_days"].notna() & (df["base_amount"] > 0)]
+    if has_terms.empty:
+        return []
+
+    agg = has_terms.groupby("canonical_supplier_name").agg(
+        annual_spend=("base_amount", "sum"),
+        avg_terms=("payment_terms_days", "mean"),
+        txn_count=("transaction_id", "count"),
+        primary_cat=("category_l1", lambda x: x.mode().iloc[0] if not x.dropna().empty else "Other"),
+    ).reset_index()
+
+    agg.rename(columns={
+        "canonical_supplier_name": "Supplier",
+        "annual_spend": "Annual Spend (AUD)",
+        "avg_terms": "Avg Payment Terms (days)",
+        "txn_count": "Transaction Count",
+        "primary_cat": "Category",
+    }, inplace=True)
+
+    fig = scatter_bubble(
+        agg,
+        x="Annual Spend (AUD)",
+        y="Avg Payment Terms (days)",
+        size="Transaction Count",
+        color="Category",
+        label="Supplier",
+        title="Supplier Spend vs Payment Terms",
+        hover_name="Supplier",
+    )
+    fig.add_hline(y=30, line_dash="dash", line_color="grey", annotation_text="30d", annotation_position="right")
+    fig.add_hline(y=45, line_dash="dash", line_color="orange", annotation_text="45d target", annotation_position="right")
+
+    event = st.plotly_chart(fig, on_select="rerun", key="pt_spend_scatter", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    selected = [p.get("text") for p in points if p.get("text")]
+    if selected:
+        st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
+    return selected
+
+
 def main() -> None:
     st.title("Payment Terms")
 
@@ -311,6 +357,11 @@ def main() -> None:
     _kpi_row(filtered, float(target_days), float(wacc_pct))
 
     st.markdown("---")
+    st.subheader("Supplier Spend vs Payment Terms")
+    selected_suppliers = _spend_terms_scatter(filtered)
+    cf = filtered[filtered["canonical_supplier_name"].isin(selected_suppliers)] if selected_suppliers else filtered
+
+    st.markdown("---")
 
     # --- Distribution histogram ---
     _terms_histogram(filtered)
@@ -323,12 +374,12 @@ def main() -> None:
     st.markdown("---")
 
     # --- Working capital table ---
-    _working_capital_table(filtered, float(target_days), float(wacc_pct))
+    _working_capital_table(cf, float(target_days), float(wacc_pct))
 
     st.markdown("---")
 
     # --- Non-standard terms anomaly list ---
-    _non_standard_terms(filtered)
+    _non_standard_terms(cf)
 
 
 if __name__ == "__main__":
