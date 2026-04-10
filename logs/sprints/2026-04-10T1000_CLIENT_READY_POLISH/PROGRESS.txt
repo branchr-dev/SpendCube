@@ -58,3 +58,24 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 — COMPLETE (2026-04-10)
+- Added `from dashboard.client_config import get_currency_label` to pages 01–03, 06
+- Replaced all `make build-cube`, `dry_run=true` strings with client-friendly equivalents
+- Replaced hardcoded 'AUD' in metric labels and chart titles with get_currency_label() in all 6 pages
+- In 03_supplier_deep_dive.py: updated both _build_supplier_options and _extract_supplier_name together (coupled — delimiter in label string must match the format string)
+- In 04_payment_terms.py: used local variable `currency` / `annual_spend_col` / `wc_opp_col` to keep column name references consistent across rename + format calls
+- In 06_recommendations.py: used local variable `impact_col` in _build_display_df and _recommendations_table to keep column name consistent
+- grep check: zero matches for developer strings
+- py_compile check: all syntax OK
+
+### [US-004] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-004] - 2026-04-10 10:10:22
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+

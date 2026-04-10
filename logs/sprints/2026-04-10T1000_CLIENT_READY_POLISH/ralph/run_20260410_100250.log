@@ -205,3 +205,76 @@ STORY_COMPLETE: US-003
 [2026-04-10 10:05:08] [OK] Marked US-003 as passed
 [2026-04-10 10:05:08] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 10:05:08] [STEP] Committing changes...
+[2026-04-10 10:05:10] [INFO] Starting iteration 4
+[2026-04-10 10:05:10] [INFO] Processing story: US-004
+[2026-04-10 10:05:10] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Remove all developer-facing strings from dashboard pages 01–06
+
+## Project Context
+**Project:** Client Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-04
+**PRD:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Audit and clean every client-visible developer string across the six analytics/reporting pages. Target strings: 'make build-cube', 'make ingest', 'make harmonise', 'make categorise', 'Run the full pipeline', 'data/output', 'data/db', 'dry_run=true or LLM skipped', 'Run make build-cube'. Replace with professional client-appropriate equivalents. Also replace hardcoded 'AUD' currency strings in KPI labels and chart titles with the currency label from client_config.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/01_spend_overview.py — (a) add import: from dashboard.client_config import get_currency_label (b) replace st.info('No quality scorecard available. Run `make build-cube`...') with st.info('Quality scorecard not available.') (c) replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') (d) replace hardcoded 'Total Spend (AUD)' metric label with f'Total Spend ({get_currency_label()})' (e) replace hardcoded 'AUD' in any other metric labels or chart titles similarly.
+- Edit file: dashboard/pages/02_category_deep_dive.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Add import from dashboard.client_config import get_currency_label and replace 'AUD' in metric labels with get_currency_label().
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Replace 'AUD' in metric labels and chart titles with get_currency_label().
+- Edit file: dashboard/pages/04_payment_terms.py — replace st.error('No spend data found. Run `make build-cube` first.') with st.error('No spend data found. Please contact your analyst.') Replace 'AUD' in metric labels (including 'AUD {total_wc:,.0f}', 'Annual Spend (AUD)', 'WC Opportunity (AUD)') with get_currency_label() where used as a label. Replace 'Working Capital Opportunity', 'AUD' with f'{get_currency_label()} ...' pattern.
+- Edit file: dashboard/pages/05_data_quality.py — (a) replace st.warning that mentions 'Run `make build-cube`' and 'data/output/quality_scorecard.json exists' with st.warning('Quality data not available. Please ask your analyst to refresh the diagnostics.') (b) the _SCORECARD_PATH is already an absolute path — leave it, it is not shown to clients.
+- Edit file: dashboard/pages/06_recommendations.py — (a) replace st.caption('No narrative available (dry_run=true or LLM skipped).') with st.caption('Narrative not available for this recommendation.') (b) replace st.warning('Run make build-cube to generate recommendations') with st.warning('No recommendations available. Please contact your analyst.') (c) add import from dashboard.client_config import get_currency_label and replace 'AUD' in metric labels ('Total Identified Savings (AUD)', 'Estimated Impact (AUD)') with get_currency_label().
+- Run: grep -r 'make build-cube\|make ingest\|make harmonise\|dry_run=true\|Run the full pipeline' dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py — should return NO matches.
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py && echo 'all syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-04-10T1000_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Remove all developer-facing strings from dashboard pages 01–06`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+All changes are complete and verified:
+
+- **01_spend_overview.py**: Added `get_currency_label` import; replaced `make build-cube` error/info strings; replaced all hardcoded `AUD` in metric labels and chart titles
+- **02_category_deep_dive.py**: Added import; replaced error string; replaced `AUD` in metric labels and chart titles
+- **03_supplier_deep_dive.py**: Added import; replaced error string; replaced `AUD` in metric labels, chart titles, and supplier dropdown labels (keeping `_build_supplier_options` and `_extract_supplier_name` in sync)
+- **04_payment_terms.py**: Added import; replaced error string; replaced `AUD` in metric value, colorbar, chart titles, and column names (using local variables to keep rename + format references consistent)
+- **05_data_quality.py**: Replaced the `make build-cube` / `data/output` warning with a clean client-facing message
+- **06_recommendations.py**: Added import; replaced `dry_run=true` caption; replaced `make build-cube` warning; replaced `AUD` in metric labels, heatmap title, and detail card labels (using `impact_col` variable to keep column names consistent)
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 10:10:22] [OK] Story US-004 completed!
+[2026-04-10 10:10:22] [OK] Marked US-004 as passed
+[2026-04-10 10:10:22] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 10:10:22] [STEP] Committing changes...

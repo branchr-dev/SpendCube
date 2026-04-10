@@ -99,7 +99,8 @@
         "Run: grep -r 'make build-cube\\|make ingest\\|make harmonise\\|dry_run=true\\|Run the full pipeline' dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py — should return NO matches.",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/01_spend_overview.py dashboard/pages/02_category_deep_dive.py dashboard/pages/03_supplier_deep_dive.py dashboard/pages/04_payment_terms.py dashboard/pages/05_data_quality.py dashboard/pages/06_recommendations.py && echo 'all syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T08:10:22Z"
     },
     {
       "id": "US-005",
