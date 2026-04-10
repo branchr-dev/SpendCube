@@ -111,7 +111,8 @@
         "Edit file: dashboard/pages/04_payment_terms.py — in main(), change _working_capital_table and _non_standard_terms to use cf instead of filtered. Keep _terms_histogram and _supplier_terms_heatmap using filtered (they show the full distribution, not cross-filtered).",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/04_payment_terms.py && echo 'syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T07:52:57Z"
     },
     {
       "id": "US-006",

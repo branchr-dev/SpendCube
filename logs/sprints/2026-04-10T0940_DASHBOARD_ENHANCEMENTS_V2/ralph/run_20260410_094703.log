@@ -256,3 +256,64 @@ STORY_COMPLETE: US-004
 [2026-04-10 09:51:37] [OK] Marked US-004 as passed
 [2026-04-10 09:51:37] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 09:51:37] [STEP] Committing changes...
+[2026-04-10 09:51:40] [INFO] Starting iteration 5
+[2026-04-10 09:51:40] [INFO] Processing story: US-005
+[2026-04-10 09:51:40] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Upgrade Payment Terms with spend vs terms scatter and cross-filtering
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance dashboard/pages/04_payment_terms.py with a supplier spend vs payment terms scatter chart (the key 'large suppliers on short terms' view from the blueprint) and cross-filtering. The scatter shows every supplier as a bubble: x=annual_spend, y=avg_payment_terms_days, size=transaction_count, color=category_l1. Clicking a bubble cross-filters the working capital table and non-standard terms table to show only that supplier. The scatter is placed between the KPI row and the existing histogram.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/04_payment_terms.py — add import: from dashboard.components.charts import scatter_bubble (add to existing import line from dashboard.components.charts).
+- Edit file: dashboard/pages/04_payment_terms.py — add function _spend_terms_scatter(df: pd.DataFrame) -> list[str]. Logic: (1) Guard: if df.empty or 'payment_terms_days' not in df.columns: st.info('No data.'); return []. (2) Filter: has_terms = df[df['payment_terms_days'].notna() & (df['base_amount'] > 0)]. If has_terms.empty: return []. (3) Aggregate: agg = has_terms.groupby('canonical_supplier_name').agg(annual_spend=('base_amount','sum'), avg_terms=('payment_terms_days','mean'), txn_count=('transaction_id','count'), primary_cat=('category_l1', lambda x: x.mode().iloc[0] if not x.dropna().empty else 'Other')).reset_index(). (4) Rename: agg.rename(columns={'canonical_supplier_name':'Supplier','annual_spend':'Annual Spend (AUD)','avg_terms':'Avg Payment Terms (days)','txn_count':'Transaction Count','primary_cat':'Category'}, inplace=True). (5) Call: fig = scatter_bubble(agg, x='Annual Spend (AUD)', y='Avg Payment Terms (days)', size='Transaction Count', color='Category', label='Supplier', title='Supplier Spend vs Payment Terms', hover_name='Supplier'). (6) Add reference lines: fig.add_hline(y=30, line_dash='dash', line_color='grey', annotation_text='30d', annotation_position='right'); fig.add_hline(y=45, line_dash='dash', line_color='orange', annotation_text='45d target', annotation_position='right'). (7) Render with: event = st.plotly_chart(fig, on_select='rerun', key='pt_spend_scatter', use_container_width=True). (8) Extract selections: points = (event or {}).get('selection', {}).get('points', []); selected = [p.get('text') for p in points if p.get('text')]; if selected: st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear'). (9) Return selected.
+- Edit file: dashboard/pages/04_payment_terms.py — in main(), call the scatter and set up cross-filter. After the _kpi_row call, insert: st.markdown('---'); st.subheader('Supplier Spend vs Payment Terms'); selected_suppliers = _spend_terms_scatter(filtered); cf = filtered[filtered['canonical_supplier_name'].isin(selected_suppliers)] if selected_suppliers else filtered.
+- Edit file: dashboard/pages/04_payment_terms.py — in main(), change _working_capital_table and _non_standard_terms to use cf instead of filtered. Keep _terms_histogram and _supplier_terms_heatmap using filtered (they show the full distribution, not cross-filtered).
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/04_payment_terms.py && echo 'syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Upgrade Payment Terms with spend vs terms scatter and cross-filtering`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 09:52:57] [OK] Story US-005 completed!
+[2026-04-10 09:52:57] [OK] Marked US-005 as passed
+[2026-04-10 09:52:57] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 09:52:57] [STEP] Committing changes...

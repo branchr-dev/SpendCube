@@ -45,3 +45,22 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+---
+
+### [US-005] - 2026-04-10
+**Status:** PASSED
+Story completed successfully.
+- Added `from dashboard.components.charts import scatter_bubble` import.
+- Added `_spend_terms_scatter(df)` function: aggregates by supplier, calls scatter_bubble, adds 30d and 45d reference hlines, captures on_select events, returns list of selected supplier names.
+- In `main()`, inserted scatter between KPI row and histogram with st.subheader('Supplier Spend vs Payment Terms').
+- Cross-filter `cf` wired to `_working_capital_table` and `_non_standard_terms`; histogram and heatmap remain on full `filtered`.
+- Syntax check passes.
+
+
+---
+
+### [US-005] - 2026-04-10 09:52:57
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
