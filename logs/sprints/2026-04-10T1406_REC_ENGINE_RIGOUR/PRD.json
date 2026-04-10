@@ -79,7 +79,8 @@
         "Run: python3 -c \"from src.config import load_config; c=load_config('config.yaml'); print(c.recommendations.addressability_defaults)\" — prints dict with 6 entries",
         "Run: python3 -m py_compile src/config.py — succeeds"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:17:18Z"
     },
     {
       "id": "US-004",
