@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
+from dashboard.client_config import get_currency_label
 from dashboard.components.charts import horizontal_bar, dumbbell
 from dashboard.components.filters import render_filters
 
@@ -37,15 +38,17 @@ def _build_supplier_options(txn: pd.DataFrame) -> list[str]:
         .reset_index()
         .sort_values("base_amount", ascending=False)
     )
+    currency = get_currency_label()
     return [
-        f"{row['canonical_supplier_name']} (AUD {row['base_amount']:,.0f})"
+        f"{row['canonical_supplier_name']} ({currency} {row['base_amount']:,.0f})"
         for _, row in sup_spend.iterrows()
     ]
 
 
 def _extract_supplier_name(label: str) -> str:
     """Strip the spend suffix to get the canonical name."""
-    idx = label.rfind(" (AUD ")
+    currency = get_currency_label()
+    idx = label.rfind(f" ({currency} ")
     return label[:idx] if idx != -1 else label
 
 
@@ -75,9 +78,9 @@ def _kpi_row(df: pd.DataFrame) -> None:
         contract_pct = 0.0
 
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Total Spend (AUD)", f"{total_spend:,.0f}")
+    c1.metric(f"Total Spend ({get_currency_label()})", f"{total_spend:,.0f}")
     c2.metric("Invoice Count", f"{invoice_count:,}")
-    c3.metric("Avg Transaction Size (AUD)", f"{avg_transaction:,.0f}")
+    c3.metric(f"Avg Transaction Size ({get_currency_label()})", f"{avg_transaction:,.0f}")
     c4.metric("Payment Terms (days)", f"{avg_terms:.0f}")
     c5.metric("Contract Coverage", f"{contract_pct:.1f}%")
 
@@ -108,7 +111,7 @@ def _spend_trend(df: pd.DataFrame) -> None:
         plot_bgcolor="white",
         font=dict(size=12),
         xaxis=dict(title="Month"),
-        yaxis=dict(showgrid=False, title="Spend (AUD)"),
+        yaxis=dict(showgrid=False, title=f"Spend ({get_currency_label()})"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -196,17 +199,18 @@ def _related_entities(
         ]["canonical_supplier_name"].dropna().unique()
 
         if len(siblings) > 0:
+            spend_col = f"Spend ({get_currency_label()})"
             sib_spend = (
                 txn[txn["canonical_supplier_name"].isin(siblings)]
                 .groupby("canonical_supplier_name")["base_amount"]
                 .sum()
                 .reset_index()
-                .rename(columns={"canonical_supplier_name": "Supplier", "base_amount": "Spend (AUD)"})
-                .sort_values("Spend (AUD)", ascending=False)
+                .rename(columns={"canonical_supplier_name": "Supplier", "base_amount": spend_col})
+                .sort_values(spend_col, ascending=False)
             )
             st.markdown(f"**Same parent company ({parent}):**")
             st.dataframe(
-                sib_spend.assign(**{"Spend (AUD)": sib_spend["Spend (AUD)"].map("{:,.0f}".format)}),
+                sib_spend.assign(**{spend_col: sib_spend[spend_col].map("{:,.0f}".format)}),
                 use_container_width=True,
                 hide_index=True,
             )
@@ -325,7 +329,7 @@ def main() -> None:
 
     cube = load_cube_data()
     if not cube:
-        st.error("No spend data found. Run `make build-cube` first.")
+        st.error("No spend data found. Please contact your analyst.")
         return
 
     txn = cube.get("transactions", pd.DataFrame())

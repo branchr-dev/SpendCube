@@ -214,10 +214,7 @@ def main() -> None:
     txn = cube.get("transactions", pd.DataFrame()) if cube else pd.DataFrame()
 
     if not scorecard:
-        st.warning(
-            "No quality scorecard found. Run `make build-cube` to generate diagnostics, "
-            "or ensure `data/output/quality_scorecard.json` exists."
-        )
+        st.warning("Quality data not available. Please ask your analyst to refresh the diagnostics.")
         return
 
     # --- Overall score metric ---

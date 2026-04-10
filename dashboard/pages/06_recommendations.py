@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from dashboard.client_config import get_currency_label
 from dashboard.components.charts import heatmap
 
 _RECS_PATH = Path(__file__).parent.parent.parent / "data" / "output" / "recommendations.json"
@@ -39,13 +40,14 @@ def _kpi_row(recs: list[dict]) -> None:
     medium_count = sum(1 for r in recs if r.get("confidence") == "MEDIUM")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Identified Savings (AUD)", f"{total_savings:,.0f}")
+    c1.metric(f"Total Identified Savings ({get_currency_label()})", f"{total_savings:,.0f}")
     c2.metric("Recommendation Count", str(total_count))
     c3.metric("HIGH Confidence", str(high_count))
     c4.metric("MEDIUM Confidence", str(medium_count))
 
 
 def _build_display_df(recs: list[dict]) -> pd.DataFrame:
+    impact_col = f"Estimated Impact ({get_currency_label()})"
     rows = []
     for i, r in enumerate(recs, 1):
         rows.append(
@@ -54,7 +56,7 @@ def _build_display_df(recs: list[dict]) -> pd.DataFrame:
                 "Type": r.get("type", ""),
                 "Context": r.get("context", ""),
                 "Evidence": r.get("evidence", ""),
-                "Estimated Impact (AUD)": r.get("estimated_impact_aud", 0.0),
+                impact_col: r.get("estimated_impact_aud", 0.0),
                 "Confidence": r.get("confidence", ""),
                 "Lever": r.get("lever", ""),
             }
@@ -69,7 +71,8 @@ def _recommendations_table(recs: list[dict]) -> None:
         st.info("No recommendations to display.")
         return
 
-    styled = df.style.format({"Estimated Impact (AUD)": "{:,.0f}"}).map(
+    impact_col = f"Estimated Impact ({get_currency_label()})"
+    styled = df.style.format({impact_col: "{:,.0f}"}).map(
         _colour_confidence, subset=["Confidence"]
     )
     st.dataframe(styled, use_container_width=True, hide_index=True)
@@ -101,7 +104,7 @@ def _savings_heatmap(recs: list[dict]) -> None:
         x="lever",
         y="type",
         values="estimated_impact_aud",
-        title="Estimated Impact (AUD) by Recommendation Type and Lever",
+        title=f"Estimated Impact ({get_currency_label()}) by Recommendation Type and Lever",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -111,7 +114,7 @@ def _detail_cards(recs: list[dict]) -> None:
     for i, r in enumerate(recs, 1):
         label = (
             f"#{i:02d} [{r.get('type', '')}] {r.get('context', '')} "
-            f"— AUD {r.get('estimated_impact_aud', 0.0):,.0f} "
+            f"— {get_currency_label()} {r.get('estimated_impact_aud', 0.0):,.0f} "
             f"({r.get('confidence', '')})"
         )
         with st.expander(label):
@@ -127,7 +130,7 @@ def _detail_cards(recs: list[dict]) -> None:
                     st.markdown("**Narrative:**")
                     st.markdown(narrative)
                 else:
-                    st.caption("No narrative available (dry_run=true or LLM skipped).")
+                    st.caption("Narrative not available for this recommendation.")
 
                 assumptions = r.get("assumptions")
                 if assumptions:
@@ -163,7 +166,7 @@ def main() -> None:
     recs = _load_recommendations()
 
     if not recs:
-        st.warning("Run make build-cube to generate recommendations")
+        st.warning("No recommendations available. Please contact your analyst.")
         return
 
     # --- Confidence filter ---

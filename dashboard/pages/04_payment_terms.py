@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
+from dashboard.client_config import get_currency_label
 from dashboard.components.charts import scatter_bubble
 from dashboard.components.filters import render_filters
 
@@ -79,7 +80,7 @@ def _kpi_row(
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Weighted Avg Payment Terms", f"{weighted_avg:.1f} days")
     c2.metric("% Transactions with Terms", f"{pct_with_terms:.1f}%")
-    c3.metric("Working Capital Opportunity", f"AUD {total_wc:,.0f}")
+    c3.metric("Working Capital Opportunity", f"{get_currency_label()} {total_wc:,.0f}")
     c4.metric("Suppliers on Short Terms (<30d)", f"{short_terms_count:,}")
 
 
@@ -156,11 +157,11 @@ def _supplier_terms_heatmap(df: pd.DataFrame) -> None:
             x=pivot.columns.tolist(),
             y=pivot.index.tolist(),
             colorscale="Blues",
-            colorbar=dict(title="Spend (AUD)"),
+            colorbar=dict(title=f"Spend ({get_currency_label()})"),
         )
     )
     fig.update_layout(
-        title="Top 15 Suppliers × Payment Terms Bucket (Spend AUD)",
+        title=f"Top 15 Suppliers × Payment Terms Bucket (Spend {get_currency_label()})",
         paper_bgcolor="white",
         font=dict(size=12),
         xaxis=dict(title="Payment Terms Bucket"),
@@ -206,17 +207,20 @@ def _working_capital_table(df: pd.DataFrame, target_days: float, wacc: float) ->
     )
     sup_agg = sup_agg.sort_values("wc_opportunity", ascending=False).reset_index(drop=True)
 
+    currency = get_currency_label()
+    annual_spend_col = f"Annual Spend ({currency})"
+    wc_opp_col = f"WC Opportunity ({currency})"
     display = sup_agg.rename(columns={
         "canonical_supplier_name": "Supplier",
         "current_terms": "Current Terms (days)",
         "target_terms": "Target Terms (days)",
-        "annual_spend": "Annual Spend (AUD)",
-        "wc_opportunity": "WC Opportunity (AUD)",
+        "annual_spend": annual_spend_col,
+        "wc_opportunity": wc_opp_col,
     })
     display["Current Terms (days)"] = display["Current Terms (days)"].map("{:.0f}".format)
     display["Target Terms (days)"] = display["Target Terms (days)"].map("{:.0f}".format)
-    display["Annual Spend (AUD)"] = display["Annual Spend (AUD)"].map("{:,.0f}".format)
-    display["WC Opportunity (AUD)"] = display["WC Opportunity (AUD)"].map("{:,.0f}".format)
+    display[annual_spend_col] = display[annual_spend_col].map("{:,.0f}".format)
+    display[wc_opp_col] = display[wc_opp_col].map("{:,.0f}".format)
 
     st.dataframe(display, use_container_width=True, hide_index=True)
 
@@ -255,14 +259,15 @@ def _non_standard_terms(df: pd.DataFrame) -> None:
     )
     anomaly["spend"] = anomaly["spend"].abs()
 
+    spend_col = f"Spend ({get_currency_label()})"
     display = anomaly.rename(columns={
         "canonical_supplier_name": "Supplier",
         "avg_terms": "Avg Terms (days)",
-        "spend": "Spend (AUD)",
+        "spend": spend_col,
         "txn_count": "Transaction Count",
     })
     display["Avg Terms (days)"] = display["Avg Terms (days)"].map("{:.1f}".format)
-    display["Spend (AUD)"] = display["Spend (AUD)"].map("{:,.0f}".format)
+    display[spend_col] = display[spend_col].map("{:,.0f}".format)
 
     st.dataframe(display, use_container_width=True, hide_index=True)
 
@@ -283,9 +288,10 @@ def _spend_terms_scatter(df: pd.DataFrame) -> list[str]:
         primary_cat=("category_l1", lambda x: x.mode().iloc[0] if not x.dropna().empty else "Other"),
     ).reset_index()
 
+    annual_spend_col = f"Annual Spend ({get_currency_label()})"
     agg.rename(columns={
         "canonical_supplier_name": "Supplier",
-        "annual_spend": "Annual Spend (AUD)",
+        "annual_spend": annual_spend_col,
         "avg_terms": "Avg Payment Terms (days)",
         "txn_count": "Transaction Count",
         "primary_cat": "Category",
@@ -293,7 +299,7 @@ def _spend_terms_scatter(df: pd.DataFrame) -> list[str]:
 
     fig = scatter_bubble(
         agg,
-        x="Annual Spend (AUD)",
+        x=annual_spend_col,
         y="Avg Payment Terms (days)",
         size="Transaction Count",
         color="Category",
@@ -317,7 +323,7 @@ def main() -> None:
 
     cube = load_cube_data()
     if not cube:
-        st.error("No spend data found. Run `make build-cube` first.")
+        st.error("No spend data found. Please contact your analyst.")
         return
 
     txn = cube.get("transactions", pd.DataFrame())

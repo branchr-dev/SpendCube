@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data, load_quality_scorecard
+from dashboard.client_config import get_currency_label
 from dashboard.components.charts import horizontal_bar, donut_chart, scatter_bubble
 from dashboard.components.filters import render_filters
 
@@ -45,7 +46,7 @@ def _kpi_cards(filtered: pd.DataFrame) -> None:
         tail_pct = 0.0
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Total Spend (AUD)", f"{total_spend:,.0f}")
+    c1.metric(f"Total Spend ({get_currency_label()})", f"{total_spend:,.0f}")
     c2.metric("Supplier Count", f"{supplier_count:,}")
     c3.metric("Invoice Count", f"{invoice_count:,}")
     c4.metric("Avg Transaction Size", f"{avg_txn:,.0f}")
@@ -84,7 +85,7 @@ def _spend_by_month(filtered: pd.DataFrame) -> None:
         paper_bgcolor="white",
         plot_bgcolor="white",
         font=dict(size=12),
-        yaxis=dict(showgrid=False, title="Spend (AUD)"),
+        yaxis=dict(showgrid=False, title=f"Spend ({get_currency_label()})"),
         xaxis=dict(title="Month"),
         legend=dict(orientation="h"),
     )
@@ -153,7 +154,7 @@ def _top_suppliers(filtered: pd.DataFrame) -> list[str]:
         go.Bar(
             y=sup_data["canonical_supplier_name"],
             x=sup_data["base_amount"],
-            name="Spend (AUD)",
+            name=f"Spend ({get_currency_label()})",
             orientation="h",
         )
     )
@@ -173,7 +174,7 @@ def _top_suppliers(filtered: pd.DataFrame) -> list[str]:
         plot_bgcolor="white",
         font=dict(size=12),
         yaxis=dict(showgrid=False, autorange="reversed"),
-        xaxis=dict(title="Spend (AUD)"),
+        xaxis=dict(title=f"Spend ({get_currency_label()})"),
         xaxis2=dict(
             title="Cumulative %",
             overlaying="x",
@@ -287,7 +288,7 @@ def _category_bu_heatmap(filtered: pd.DataFrame) -> None:
         return
     pivot = filtered.groupby(["category_l1", "business_unit"])["base_amount"].sum().unstack(fill_value=0)
     import plotly.express as px
-    fig = px.imshow(pivot, color_continuous_scale="Blues", aspect="auto", title="Spend by Category x Business Unit (AUD)", text_auto=".3s")
+    fig = px.imshow(pivot, color_continuous_scale="Blues", aspect="auto", title=f"Spend by Category x Business Unit ({get_currency_label()})", text_auto=".3s")
     fig.update_layout(paper_bgcolor="white", font=dict(size=11), xaxis_title="Business Unit", yaxis_title="Category")
     st.plotly_chart(fig, use_container_width=True)
 
@@ -302,20 +303,21 @@ def _opportunity_scatter(filtered: pd.DataFrame) -> None:
         txn_count=("transaction_id", "count"),
     ).reset_index()
     agg = agg[agg["supplier_count"] >= 2]
+    spend_col = f"Total Spend ({get_currency_label()})"
     agg.rename(columns={
         "category_l1": "Category",
-        "total_spend": "Total Spend (AUD)",
+        "total_spend": spend_col,
         "supplier_count": "Supplier Count",
         "txn_count": "Transaction Count",
     }, inplace=True)
-    fig = scatter_bubble(agg, x="Total Spend (AUD)", y="Supplier Count", size="Transaction Count", color="Category", label="Category", title="Opportunity Prioritisation: Spend vs Supplier Fragmentation")
+    fig = scatter_bubble(agg, x=spend_col, y="Supplier Count", size="Transaction Count", color="Category", label="Category", title="Opportunity Prioritisation: Spend vs Supplier Fragmentation")
     fig.add_annotation(text="High spend + many suppliers = consolidation opportunity", xref="paper", yref="paper", x=0.01, y=1.08, showarrow=False, font=dict(size=10, color="grey"))
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _quality_scorecard(scorecard: dict) -> None:
     if not scorecard:
-        st.info("No quality scorecard available. Run `make build-cube` to generate.")
+        st.info("Quality scorecard not available.")
         return
 
     st.subheader("Data Quality Scorecard")
@@ -334,7 +336,7 @@ def main() -> None:
 
     cube = load_cube_data()
     if not cube:
-        st.error("No spend data found. Run `make build-cube` first.")
+        st.error("No spend data found. Please contact your analyst.")
         return
 
     txn = cube.get("transactions", pd.DataFrame())

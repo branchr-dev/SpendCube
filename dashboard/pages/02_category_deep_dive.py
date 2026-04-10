@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.app import load_cube_data
+from dashboard.client_config import get_currency_label
 from dashboard.components.charts import horizontal_bar, boxplot
 from dashboard.components.filters import render_filters
 
@@ -77,7 +78,7 @@ def _kpi_row(df: pd.DataFrame) -> None:
         avg_terms = 0.0
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Total Spend (AUD)", f"{total_spend:,.0f}")
+    c1.metric(f"Total Spend ({get_currency_label()})", f"{total_spend:,.0f}")
     c2.metric("Supplier Count", f"{supplier_count:,}")
     c3.metric("Invoice Count", f"{invoice_count:,}")
     c4.metric("Contract Coverage", f"{contract_pct:.1f}%")
@@ -107,7 +108,7 @@ def _spend_trend(df: pd.DataFrame) -> None:
         plot_bgcolor="white",
         font=dict(size=12),
         xaxis=dict(title="Month"),
-        yaxis=dict(showgrid=False, title="Spend (AUD)"),
+        yaxis=dict(showgrid=False, title=f"Spend ({get_currency_label()})"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -120,7 +121,7 @@ def _transaction_boxplot(df: pd.DataFrame) -> None:
     if pos_df.empty:
         st.info("No positive-value transactions for boxplot.")
         return
-    fig = boxplot(pos_df, x="category_l1", y="base_amount", title="Transaction Value Distribution by Category (AUD)")
+    fig = boxplot(pos_df, x="category_l1", y="base_amount", title=f"Transaction Value Distribution by Category ({get_currency_label()})")
     st.plotly_chart(fig, use_container_width=True)
     st.caption("Distribution of individual transaction values (positive spend only). Wide spread indicates purchasing inconsistency or multiple item types within the category.")
 
@@ -254,7 +255,7 @@ def main() -> None:
 
     cube = load_cube_data()
     if not cube:
-        st.error("No spend data found. Run `make build-cube` first.")
+        st.error("No spend data found. Please contact your analyst.")
         return
 
     txn = cube.get("transactions", pd.DataFrame())
