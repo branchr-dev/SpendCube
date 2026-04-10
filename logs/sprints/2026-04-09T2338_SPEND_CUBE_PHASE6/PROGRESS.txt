@@ -86,3 +86,27 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 COMPLETE — 2026-04-10
+
+### Implemented
+- dashboard/pages/06_recommendations.py: full recommendations page
+  - @st.cache_data load from data/output/recommendations.json; st.warning if not found
+  - KPI row: Total Identified Savings (AUD), Recommendation Count, # HIGH, # MEDIUM
+  - st.multiselect confidence filter (HIGH/MEDIUM/LOW, default all)
+  - Recommendations table: st.dataframe with Rank, Type, Context, Evidence, Impact (AUD), Confidence (colour-coded), Lever
+  - Savings heatmap via charts.heatmap(): recommendation type on y-axis, lever on x-axis, colour = estimated_impact_aud
+  - Expandable detail cards (st.expander) per recommendation: evidence, action, lever, confidence, narrative, assumptions
+  - Download button: export to Excel via openpyxl (already in requirements.txt)
+
+### Learnings
+- Page follows same pattern as other dashboard pages: load data → filter → render sections
+- heatmap() in charts.py uses pivot_table(index=y, columns=x) so x=lever, y=type maps correctly
+- assumptions field may be list or string — handle both cases in detail cards
+- narrative field is None in dry_run mode; display a caption instead of empty section
+
+---
+
+### [US-004] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
