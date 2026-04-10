@@ -97,3 +97,19 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+[US-006 2026-04-10] Implemented dashboard/pages/04_payment_terms.py
+- KPI row (4 cols): Weighted Avg Payment Terms (spend-weighted), % Transactions with Terms, WC Opportunity (AUD), # Suppliers on Short Terms (<30 days)
+- Distribution histogram: plotly go.Histogram with bin size 5 days on payment_terms_days
+- Supplier × terms bucket heatmap: top 15 suppliers by spend, buckets 0-14/15-30/31-45/46-60/60+, colour = spend (AUD)
+- Working capital table: suppliers with terms < target, WC formula: (target-current)/365 * annual_spend * wacc, sorted by WC opportunity desc
+- Non-standard terms anomaly list: suppliers with avg terms not in {14, 30, 45, 60, 90}
+- st.sidebar number_input for target payment days (default 45) and WACC % (default 8.0); all WC calculations recalculate dynamically
+- All sections guard against empty DataFrames with st.info() fallbacks
+
+
+---
+
+### [US-006] - 2026-04-10 07:40:46
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

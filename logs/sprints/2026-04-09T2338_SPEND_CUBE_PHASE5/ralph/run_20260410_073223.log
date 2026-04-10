@@ -276,3 +276,67 @@ STORY_COMPLETE: US-005
 [2026-04-10 07:39:19] [OK] Marked US-005 as passed
 [2026-04-10 07:39:19] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 07:39:19] [STEP] Committing changes...
+[2026-04-10 07:39:21] [INFO] Starting iteration 5
+[2026-04-10 07:39:21] [INFO] Processing story: US-006
+[2026-04-10 07:39:21] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Implement payment terms deep dive page
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/04_payment_terms.py — weighted average payment terms analysis with working capital opportunity sizing and renegotiation priority list.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/04_payment_terms.py — implement payment terms page
+- KPI row: Weighted Avg Payment Terms (days), % Transactions with Terms, Working Capital Opportunity (AUD, at target 45 days, WACC 8%), # Suppliers on Short Terms (<30 days)
+- Distribution histogram: payment_terms_days distribution across all transactions (plotly histogram, bin size 5 days)
+- Heatmap: top 15 suppliers × payment terms bucket (0-14, 15-30, 31-45, 46-60, 60+) — colour = spend
+- Working capital table: for each supplier with terms < config target (45 days), show: Supplier, Current Terms, Target Terms, Annual Spend, WC Opportunity (AUD). Sorted by WC Opportunity desc. Formula: (target - current) / 365 * annual_spend * wacc.
+- Non-standard terms: show suppliers with payment_terms_days not in (14, 30, 45, 60, 90) as anomaly list
+- st.number_input for target payment days (default 45) and WACC % (default 8) — recalculates WC opportunity dynamically
+- Page title: 'Payment Terms'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Implement payment terms deep dive page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 07:40:46] [OK] Story US-006 completed!
+[2026-04-10 07:40:46] [OK] Marked US-006 as passed
+[2026-04-10 07:40:46] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 07:40:46] [STEP] Committing changes...

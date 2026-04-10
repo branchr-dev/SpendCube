@@ -145,7 +145,8 @@
         "st.number_input for target payment days (default 45) and WACC % (default 8) — recalculates WC opportunity dynamically",
         "Page title: 'Payment Terms'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:40:46Z"
     },
     {
       "id": "US-007",
