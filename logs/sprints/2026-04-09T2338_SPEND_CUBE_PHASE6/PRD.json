@@ -130,7 +130,8 @@
         "On Override: create new supplier_master entry if needed, set review_status='APPROVED', update transactions. INSERT audit_log.",
         "Show count: 'X matches pending review' header metric."
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T06:00:15Z"
     },
     {
       "id": "US-006",

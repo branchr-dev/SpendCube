@@ -267,3 +267,68 @@ STORY_COMPLETE: US-004
 [2026-04-10 07:57:15] [OK] Marked US-004 as passed
 [2026-04-10 07:57:15] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 07:57:15] [STEP] Committing changes...
+[2026-04-10 07:57:17] [INFO] Starting iteration 5
+[2026-04-10 07:57:17] [INFO] Processing story: US-005
+[2026-04-10 07:57:17] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Implement review workstation — supplier match queue
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the supplier match review queue section of dashboard/pages/07_review_workstation.py. Shows PENDING supplier matches for human approval/rejection, with approve/reject/merge actions that persist to DB.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/07_review_workstation.py — implement review workstation page (supplier section)
+- Page title: 'Review Workstation'
+- Section: 'Supplier Match Review' with st.subheader
+- Load supplier_match_log rows where review_status='PENDING' from SQLite. Sort by confidence asc (lowest confidence first), then by spend desc.
+- For each pending match, show: st.expander(f'{raw_supplier_name} → {canonical_supplier_name} (conf: {confidence:.2f})'). Inside: show raw_supplier_id, match_method, evidence string, proposed canonical_supplier_name. Three buttons: ✅ Approve, ❌ Reject, ✏️ Override (text input for manual canonical name).
+- On Approve: UPDATE supplier_match_log SET review_status='APPROVED', reviewed_at=now WHERE id=?. INSERT audit_log entry. UPDATE transactions SET canonical_supplier_id/name = approved values WHERE raw_supplier_name=?. Clear st.cache_data.
+- On Reject: UPDATE supplier_match_log SET review_status='REJECTED'. INSERT audit_log. Clear cache.
+- On Override: create new supplier_master entry if needed, set review_status='APPROVED', update transactions. INSERT audit_log.
+- Show count: 'X matches pending review' header metric.
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Implement review workstation — supplier match queue`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 08:00:15] [OK] Story US-005 completed!
+[2026-04-10 08:00:15] [OK] Marked US-005 as passed
+[2026-04-10 08:00:15] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 08:00:15] [STEP] Committing changes...

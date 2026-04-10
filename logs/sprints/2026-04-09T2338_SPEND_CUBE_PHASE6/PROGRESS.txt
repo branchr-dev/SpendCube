@@ -117,3 +117,40 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+## US-005 COMPLETE — 2026-04-10
+
+### Implemented
+- dashboard/pages/07_review_workstation.py: review workstation page — supplier match section
+  - st.title('Review Workstation'), st.subheader('Supplier Match Review')
+  - @st.cache_data load of PENDING rows from supplier_match_log joined with supplier_master
+    (for canonical_supplier_name) and transactions (for total_spend per raw_supplier_name)
+  - Sort: confidence asc, total_spend desc — lowest-confidence highest-spend matches first
+  - st.metric showing 'X matches pending review'
+  - st.expander per match: raw_supplier_id, match_method, evidence, proposed canonical name, spend
+  - ✅ Approve: UPDATE supplier_match_log review_status='APPROVED', INSERT audit_log,
+    UPDATE transactions canonical_supplier_id/name, st.cache_data.clear(), st.rerun()
+  - ❌ Reject: UPDATE supplier_match_log review_status='REJECTED', INSERT audit_log, clear/rerun
+  - ✏️ Override: st.form with text_input for manual name; creates supplier_master entry (if new),
+    sets canonical_supplier_id via SHA256 of normalised name, updates match_log+transactions+audit_log
+  - TODO: US-006 category review sections left as comment
+
+### Learnings
+- supplier_match_log does NOT have a reviewed_at column (not in database.py schema) — omitted from UPDATE
+- canonical_supplier_name must be fetched from supplier_master via JOIN (not stored in match_log)
+- total_spend must be computed via transactions JOIN (not stored in match_log)
+- st.form is needed for Override to allow text input + submit button inside st.expander in a loop
+- st.cache_data.clear() + st.rerun() is the correct pattern to refresh after DB mutations
+
+---
+
+### [US-005] - 2026-04-10
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-005] - 2026-04-10 08:00:15
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
