@@ -216,6 +216,10 @@ make serve-dashboard   # Runs: streamlit run dashboard/app.py
 
 Requires Phase 4 cube outputs (`data/output/*.parquet`) to exist. Run `make build-cube` first if the output directory is empty.
 
+### Client Configuration
+
+Client branding is controlled by the `client:` block in `config.yaml` (`name`, `engagement`, `currency_label`). The `dashboard/client_config.py` module exposes: `get_client_name()`, `get_engagement_title()`, `get_currency_label()`, `get_page_header(page_title)`, `get_data_freshness()`. All dashboard pages import from this module — never read `config.yaml` directly in a page file. To set up for a new client: edit `config.yaml` `client.name` and `client.engagement` fields.
+
 ## Phase 6: Recommendations and Review Workstation
 
 Phase 6 (final) adds a rule-based recommendation engine and a human review workstation to close the feedback loop between analytics and action.
@@ -244,7 +248,7 @@ Phase 6 (final) adds a rule-based recommendation engine and a human review works
 
 ### Review Workstation
 
-`dashboard/pages/07_review_workstation.py` implements a Streamlit page with four sections:
+`dashboard/pages/99_admin_review_workstation.py` is the internal analyst review tool (renamed from `07_review_workstation.py`). It should **not** be shown to clients — it is positioned at the bottom of the Streamlit sidebar by the `99_` prefix and displays a prominent internal-use-only banner. It implements a Streamlit page with four sections:
 
 1. **Supplier Match Review** — shows PENDING rows from `supplier_match_log`, sorted by confidence asc / spend desc. Approve / Reject / Override buttons write to DB and log to `audit_log`.
 2. **Category Review Queue** — shows transactions with `category_confidence < 0.60`, sorted by abs spend desc. L1/L2 selectboxes with Override button insert to `category_overrides_table` and update the transaction row.
