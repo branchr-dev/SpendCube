@@ -194,3 +194,65 @@ STORY_COMPLETE: US-003
 [2026-04-10 09:49:54] [OK] Marked US-003 as passed
 [2026-04-10 09:49:54] [INFO] Logged progress for US-003: PASSED
 [2026-04-10 09:49:54] [STEP] Committing changes...
+[2026-04-10 09:49:56] [INFO] Starting iteration 4
+[2026-04-10 09:49:56] [INFO] Processing story: US-004
+[2026-04-10 09:49:57] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Upgrade Supplier Deep Dive with payment terms dumbbell and cross-filtering
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance dashboard/pages/03_supplier_deep_dive.py with a payment terms dumbbell chart and cross-filtering. The dumbbell shows for the selected supplier's top 15 transaction groups (by category or all transactions): for each of the top 15 suppliers by spend within the current filtered view, show their avg payment_terms_days (red, left) vs the median payment_terms_days for their primary category across ALL transactions (blue, right). Cross-filtering: clicking a category in the spend-by-category chart filters the monthly trend to that category. Note: the dumbbell is supplier-level; it shows all selected supplier's data vs category benchmark.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — add import: from dashboard.components.charts import horizontal_bar, dumbbell (update existing import line to include dumbbell).
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — add function _payment_terms_dumbbell(sup_df: pd.DataFrame, all_txn: pd.DataFrame) -> None. Logic: (1) if sup_df.empty or 'payment_terms_days' not in sup_df.columns: st.info('No payment terms data.'); return. (2) Filter sup_df: has_terms = sup_df[sup_df['payment_terms_days'].notna()]. If has_terms.empty: st.info('No payment terms recorded for this supplier.'); return. (3) Compute supplier avg terms: sup_avg = float(has_terms['payment_terms_days'].mean()). (4) Determine primary category: primary_cat = has_terms['category_l1'].mode().iloc[0] if 'category_l1' in has_terms.columns and not has_terms['category_l1'].dropna().empty else None. (5) Compute category median from all_txn: if primary_cat and 'payment_terms_days' in all_txn.columns: cat_median = float(all_txn[all_txn['category_l1']==primary_cat]['payment_terms_days'].dropna().median()) else: cat_median = float(all_txn['payment_terms_days'].dropna().median()) if 'payment_terms_days' in all_txn.columns else None. (6) If cat_median is None: st.info('Category benchmark unavailable.'); return. (7) Build single-row df: row_df = pd.DataFrame({'Supplier': [sup_df['canonical_supplier_name'].iloc[0] if 'canonical_supplier_name' in sup_df.columns else 'Selected Supplier'], 'Avg Terms (days)': [sup_avg], 'Category Median (days)': [cat_median]}). (8) Call: fig = dumbbell(row_df, label_col='Supplier', left_col='Avg Terms (days)', right_col='Category Median (days)', left_name='Supplier Avg', right_name='Category Median', title=f'Payment Terms vs Category Median ({primary_cat or "All Categories"})'). (9) Render: st.plotly_chart(fig, use_container_width=True). (10) Add caption: supplier_below = sup_avg < cat_median; msg = f'This supplier is on {"shorter" if supplier_below else "longer"} terms ({sup_avg:.0f}d) than the {primary_cat or "overall"} category median ({cat_median:.0f}d). {"Working capital opportunity: negotiate extension." if supplier_below else "Terms are favourable."}'; st.caption(msg).
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — modify _spend_by_category(df: pd.DataFrame) -> None to return list[str]. Rename to keep same function name. Change the st.plotly_chart call to: event = st.plotly_chart(fig, on_select='rerun', key='supplier_spend_by_cat', use_container_width=True). Add: points = (event or {}).get('selection', {}).get('points', []); selected = [p['y'] for p in points if 'y' in p]; if selected: st.caption(f'Cross-filter active: {", ".join(selected[:3])} — click chart background to clear'); return selected.
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), change the _spend_by_category call. Currently it is in a col_left block. Change to: cat_sel = _spend_by_category(sup_txn). Add after: cf_sup = sup_txn[sup_txn['category_l1'].isin(cat_sel)] if cat_sel else sup_txn. Pass cf_sup to _spend_trend. Pass sup_txn to _spend_by_bu, _related_entities, _risk_flags.
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), add dumbbell section after the risk flags section: st.markdown('---'); st.subheader('Payment Terms Benchmark'); _payment_terms_dumbbell(sup_txn, filtered). The second arg filtered is the pre-supplier-filtered DataFrame from render_filters, so category medians are computed across all suppliers in the filtered view.
+- Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/03_supplier_deep_dive.py && echo 'syntax OK'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Upgrade Supplier Deep Dive with payment terms dumbbell and cross-filtering`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-04-10 09:51:37] [OK] Story US-004 completed!
+[2026-04-10 09:51:37] [OK] Marked US-004 as passed
+[2026-04-10 09:51:37] [INFO] Logged progress for US-004: PASSED
+[2026-04-10 09:51:37] [STEP] Committing changes...

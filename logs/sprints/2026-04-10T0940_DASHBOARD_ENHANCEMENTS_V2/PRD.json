@@ -97,7 +97,8 @@
         "Edit file: dashboard/pages/03_supplier_deep_dive.py — in main(), add dumbbell section after the risk flags section: st.markdown('---'); st.subheader('Payment Terms Benchmark'); _payment_terms_dumbbell(sup_txn, filtered). The second arg filtered is the pre-supplier-filtered DataFrame from render_filters, so category medians are computed across all suppliers in the filtered view.",
         "Run: PYTHONPATH=$(pwd) python3 -m py_compile dashboard/pages/03_supplier_deep_dive.py && echo 'syntax OK'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T07:51:37Z"
     },
     {
       "id": "US-005",
