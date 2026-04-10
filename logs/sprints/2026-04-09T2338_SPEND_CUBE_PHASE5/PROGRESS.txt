@@ -113,3 +113,25 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+[US-007 2026-04-10] Implemented dashboard/pages/05_data_quality.py
+- Overall quality score: computed as mean of per-check scores (GREEN/INFO=100, AMBER/WARN=50, RED/ALERT=0)
+- Scorecard table: 9 checks with Check, Value, % / Amount, Status (Styler coloured), Green/Amber Threshold, Remediation columns
+- Drill-down expanders: shown for non-GREEN checks (RED/ALERT=🔴, AMBER/WARN=🟡), display up to 100 problematic rows with contextual columns
+- Drill-down logic per check: missing_supplier_name (null raw_supplier_name), uncategorised_spend (null category_l1), unresolved_suppliers (null canonical_supplier_id), missing_payment_terms (null payment_terms_days), duplicate_invoice_risk ((invoice_number, base_amount) count >1), negative_reversal_lines (base_amount < 0), weak_descriptions (null/generic/<5 words raw_line_description), missing_contract_linkage (no PO + no contract_id), missing_bu_cost_centre (null business_unit AND cost_centre)
+- Export button: download quality_scorecard.json from disk (or from in-memory JSON if file missing)
+- Refresh button: clears st.cache_data and calls st.rerun()
+- Discovery: diagnostics uses two status naming schemes — GREEN/AMBER/RED and INFO/WARN/ALERT — both handled consistently
+
+---
+
+### [US-007] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
+
+---
+
+### [US-007] - 2026-04-10 07:43:05
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+

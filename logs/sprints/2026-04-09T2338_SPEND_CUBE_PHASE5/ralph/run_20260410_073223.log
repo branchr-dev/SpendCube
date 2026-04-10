@@ -340,3 +340,66 @@ STORY_COMPLETE: US-006
 [2026-04-10 07:40:46] [OK] Marked US-006 as passed
 [2026-04-10 07:40:46] [INFO] Logged progress for US-006: PASSED
 [2026-04-10 07:40:46] [STEP] Committing changes...
+[2026-04-10 07:40:49] [INFO] Starting iteration 6
+[2026-04-10 07:40:49] [INFO] Processing story: US-007
+[2026-04-10 07:40:49] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Implement data quality dashboard page
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/05_data_quality.py — the data quality scorecard page showing all 9 diagnostic checks with drill-down into problematic records.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/05_data_quality.py — implement data quality page
+- Overall quality score: st.metric('Overall Data Quality', f'{score}/100') as a large header metric
+- Scorecard table: st.dataframe showing all 9 checks with columns: Check, Value, Status (coloured), Green Threshold, Amber Threshold, Remediation. Use pandas Styler to colour Status column (green/amber/red).
+- Drill-down expandable sections (st.expander) for each RED or AMBER check: show the actual problematic rows. E.g. for 'Missing supplier name': show transactions where raw_supplier_name is null. For 'Duplicate invoice risk': show the duplicate invoice pairs.
+- Export button: st.download_button to download quality_scorecard.json
+- Refresh button: st.button('Re-run diagnostics') — clears st.cache_data and reloads
+- Page title: 'Data Quality'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Implement data quality dashboard page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-04-10 07:43:05] [OK] Story US-007 completed!
+[2026-04-10 07:43:05] [OK] Marked US-007 as passed
+[2026-04-10 07:43:05] [INFO] Logged progress for US-007: PASSED
+[2026-04-10 07:43:05] [STEP] Committing changes...

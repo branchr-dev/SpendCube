@@ -161,7 +161,8 @@
         "Refresh button: st.button('Re-run diagnostics') — clears st.cache_data and reloads",
         "Page title: 'Data Quality'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:43:05Z"
     },
     {
       "id": "US-008",
