@@ -317,3 +317,63 @@ STORY_COMPLETE: US-005
 [2026-04-10 09:52:57] [OK] Marked US-005 as passed
 [2026-04-10 09:52:57] [INFO] Logged progress for US-005: PASSED
 [2026-04-10 09:52:57] [STEP] Committing changes...
+[2026-04-10 09:52:59] [INFO] Starting iteration 6
+[2026-04-10 09:52:59] [INFO] Processing story: US-006
+[2026-04-10 09:52:59] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Update CLAUDE.md with cross-filtering pattern and new chart helpers
+
+## Project Context
+**Project:** Dashboard Enhancements V2
+**Project ID:** DASHBOARD-ENHANCEMENTS-V2-2026-04
+**PRD:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md to document the cross-filtering architecture and new chart helper functions added in this sprint. Future Ralph agents and developers working on dashboard pages need to know the on_select pattern and the boxplot/scatter_bubble/dumbbell API.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — in the Phase 5 section (Streamlit Dashboards), after the 'Chart Library' subsection, add a new subsection '### Cross-Filtering Pattern' with this content: 'Pages use Streamlit on_select events for within-page cross-filtering. Pattern: (1) event = st.plotly_chart(fig, on_select="rerun", key="unique_page_key", use_container_width=True). (2) points = (event or {}).get("selection", {}).get("points", []). (3) For horizontal bars: selected = [p["y"] for p in points if "y" in p]. For scatter with text=: selected = [p.get("text") for p in points if p.get("text")]. (4) if selected: st.caption(f"Cross-filter active: {...} — click chart background to clear"). (5) cf = df[df[col].isin(selected)] if selected else df. Apply cf to secondary charts only. Cross-filter is within-page only — no cross-page state sharing.'
+- Edit file: CLAUDE.md — in the Chart Library subsection (which currently says 'All charts use Plotly Express'), add after the existing description: 'Chart helpers in dashboard/components/charts.py: horizontal_bar(df, x, y, title, max_rows), donut_chart(df, names, values, title), heatmap(df, x, y, values, title), pareto_chart(df, x, y, title), line_chart(df, x, y, title), bar_chart(df, x, y, title, color), boxplot(df, x, y, title) — box plot grouped by x, boxplot(df, x, y, title) — box plot grouped by x, scatter_bubble(df, x, y, size, color, label, title, hover_name) — bubble scatter, dumbbell(df, label_col, left_col, right_col, left_name, right_name, title) — dumbbell/lollipop for benchmark comparison.'
+- Verify: grep -n 'Cross-Filtering' CLAUDE.md — should return at least one matching line
+- Verify: grep -n 'dumbbell' CLAUDE.md — should return at least one matching line
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/PRD.json
+   - Session: logs/sprints/2026-04-10T0940_DASHBOARD_ENHANCEMENTS_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Update CLAUDE.md with cross-filtering pattern and new chart helpers`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-04-10 09:53:26] [OK] Story US-006 completed!
+[2026-04-10 09:53:26] [OK] Marked US-006 as passed
+[2026-04-10 09:53:26] [INFO] Logged progress for US-006: PASSED
+[2026-04-10 09:53:26] [STEP] Committing changes...

@@ -124,7 +124,8 @@
         "Verify: grep -n 'Cross-Filtering' CLAUDE.md — should return at least one matching line",
         "Verify: grep -n 'dumbbell' CLAUDE.md — should return at least one matching line"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T07:53:26Z"
     }
   ],
   "verification": {
