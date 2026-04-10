@@ -69,3 +69,64 @@ STORY_COMPLETE: US-001
 [2026-04-10 14:16:02] [OK] Marked US-001 as passed
 [2026-04-10 14:16:02] [INFO] Logged progress for US-001: PASSED
 [2026-04-10 14:16:02] [STEP] Committing changes...
+[2026-04-10 14:16:04] [INFO] Starting iteration 2
+[2026-04-10 14:16:04] [INFO] Processing story: US-002
+[2026-04-10 14:16:04] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Create SavingsRates lookup module
+
+## Project Context
+**Project:** Recommendation Engine Rigour
+**Project ID:** REC-ENGINE-RIGOUR-2026-04
+**PRD:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+**Progress Log:** logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create src/recommendations/savings_rates.py containing a SavingsRates class. Constructor takes optional yaml_path argument (default: Path(__file__).resolve().parent.parent.parent / 'data' / 'reference' / 'savings_rates.yaml'). Loads and caches the YAML in __init__. Method get(lever_type: str, category_l1: str | None = None) -> dict returns {'saving_pct': float | None, 'addressability_pct': float}. Lookup order: (1) data['categories'][category_l1][lever_type] if both keys exist, (2) data['defaults'][lever_type], (3) hardcoded fallback {'saving_pct': None, 'addressability_pct': 0.70}. Include module-level lazy singleton: _default_rates = None and get_default_rates() -> SavingsRates function.
+
+## Acceptance Criteria
+- Create file: src/recommendations/savings_rates.py
+- Run: python3 -m py_compile src/recommendations/savings_rates.py — succeeds
+- Verify: python3 -c "from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('SUPPLIER_CONSOLIDATION','Information Technology'); assert v['saving_pct']==0.12, v" — passes (IT override)
+- Verify: python3 -c "from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('SUPPLIER_CONSOLIDATION','Unknown Category'); assert v['saving_pct']==0.08, v" — passes (default fallback)
+- Verify: python3 -c "from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('PAYMENT_TERM_EXTENSION'); assert v['saving_pct'] is None and v['addressability_pct']==0.80, v" — passes
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/PRD.json
+   - Session: logs/sprints/2026-04-10T1406_REC_ENGINE_RIGOUR/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Create SavingsRates lookup module`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-04-10 14:16:54] [OK] Story US-002 completed!
+[2026-04-10 14:16:54] [OK] Marked US-002 as passed
+[2026-04-10 14:16:54] [INFO] Logged progress for US-002: PASSED
+[2026-04-10 14:16:54] [STEP] Committing changes...

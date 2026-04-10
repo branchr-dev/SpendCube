@@ -66,7 +66,8 @@
         "Verify: python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('SUPPLIER_CONSOLIDATION','Unknown Category'); assert v['saving_pct']==0.08, v\" — passes (default fallback)",
         "Verify: python3 -c \"from src.recommendations.savings_rates import SavingsRates; r=SavingsRates(); v=r.get('PAYMENT_TERM_EXTENSION'); assert v['saving_pct'] is None and v['addressability_pct']==0.80, v\" — passes"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T12:16:54Z"
     },
     {
       "id": "US-003",

@@ -18,3 +18,14 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+
+[US-002 2026-04-10] SavingsRates module created at src/recommendations/savings_rates.py.
+- _normalise() helper needed: PAYMENT_TERM_EXTENSION YAML entry has no saving_pct key; without normalisation dict() copy omits the key entirely, breaking the assert v['saving_pct'] is None check.
+- All 3 acceptance criteria pass. Committed 06273e6.
+
+---
+
+### [US-002] - 2026-04-10 14:16:54
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+
