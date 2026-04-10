@@ -396,3 +396,66 @@ STORY_COMPLETE: US-006
 [2026-04-10 08:02:20] [OK] Marked US-006 as passed
 [2026-04-10 08:02:20] [INFO] Logged progress for US-006: PASSED
 [2026-04-10 08:02:20] [STEP] Committing changes...
+[2026-04-10 08:02:22] [INFO] Starting iteration 7
+[2026-04-10 08:02:22] [INFO] Processing story: US-007
+[2026-04-10 08:02:22] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Write Phase 6 unit tests
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write unit tests for the recommendation engine in tests/test_recommendations.py. All tests must pass.
+
+## Acceptance Criteria
+- Edit file: tests/test_recommendations.py — write minimum 10 test functions
+- Test RecommendationRules: test_generates_at_least_one_recommendation_from_sample, test_maverick_recommendation_generated_when_po_missing, test_tail_spend_recommendation_generated, test_payment_term_rec_only_for_suppliers_below_target, test_recommendations_sorted_by_impact_desc, test_no_negative_impact_recommendations
+- Test NarrativeGenerator: test_dry_run_returns_recommendations_unchanged, test_dry_run_makes_no_api_calls
+- Test RecommendationEngine: test_run_returns_list, test_export_creates_json_file, test_to_dataframe_has_correct_columns
+- Use in_memory_engine and cube_df fixtures from tests/conftest.py
+- Run: pytest tests/test_recommendations.py -v — all tests pass
+- Run: pytest tests/test_recommendations.py --cov=src/recommendations --cov-report=term-missing — coverage >= 70%
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Write Phase 6 unit tests`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-04-10 08:10:14] [OK] Story US-007 completed!
+[2026-04-10 08:10:14] [OK] Marked US-007 as passed
+[2026-04-10 08:10:14] [INFO] Logged progress for US-007: PASSED
+[2026-04-10 08:10:14] [STEP] Committing changes...
