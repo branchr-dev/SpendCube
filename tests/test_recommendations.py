@@ -15,6 +15,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from src.cube.metrics import CubeMetrics
+from src.recommendations.deduplicator import SpendAllocator
 from src.recommendations.engine import RecommendationEngine
 from src.recommendations.narratives import NarrativeGenerator
 from src.recommendations.rules import (
@@ -26,6 +27,7 @@ from src.recommendations.rules import (
     TAIL_SPEND_RATIONALISATION,
     RecommendationRules,
 )
+from src.recommendations.savings_rates import SavingsRates
 
 
 # ---------------------------------------------------------------------------
@@ -112,12 +114,12 @@ class TestRecommendationRules:
         target = config.recommendations.target_payment_days  # 45 by default
 
         # Below-target suppliers: 20 days (diff=25) with large enough spend to
-        # exceed min_wc_opportunity (10_000 AUD).
-        # impact = 25/365 * 2_000_000 * 0.08 ≈ 10_958 > 10_000 ✓
+        # exceed min_wc_opportunity (10_000 AUD) after addressability_pct (0.80) applied.
+        # impact = 25/365 * 3_000_000 * 0.80 * 0.08 ≈ 13_151 > 10_000 ✓
         txn = pd.DataFrame({
             "canonical_supplier_id": ["below_a", "below_b", "above_a", "above_b"],
             "canonical_supplier_name": ["Below A", "Below B", "Above A", "Above B"],
-            "base_amount": [2_000_000.0, 2_000_000.0, 1_000_000.0, 1_000_000.0],
+            "base_amount": [3_000_000.0, 3_000_000.0, 1_000_000.0, 1_000_000.0],
             "payment_terms_days": [
                 float(target - 25),   # below target
                 float(target - 25),   # below target
@@ -404,10 +406,12 @@ class TestRecommendationEngine:
         assert Path(returned_path).exists(), f"Expected file at {returned_path}"
         with open(returned_path, encoding="utf-8") as fh:
             loaded = json.load(fh)
-        assert isinstance(loaded, list)
-        assert len(loaded) == 1
-        assert loaded[0]["type"] == "CONTRACT_COMPLIANCE"
-        assert loaded[0]["estimated_impact_aud"] == 10_000.0
+        # export() wraps output: {'recommendations': [...], 'portfolio_summary': {...}}
+        recs_list = loaded["recommendations"] if isinstance(loaded, dict) else loaded
+        assert isinstance(recs_list, list)
+        assert len(recs_list) == 1
+        assert recs_list[0]["type"] == "CONTRACT_COMPLIANCE"
+        assert recs_list[0]["estimated_impact_aud"] == 10_000.0
 
     def test_to_dataframe_has_correct_columns(self, in_memory_engine, config):
         """to_dataframe() must return a DataFrame with exactly the required 8 columns."""
@@ -436,3 +440,139 @@ class TestRecommendationEngine:
         assert len(df) == 1
         assert df.iloc[0]["type"] == "TAIL_SPEND_RATIONALISATION"
         assert df.iloc[0]["estimated_impact_aud"] == 8_000.0
+
+
+# ---------------------------------------------------------------------------
+# SavingsRates
+# ---------------------------------------------------------------------------
+
+class TestSavingsRates:
+
+    def test_it_override(self):
+        """SUPPLIER_CONSOLIDATION + Information Technology must return saving_pct=0.12."""
+        rates = SavingsRates()
+        result = rates.get(SUPPLIER_CONSOLIDATION, "Information Technology")
+        assert result["saving_pct"] == 0.12, f"Expected 0.12, got {result['saving_pct']}"
+
+    def test_default_fallback(self):
+        """SUPPLIER_CONSOLIDATION + unknown category must fall back to default saving_pct=0.08."""
+        rates = SavingsRates()
+        result = rates.get(SUPPLIER_CONSOLIDATION, "Unknown Category XYZ")
+        assert result["saving_pct"] == 0.08, f"Expected 0.08, got {result['saving_pct']}"
+
+    def test_payment_term_extension_no_saving_pct(self):
+        """PAYMENT_TERM_EXTENSION must return saving_pct=None and addressability_pct=0.80."""
+        rates = SavingsRates()
+        result = rates.get(PAYMENT_TERM_EXTENSION)
+        assert result["saving_pct"] is None, f"Expected None, got {result['saving_pct']}"
+        assert result["addressability_pct"] == 0.80, (
+            f"Expected 0.80, got {result['addressability_pct']}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# SpendAllocator
+# ---------------------------------------------------------------------------
+
+class TestSpendAllocator:
+
+    def test_same_sourcing_group_deduplicates(self):
+        """SUPPLIER_CONSOLIDATION + COMPETITIVE_TENDER on same context → only higher survives."""
+        recs = [
+            {
+                "type": SUPPLIER_CONSOLIDATION,
+                "context": "IT Services",
+                "estimated_impact_aud": 100.0,
+                "lever": "Supplier Consolidation",
+            },
+            {
+                "type": COMPETITIVE_TENDER,
+                "context": "IT Services",
+                "estimated_impact_aud": 80.0,
+                "lever": "Competitive Sourcing",
+            },
+        ]
+        out = SpendAllocator().allocate(recs)
+        assert len(out) == 1, f"Expected 1 rec after deduplication, got {len(out)}"
+        assert out[0]["type"] == SUPPLIER_CONSOLIDATION
+        assert out[0]["estimated_impact_aud"] == 100.0
+
+    def test_different_groups_both_kept(self):
+        """SUPPLIER_CONSOLIDATION (SOURCING) + CONTRACT_COVERAGE_GAP (COVERAGE) → both kept."""
+        recs = [
+            {
+                "type": SUPPLIER_CONSOLIDATION,
+                "context": "IT Services",
+                "estimated_impact_aud": 100.0,
+                "lever": "Supplier Consolidation",
+            },
+            {
+                "type": CONTRACT_COVERAGE_GAP,
+                "context": "IT Services",
+                "estimated_impact_aud": 80.0,
+                "lever": "Contract Coverage",
+            },
+        ]
+        out = SpendAllocator().allocate(recs)
+        assert len(out) == 2, f"Expected 2 recs (different groups), got {len(out)}"
+        types = {r["type"] for r in out}
+        assert SUPPLIER_CONSOLIDATION in types
+        assert CONTRACT_COVERAGE_GAP in types
+
+    def test_portfolio_deduplication(self):
+        """Two TAIL_SPEND_RATIONALISATION recs (PORTFOLIO_TAIL) → only one survives."""
+        recs = [
+            {
+                "type": TAIL_SPEND_RATIONALISATION,
+                "context": "Portfolio",
+                "estimated_impact_aud": 50_000.0,
+                "lever": "Tail Spend Rationalisation",
+            },
+            {
+                "type": TAIL_SPEND_RATIONALISATION,
+                "context": "Portfolio",
+                "estimated_impact_aud": 30_000.0,
+                "lever": "Tail Spend Rationalisation",
+            },
+        ]
+        out = SpendAllocator().allocate(recs)
+        assert len(out) == 1, f"Expected 1 rec after portfolio dedup, got {len(out)}"
+        assert out[0]["estimated_impact_aud"] == 50_000.0
+
+
+# ---------------------------------------------------------------------------
+# TestRulesAuditFields
+# ---------------------------------------------------------------------------
+
+class TestRulesAuditFields:
+
+    def test_audit_fields_present(self, config):
+        """rule_supplier_consolidation must include all four audit fields on every rec."""
+        # Build a synthetic cube with 7 suppliers in the same L2 category
+        # (consolidation_threshold default is 5 so 7 > 5 guarantees the rule fires)
+        n = 7
+        txn = pd.DataFrame({
+            "canonical_supplier_id": [f"sup_{i}" for i in range(n)],
+            "canonical_supplier_name": [f"Vendor {i}" for i in range(n)],
+            "base_amount": [50_000.0] * n,
+            "category_l2": ["IT Services"] * n,
+            "is_intercompany": [0] * n,
+            "is_tax_line": [0] * n,
+        })
+        cube = {"transactions": txn}
+        metrics = _metrics(total_spend=float(n * 50_000))
+
+        rules = RecommendationRules(cube, metrics, config)
+        recs = rules.rule_supplier_consolidation()
+
+        assert len(recs) >= 1, "Expected at least one SUPPLIER_CONSOLIDATION rec"
+
+        for rec in recs:
+            for field in ("baseline_spend", "addressability_pct", "saving_pct", "addressable_baseline"):
+                assert field in rec, f"Audit field '{field}' missing from rec: {rec}"
+
+            assert abs(rec["addressable_baseline"] - rec["baseline_spend"] * rec["addressability_pct"]) < 1e-6, (
+                f"addressable_baseline ({rec['addressable_baseline']}) != "
+                f"baseline_spend ({rec['baseline_spend']}) * addressability_pct "
+                f"({rec['addressability_pct']})"
+            )
