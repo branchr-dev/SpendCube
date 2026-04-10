@@ -81,3 +81,19 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+
+[US-005 2026-04-10] Implemented dashboard/pages/03_supplier_deep_dive.py
+- Supplier selector built from transactions parquet, sorted by spend desc with AUD amount in label
+- KPI row: Total Spend, Invoice Count, Avg Transaction Size, Payment Terms, Contract Coverage
+- Monthly spend trend (bar chart)
+- Spend by category L1 (horizontal bar) + spend by business_unit/plant_site (horizontal bar) side by side
+- Related entities: same parent_company_name siblings + PENDING fuzzy matches from supplier_match_log (SQLite at data/db/spend_cube.db)
+- Risk flags: concentration > 20%, single L1 category, contract coverage < 50%
+- DB path: data/db/spend_cube.db (spend_cube.db, not spendcube.db in data/)
+
+---
+
+### [US-005] - 2026-04-10 07:39:19
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+

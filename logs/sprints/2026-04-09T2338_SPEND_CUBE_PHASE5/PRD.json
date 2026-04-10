@@ -128,7 +128,8 @@
         "Risk flags: if supplier_spend / total_spend > 0.20: 'High concentration: {pct}% of total spend', if is_single_category (all spend in one L1): 'Single source risk', if contract_coverage < 0.5: 'Low contract coverage'",
         "Page title: 'Supplier Deep Dive'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-04-10T05:39:19Z"
     },
     {
       "id": "US-006",

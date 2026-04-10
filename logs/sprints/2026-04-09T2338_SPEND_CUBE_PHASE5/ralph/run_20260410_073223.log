@@ -211,3 +211,68 @@ STORY_COMPLETE: US-004
 [2026-04-10 07:37:16] [OK] Marked US-004 as passed
 [2026-04-10 07:37:16] [INFO] Logged progress for US-004: PASSED
 [2026-04-10 07:37:16] [STEP] Committing changes...
+[2026-04-10 07:37:18] [INFO] Starting iteration 4
+[2026-04-10 07:37:19] [INFO] Processing story: US-005
+[2026-04-10 07:37:19] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Implement supplier deep dive page
+
+## Project Context
+**Project:** SpendCube Phase 5 - Streamlit Dashboards
+**Project ID:** SPEND-CUBE-PHASE5-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement dashboard/pages/03_supplier_deep_dive.py — supplier search and drill-down with spend breakdown, related entities, and payment terms.
+
+## Acceptance Criteria
+- Edit file: dashboard/pages/03_supplier_deep_dive.py — implement supplier deep dive page
+- Supplier selector: st.selectbox with list of canonical_supplier_names sorted by spend desc. Show spend next to name: 'Telstra Corporation (AUD 22,500)'.
+- KPI row: Total Spend, Invoice Count, Avg Transaction Size, Payment Terms (days), Contract Coverage %
+- Spend trend: monthly spend for selected supplier
+- Spend by category: horizontal bar (top categories for this supplier)
+- Spend by business unit / site: horizontal bar
+- Related entities panel: show other suppliers with same parent_company_name (if any), show suppliers with similar names (fuzzy matches from supplier_match_log with review_status=PENDING)
+- Risk flags: if supplier_spend / total_spend > 0.20: 'High concentration: {pct}% of total spend', if is_single_category (all spend in one L1): 'Single source risk', if contract_coverage < 0.5: 'Low contract coverage'
+- Page title: 'Supplier Deep Dive'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE5/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Implement supplier deep dive page`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-04-10 07:39:19] [OK] Story US-005 completed!
+[2026-04-10 07:39:19] [OK] Marked US-005 as passed
+[2026-04-10 07:39:19] [INFO] Logged progress for US-005: PASSED
+[2026-04-10 07:39:19] [STEP] Committing changes...
