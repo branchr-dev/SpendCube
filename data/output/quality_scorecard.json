@@ -1,17 +1,17 @@
 {
   "missing_supplier_name": {
-    "value": 1,
-    "pct": 10.0,
-    "status": "RED",
+    "value": 0,
+    "pct": 0.0,
+    "status": "GREEN",
     "green_threshold": 1.0,
     "amber_threshold": 5.0,
     "description": "Rows missing raw_supplier_name",
     "remediation": "Enrich source data or add supplier name fallback from vendor ID."
   },
   "uncategorised_spend": {
-    "value": 125.0,
-    "pct": 0.24,
-    "status": "GREEN",
+    "value": 5293529.53,
+    "pct": 21.41,
+    "status": "RED",
     "green_threshold": 5.0,
     "amber_threshold": 15.0,
     "description": "Spend (base_amount) with no category assignment",
@@ -27,9 +27,9 @@
     "remediation": "Review supplier match log (PENDING status); lower fuzzy threshold or add manual overrides."
   },
   "missing_payment_terms": {
-    "value": 125.0,
-    "pct": 0.24,
-    "status": "GREEN",
+    "value": 6602026.25,
+    "pct": 26.7,
+    "status": "AMBER",
     "green_threshold": 10.0,
     "amber_threshold": 30.0,
     "description": "Spend with no payment terms days populated",
@@ -45,17 +45,17 @@
     "remediation": "Review is_duplicate flag; investigate AP process for duplicate invoice controls."
   },
   "negative_reversal_lines": {
-    "value": 1,
-    "pct": 10.0,
-    "status": "ALERT",
+    "value": 59,
+    "pct": 5.9,
+    "status": "WARN",
     "green_threshold": 3.0,
     "amber_threshold": 8.0,
     "description": "Rows with negative base_amount (credit notes / reversals)",
     "remediation": "High reversal rates may indicate AP process issues or over-accruals; investigate with finance."
   },
   "weak_descriptions": {
-    "value": 6,
-    "pct": 60.0,
+    "value": 1000,
+    "pct": 100.0,
     "status": "RED",
     "green_threshold": 15.0,
     "amber_threshold": 30.0,
@@ -63,8 +63,8 @@
     "remediation": "Enrich descriptions from PO/contract data; add description enrichment rules."
   },
   "missing_contract_linkage": {
-    "value": 5125.0,
-    "pct": 9.95,
+    "value": 7114999.2,
+    "pct": 28.78,
     "status": "GREEN",
     "green_threshold": 30.0,
     "amber_threshold": 60.0,

@@ -459,3 +459,73 @@ STORY_COMPLETE: US-007
 [2026-04-10 08:10:14] [OK] Marked US-007 as passed
 [2026-04-10 08:10:14] [INFO] Logged progress for US-007: PASSED
 [2026-04-10 08:10:14] [STEP] Committing changes...
+[2026-04-10 08:10:16] [INFO] Starting iteration 8
+[2026-04-10 08:10:16] [INFO] Processing story: US-008
+[2026-04-10 08:10:16] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Final integration test and CLAUDE.md update
+
+## Project Context
+**Project:** SpendCube Phase 6 - Recommendations and Review Workstation
+**Project ID:** SPEND-CUBE-PHASE6-2026-04
+**PRD:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+**Progress Log:** logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Run the complete end-to-end pipeline on the 1000-row synthetic test dataset (generated in Phase 1) to verify the full system works at scale. Update CLAUDE.md with Phase 6 documentation and final project status.
+
+## Acceptance Criteria
+- Generate 1000-row test data if not already present: python src/utils/generate_test_data.py --rows 1000 --seed 42 --output data/input/test_1k.csv
+- Run full pipeline on test_1k.csv: python src/ingestion/ingest.py --file data/input/test_1k.csv --db data/db/spend_cube_1k.db && python src/suppliers/harmoniser.py --db data/db/spend_cube_1k.db && python src/categorisation/categoriser.py --db data/db/spend_cube_1k.db && python src/cube/pipeline.py --db data/db/spend_cube_1k.db
+- Verify 1000-row run: all 4 commands exit 0, spend_cube_1k.db populated with 1000 transactions, supplier_master has < 1000 entries (deduplication worked), at least 700 transactions categorised at MEDIUM+ confidence (70%)
+- Verify recommendations generated: python src/recommendations/engine.py --db data/db/spend_cube_1k.db — generates ≥5 recommendations
+- Edit file: CLAUDE.md — add section '## Phase 6: Recommendations and Review Workstation'. Update Phase Status: All 6 Phases Complete. Add section '## End-to-End Pipeline' with full make command sequence. Add '## Definition of Done' checklist from spec showing all items checked.
+- Verify: CLAUDE.md contains 'All 6 Phases Complete'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+   - Session: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Final integration test and CLAUDE.md update`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+All criteria verified:
+
+- **1000-row test data generated** — `data/input/test_1k.csv`
+- **Full pipeline ran, all 4 commands exit 0** — ingest → harmonise → categorise → cube
+- **DB populated** — 1000 transactions, 468 supplier_master entries (< 1000), 83% MEDIUM+ confidence (target 70%)
+- **32 recommendations generated** (target ≥5) across 6 rule types
+- **CLAUDE.md updated** — Phase 6 section, Phase Status showing "All 6 Phases Complete", End-to-End Pipeline section, Definition of Done checklist
+
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-04-10 08:12:56] [OK] Story US-008 completed!
+[2026-04-10 08:12:56] [OK] Marked US-008 as passed
+[2026-04-10 08:12:56] [INFO] Logged progress for US-008: PASSED
+[2026-04-10 08:12:56] [STEP] Committing changes...

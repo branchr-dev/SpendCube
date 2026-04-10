@@ -243,3 +243,39 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+## US-008 COMPLETE — 2026-04-10
+
+### Implemented
+- Generated 1000-row synthetic test dataset: data/input/test_1k.csv (seed=42)
+- Ran full 6-phase pipeline on separate DB (data/db/spend_cube_1k.db):
+  - Ingestion: 1000 rows ingested, exit 0
+  - Harmonisation: 576 raw names → 468 canonical suppliers (dedup confirmed)
+  - Categorisation: 832/1000 (83%) at MEDIUM+ confidence (target: 70%)
+  - Cube pipeline: 6 Parquet files + diagnostics exported, exit 0
+  - Recommendations: 32 recommendations across 6 types (target: ≥5), exit 0
+- Updated CLAUDE.md:
+  - Added ## Phase 6: Recommendations and Review Workstation section
+  - Updated Phase Status table: All 6 Phases Complete
+  - Added ## End-to-End Pipeline section with full make command sequence
+  - Added ## Definition of Done checklist (all 10 items checked)
+  - Verified: CLAUDE.md contains 'All 6 Phases Complete'
+
+### Learnings
+- Virtual environment is at .venv/ — use .venv/bin/python not python/python3 system binary
+- 1000-row dataset triggers all 6 recommendation types (vs only 1 with 10-row sample)
+- Pipeline completes cleanly end-to-end: no unhandled exceptions on 1k data at scale
+- 83% MEDIUM+ categorisation in dry_run mode (LLM would push this higher with dry_run=false)
+
+---
+
+### [US-008] - 2026-04-10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
+---
+
+### [US-008] - 2026-04-10 08:12:56
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
