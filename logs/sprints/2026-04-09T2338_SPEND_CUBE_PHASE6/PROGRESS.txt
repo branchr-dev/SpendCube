@@ -1,0 +1,28 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-04-09T2338_SPEND_CUBE_PHASE6/PRD.json
+# Created: Fri 10 Apr 2026 07:45:33 CEST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-04-10
+
+### Implemented
+- src/recommendations/rules.py: RecommendationRules class with 6 rule methods:
+  - rule_supplier_consolidation (SUPPLIER_CONSOLIDATION)
+  - rule_payment_term_extension (PAYMENT_TERM_EXTENSION)
+  - rule_tail_spend_rationalisation (TAIL_SPEND_RATIONALISATION)
+  - rule_maverick_spend (CONTRACT_COMPLIANCE)
+  - rule_competitive_tender (COMPETITIVE_TENDER)
+  - rule_contract_coverage_gap (CONTRACT_COVERAGE_GAP)
+- CLI: python3 src/recommendations/rules.py --db data/db/spend_cube.db
+
+### Learnings
+- `is_on_contract` column does NOT exist in the SQLite transactions table (not in schema in database.py).
+  The contract_coverage_gap rule defaults to 0% coverage when column absent — correct behaviour.
+- 10-row sample data only triggers TAIL_SPEND_RATIONALISATION (tail_spend_pct=13.9% > 5% threshold).
+  Maverick spend pct is ~0% because intercompany/tax rows are excluded by _addressable() filter.
+  CONTRACT_COVERAGE_GAP doesn't fire because no L1 category reaches > $20,000 after exclusions.
+  Remaining rules need 1000-row dataset to fire (US-008 validation).
+- The `by_supplier` cube view does NOT include canonical_supplier_id — grouped by name only.
+  Payment term extension rule must therefore work from transactions DataFrame directly.
+
