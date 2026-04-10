@@ -1,0 +1,232 @@
+[
+  {
+    "type": "TAIL_SPEND_RATIONALISATION",
+    "context": "Portfolio",
+    "evidence": "80 tail suppliers, 19.5% of spend",
+    "estimated_impact_aud": 95055.5,
+    "confidence": "MEDIUM",
+    "action": "Rationalise 80 tail suppliers \u2014 consolidate or eliminate low-value vendors",
+    "lever": "Tail Spend Rationalisation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COMPLIANCE",
+    "context": "Portfolio",
+    "evidence": "25.1% of spend is maverick (no PO and not on-contract)",
+    "estimated_impact_aud": 61424.61,
+    "confidence": "MEDIUM",
+    "action": "Enforce PO compliance and contract coverage for maverick spend categories",
+    "lever": "Contract Compliance",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "Facilities",
+    "evidence": "0% contract coverage in Facilities ($1,068,276 total spend)",
+    "estimated_impact_aud": 53413.78,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for Facilities \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "IT",
+    "evidence": "0% contract coverage in IT ($1,055,474 total spend)",
+    "estimated_impact_aud": 52773.72,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for IT \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Freight",
+    "evidence": "23 suppliers in Freight, top supplier = 8.8%",
+    "estimated_impact_aud": 50140.08,
+    "confidence": "HIGH",
+    "action": "Consolidate 23 suppliers in Freight to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "Logistics",
+    "evidence": "0% contract coverage in Logistics ($978,966 total spend)",
+    "estimated_impact_aud": 48948.28,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for Logistics \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Software",
+    "evidence": "16 suppliers in Software, top supplier = 9.3%",
+    "estimated_impact_aud": 41621.97,
+    "confidence": "HIGH",
+    "action": "Consolidate 16 suppliers in Software to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Catering",
+    "evidence": "16 suppliers in Catering, top supplier = 14.4%",
+    "estimated_impact_aud": 33926.95,
+    "confidence": "HIGH",
+    "action": "Consolidate 16 suppliers in Catering to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Cleaning",
+    "evidence": "10 suppliers in Cleaning, top supplier = 25.2%",
+    "estimated_impact_aud": 27200.87,
+    "confidence": "HIGH",
+    "action": "Consolidate 10 suppliers in Cleaning to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Telecommunications",
+    "evidence": "12 suppliers in Telecommunications, top supplier = 20.2%",
+    "estimated_impact_aud": 19750.64,
+    "confidence": "HIGH",
+    "action": "Consolidate 12 suppliers in Telecommunications to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Warehousing",
+    "evidence": "8 suppliers in Warehousing, top supplier = 22.3%",
+    "estimated_impact_aud": 17097.61,
+    "confidence": "HIGH",
+    "action": "Consolidate 8 suppliers in Warehousing to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "Office Supplies",
+    "evidence": "0% contract coverage in Office Supplies ($313,646 total spend)",
+    "estimated_impact_aud": 15682.31,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for Office Supplies \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Security",
+    "evidence": "6 suppliers in Security, top supplier = 24.1%",
+    "estimated_impact_aud": 14913.78,
+    "confidence": "HIGH",
+    "action": "Consolidate 6 suppliers in Security to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Events",
+    "evidence": "6 suppliers in Events, top supplier = 24.8%",
+    "estimated_impact_aud": 14505.06,
+    "confidence": "HIGH",
+    "action": "Consolidate 6 suppliers in Events to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "Professional Services",
+    "evidence": "0% contract coverage in Professional Services ($274,977 total spend)",
+    "estimated_impact_aud": 13748.84,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for Professional Services \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Print Consumables",
+    "evidence": "8 suppliers in Print Consumables, top supplier = 27.4%",
+    "estimated_impact_aud": 12089.4,
+    "confidence": "HIGH",
+    "action": "Consolidate 8 suppliers in Print Consumables to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Courier",
+    "evidence": "7 suppliers in Courier, top supplier = 28.0%",
+    "estimated_impact_aud": 11079.56,
+    "confidence": "HIGH",
+    "action": "Consolidate 7 suppliers in Courier to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Cloud Services",
+    "evidence": "8 suppliers in Cloud Services, top supplier = 23.7%",
+    "estimated_impact_aud": 10657.04,
+    "confidence": "HIGH",
+    "action": "Consolidate 8 suppliers in Cloud Services to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Engineering",
+    "evidence": "6 suppliers in Engineering, top supplier = 31.8%",
+    "estimated_impact_aud": 10061.45,
+    "confidence": "HIGH",
+    "action": "Consolidate 6 suppliers in Engineering to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "Marketing",
+    "evidence": "0% contract coverage in Marketing ($183,813 total spend)",
+    "estimated_impact_aud": 9190.66,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for Marketing \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "IT Services",
+    "evidence": "6 suppliers in IT Services, top supplier = 40.7%",
+    "estimated_impact_aud": 7227.31,
+    "confidence": "HIGH",
+    "action": "Consolidate 6 suppliers in IT Services to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "SUPPLIER_CONSOLIDATION",
+    "context": "Legal",
+    "evidence": "6 suppliers in Legal, top supplier = 50.2%",
+    "estimated_impact_aud": 6564.9,
+    "confidence": "HIGH",
+    "action": "Consolidate 6 suppliers in Legal to 2-3 preferred vendors",
+    "lever": "Supplier Consolidation",
+    "narrative": null
+  },
+  {
+    "type": "CONTRACT_COVERAGE_GAP",
+    "context": "HR",
+    "evidence": "0% contract coverage in HR ($81,018 total spend)",
+    "estimated_impact_aud": 4050.92,
+    "confidence": "MEDIUM",
+    "action": "Establish framework agreements for HR \u2014 target 80% contract coverage",
+    "lever": "Contract Coverage",
+    "narrative": null
+  }
+]

@@ -1,0 +1,201 @@
+VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE
+INTERCOMPANY - IT,V-INTCO,INV-2023-0001,2023-08-17,Catering services,33867.3,AUD,6440520,CC-MKT-01,NET14,PO-81426,Energy,Adelaide
+Bennett Group,V-0389,INV-2024-0002,2023-10-12,Engineering services,16896.07,,6309891,CC-IT-01,Net 60,PO-92397,Retail,Brisbane
+Morales-Jones,V-0024,INV-2023-0003,27/08/2023,Marketing materials,13970.88,AUD,6305820,CC-FIN-03,NET14,,Energy,Brisbane
+Bowen Group,V-0286,INV-2023-0004,23/08/2023,Data services,15841.11,AUD,6303483,CC-ENG-04,N30,PO-83579,Technology,Adelaide
+Johnston-Odonnell,V-0186,INV-2024-0005,04/04/2023,Courier services,5571.49,AUD,6449771,CC-OPS-04,N7,PO-11504,Corporate,Darwin
+"Miller, Ramos and Coleman",V-0394,INV-2024-0006,2023-06-11,Conference facilities,43805.06,AUD,6518317,CC-OPS-03,NET30,PO-31174,Retail,Adelaide
+Moon-White Incorporated,V-0251,INV-2023-0007,03-Aug-2024,IT equipment,36622.19,AUD,6512103,CC-ENG-05,7 days,PO-80686,Technology,Melbourne
+Davis-Lewis,V-0344,INV-2024-0008,2023-05-04,IT equipment,16970.47,AUD,6510117,CC-OPS-01,Net 45,PO-46500,Operations,Adelaide
+Bright-Francis,V-0293,INV-2024-0009,2024-02-21,Catering services,32983.24,AUD,6421612,CC-MKT-04,NET14,PO-80292,Energy,Melbourne
+MOODY-TAYLOR Pty Ltd,V-0473,INV-2023-0010,06-Apr-2023,Courier services,11895.34,AUD,6440960,LEG04,N60,PO-82845,Energy,Melbourne
+"Snyder, Campos and Callahan",V-0030,INV-2024-0011,2023-02-28,Equipment hire,25192.23,AUD,6423044,OPS05,Net 60,,Finance,Sydney
+"Sparks, Jackson and Miller",V-0299,INV-2024-0012,2023-07-29,IT support,12010.43,AUD,6307491,LOG01,,PO-37938,Operations,Brisbane
+"Burke, Martinez and Riggs",V-0190,INV-2024-0013,18-Sep-2024,Data services,32733.42,AUD,6301697,,NET7,,Mining,Melbourne
+Gutierrez-Lopez,V-0259,INV-2023-0014,2023-04-05,Subscription - annual,13906.34,AUD,6302647,CC-ENG-05,Net 14,PO-29536,Retail,Brisbane
+Morton-Chase Inc,V-0066,INV-2023-0015,2024-11-29,Catering services,17748.56,AUD,6513878,,End of Month,PO-63964,Retail,Darwin
+Jones-Hensley,V-0404,INV-2023-0016,2024-04-26,Subscription - annual,45930.75,AUD,6513652,CC-MKT-02,N14,PO-76768,Retail,Adelaide
+INTERCOMPANY - IT,V-INTCO,INV-2023-0017,17-Aug-2024,Facility management,2009.03,AUD,6307149,,,PO-80575,Technology,Darwin
+Rodriguez-Graham,V-0036,INV-2024-0018,10/11/2024,Conference facilities,45012.34,AUD,6306592,CC-IT-05,NET60,PO-49446,Retail,Sydney
+"Hall, Hansen and Barnett",V-0403,INV-2024-0019,2024-03-28,Maintenance services,25607.58,AUD,6511389,CC-IT-05,NET14,PO-39444,Operations,Sydney
+Robinson-Lee,V-0313,CN-2024-0020,2024-10-06,Credit staff catering,-3496.95,AUD,6421746,CC-MIN-02,,,Retail,Sydney
+"Winters, Newman and Brown",V-0342,INV-2024-0021,2024-03-29,Conference facilities,44611.81,AUD,6442607,CC-ENG-04,End of Month,PO-78327,Operations,Brisbane
+White-Estes,V-0121,INV-2023-0022,2023-05-22,Marketing materials,34728.1,,6445421,ENG04,Net 60,PO-85456,Corporate,Brisbane
+Bishop-Goodwin,V-0457,INV-2023-0023,2024-05-14,Legal services,24333.54,AUD,6442704,CC-ENG-02,,,Energy,Melbourne
+Hancock and Sons,V-0109,INV-2024-0024,12/10/2023,Subscription - annual,21136.08,AUD,6425733,CC-FIN-01,NET14,PO-12671,Operations,Melbourne
+Jones-Fox,V-0486,INV-2024-0025,2023-06-21,Conference facilities,35946.03,AUD,6301771,CC-MKT-03,60 days,,Technology,Canberra
+Reed Inc,V-0396,INV-2023-0026,02/08/2024,Travel expenses,26683.99,,6300207,CC-MIN-04,End of Month,,Finance,Darwin
+"Burns, Hernandez and Ryan",V-0276,INV-2024-0027,27/11/2023,Subscription - annual,46737.63,AUD,6449336,MIN03,30 days,PO-43862,Finance,Darwin
+Tran Inc,V-0265,INV-2024-0028,2024-05-15,Software licences,34561.41,AUD,6421524,CC-IT-02,end of month,PO-82544,Energy,Darwin
+"Clark, Guerrero and Moore",V-0233,INV-2023-0029,2023-07-17,Conference facilities,26839.61,AUD,6517933,CC-IT-05,Net 45,,Operations,Brisbane
+Hernandez PTY LTD,V-0141,CN-2023-0030,15/10/2024,Credit equipment hire,-557.81,AUD,6447216,CC-LOG-02,Net 60,,Energy,Sydney
+yu Aust P/L,V-0078,INV-2023-0031,2023-05-02,Legal services,30355.25,AUD,6447381,CC-ENG-03,Net 45,PO-23006,Operations,Darwin
+"Sanchez, Wheeler and Harvey",V-0081,INV-2023-0032,2023-01-03,Staff catering,29731.18,AUD,6307438,CC-OPS-02,end of month,PO-35928,Finance,Melbourne
+Hernandez-Jones PTY LIMITED,V-0424,INV-2024-0033,2024-03-25,Staff catering,15274.15,AUD,6447172,OPS05,,PO-40005,Retail,Canberra
+Ware and Sons,V-0392,INV-2023-0034,2023-06-29,Printing services,22167.25,AUD,6448056,CC-OPS-04,EOM,PO-53228,Energy,Brisbane
+Moore-Collins,V-0390,INV-2024-0035,2023-09-16,Engineering services,20268.34,AUD,6446770,CC-MKT-02,60 days,,Operations,Brisbane
+Wright and P/L,V-0063,INV-2024-0036,2024-07-18,Legal services,4751.14,NZD,6441924,CC-LEG-04,End of Month,PO-73242,Operations,Perth
+Combs Ltd,V-0472,INV-2023-0037,2023-03-13,Data services,42735.18,AUD,6300042,CC-IT-03,End of Month,PO-68529,Mining,Brisbane
+Arnold and Sons,V-0234,INV-2023-0038,2024-08-08,Courier services,38799.67,AUD,6446325,,N7,,Energy,Sydney
+"Avery, Horton and Fernandez",V-0336,INV-2024-0039,2023-12-13,Marketing materials,32526.85,AUD,6445188,,end of month,PO-39817,Energy,Sydney
+Walker LLC,V-0052,INV-2023-0040,2023-02-17,Office supplies,14739.05,AUD,6449272,CC-LEG-02,NET60,,Energy,Darwin
+"Guzman, Hoffman and Baldwin",V-0005,INV-2024-0041,2024-11-24,IT equipment,22142.32,AUD,6444097,CC-ENG-03,Net 60,PO-84963,Mining,Darwin
+BASS PLC,V-0338,INV-2023-0042,12/09/2024,Subscription - annual,45217.35,AUD,6303588,CC-FIN-05,end of month,,Technology,Darwin
+"Flowers, Martin and Kelly",V-0018,CN-2023-0043,2023-10-30,Credit legal services,-919.42,AUD,6308697,CC-IT-02,N60,,Retail,Sydney
+"Morales, Thomas and Schultz",V-0387,INV-2024-0044,2024-07-24,Data services,19789.27,AUD,6304295,CC-MIN-03,N14,PO-39015,Technology,Canberra
+Torres Group,V-0333,INV-2023-0045,08-Nov-2023,Catering services,4949.88,AUD,6446078,,Net 60,PO-90694,Mining,Sydney
+"Duran, Obrien and Gibbs",V-0228,INV-2023-0046,2024-12-03,Printing services,17997.82,AUD,6427450,CC-OPS-02,Net 14,PO-41925,Retail,Adelaide
+"Sanford, Rivera and Garcia",V-0284,INV-2023-0047,03/12/2023,Data services,45036.5,AUD,6512129,CC-IT-02,Net 30,PO-41186,Corporate,Melbourne
+"Carlson, Hooper and Wall",V-0216,INV-2024-0048,04/04/2024,Cleaning services,29723.93,AUD,6428543,,60 days,PO-24150,Energy,Sydney
+"Daniels, Adkins and Incorporated",V-0076,INV-2024-0049,2024-04-09,Legal services,5049.01,AUD,6517046,CC-ENG-02,60 days,PO-50966,Technology,Brisbane
+Moody-Taylor,V-0473,INV-2023-0050,2023-04-06,Conference facilities,36965.92,AUD,6302002,CC-MIN-03,Net 60,PO-88696,Corporate,Adelaide
+Davis Ltd,V-0247,INV-2024-0051,28/04/2023,Telecommunications,11385.34,AUD,6429977,CC-IT-01,N45,PO-33777,Finance,Darwin
+"Diaz, Gibbs and Smith",V-0325,INV-2023-0052,2024-01-21,IT support,7954.72,AUD,6420861,,N14,PO-65576,Energy,Perth
+Lee-Davis,V-0059,INV-2024-0053,2024-06-23,Office supplies,11103.87,,6514938,CC-FIN-02,Net 14,,Energy,Adelaide
+Johnson-Wood,V-0427,INV-2024-0054,2023-02-13,Training services,46066.01,AUD,6446843,CC-IT-01,net-30,,Retail,Sydney
+Hicks-Hill Incorporated,V-0269,INV-2023-0055,2023-03-20,Catering services,26577.18,AUD,6302419,,NET7,,Retail,Darwin
+Moore-Collins,V-0390,INV-2024-0056,2024-10-04,Training services,3507.48,AUD,6309689,CC-MKT-03,,,Retail,Canberra
+Marshall-Petersen,V-0197,INV-2023-0057,05-Apr-2024,Telecommunications,32626.69,AUD,6511013,CC-ENG-01,EOM,,Technology,Perth
+Robinson-Lee,V-0313,INV-2024-0058,2024-02-01,IT support,33977.0,AUD,6301079,CC-LOG-01,NET45,PO-86380,Mining,Brisbane
+"Barnett, Rogers and P/L",V-0201,INV-2024-0059,2023-05-11,Subscription - annual,47360.72,CAD,6426937,,N30,,Operations,Melbourne
+Walker LLC,V-0052,INV-2023-0060,2024-11-08,Engineering services,30939.77,AUD,6512712,CC-ENG-01,30 days,,Operations,Brisbane
+"Taylor, Wright and Davidson",V-0463,INV-2024-0061,17/04/2024,Engineering services,19155.43,AUD,6519906,LEG03,Net 45,PO-77621,Mining,Sydney
+Spencer-Garcia,V-0464,INV-2023-0062,16/08/2023,Travel expenses,46530.55,AUD,6303862,,N14,,Retail,Perth
+Lam LLC,V-0362,INV-2023-0063,2023-01-20,Subscription - annual,7561.03,USD,6441821,,,PO-75513,Corporate,Darwin
+"STANLEY, TUCKER AND LEE",V-0074,INV-2024-0064,2023-09-04,Consulting fees,33252.13,AUD,6428618,,N60,PO-12128,Corporate,Brisbane
+"Robinson, Jones and Welch",V-0054,INV-2024-0065,2023-05-17,Security services,16993.51,AUD,6447840,LEG02,Net 60,PO-15741,Corporate,Brisbane
+Thomas and Sons,V-0418,INV-2023-0066,2023-10-20,Engineering services,2485.42,AUD,6307159,CC-MIN-04,30 days,PO-58148,Finance,Brisbane
+Ryan PLC,V-0041,INV-2023-0067,2024-07-12,Catering services,4095.44,AUD,6442730,CC-ENG-03,45 days,,Technology,Perth
+willis and sons,V-0348,INV-2024-0068,2023-02-05,Software licences,38947.92,AUD,6429913,CC-LEG-04,NET14,PO-62171,Mining,Melbourne
+INTERCOMPANY - HR,V-INTCO,INV-2024-0069,2024-06-14,Security services,5976.27,AUD,6514678,CC-ENG-02,NET60,PO-68341,Retail,Darwin
+"Winters, Newman and Brown",V-0342,INV-2024-0070,04/11/2023,Staff catering,35507.23,AUD,6308335,CC-FIN-01,,PO-82616,Energy,Canberra
+Harper and INCORPORATED,V-0453,INV-2024-0071,2024-06-22,Legal services,41184.64,AUD,6427372,CC-ENG-05,NET7,PO-26912,Retail,Sydney
+Hill Inc,V-0156,INV-2023-0072,21-Dec-2023,Cleaning services,44756.8,AUD,6302050,CC-IT-05,net-30,,Finance,Darwin
+Lowery-Kennedy,V-0474,INV-2023-0073,2023-03-25,Printing services,38574.02,AUD,6440496,CC-ENG-05,NET60,PO-99783,Energy,Sydney
+Stewart Ltd,V-0213,INV-2023-0074,17/11/2023,IT support,36736.57,AUD,6516070,,NET60,,Energy,Canberra
+Collins Group,V-0444,INV-2024-0075,14/07/2023,Equipment hire,49798.87,AUD,6440379,CC-OPS-04,net-30,,Finance,Canberra
+Monroe-Carpenter Pty. Ltd.,V-0275,INV-2024-0076,10/01/2024,Travel expenses,2357.6,AUD,6309064,CC-IT-01,N7,PO-91689,Corporate,Melbourne
+Berry-Mckinney,V-0407,INV-2024-0077,2023-05-28,Cleaning services,20129.22,,6307761,CC-ENG-02,N45,PO-90805,Mining,Adelaide
+Morgan-French,V-0273,INV-2024-0078,2023-01-18,Office furniture,5569.27,AUD,6429779,CC-ENG-03,NET7,PO-86483,Finance,Darwin
+"Hernandez, Thompson and Ltd",V-0195,INV-2023-0079,2023-07-15,IT support,20997.14,AUD,6441020,CC-LEG-05,End of Month,PO-51124,Energy,Adelaide
+Reed Inc,V-0396,INV-2024-0080,2024-09-16,Software licences,14022.42,AUD,6304735,CC-FIN-04,End of Month,PO-85166,Energy,Perth
+Graham P/L,V-0412,INV-2023-0081,21-Dec-2023,Printing services,12896.55,AUD,6309208,CC-IT-02,,,Operations,Sydney
+Larson-Holloway Ltd,V-0242,INV-2023-0082,2024-02-21,Equipment hire,23924.68,AUD,6304676,CC-MKT-01,end of month,PO-14888,Operations,Perth
+Walker-Flores CORPORATION,V-0471,INV-2024-0083,2023-02-08,Telecommunications,30178.87,USD,6448901,CC-ENG-02,Net 30,PO-70150,Technology,Melbourne
+"Simmons, Meadows and Griffin",V-0152,CN-2023-0084,17/09/2024,Credit marketing materials,-4143.6,,6423027,CC-LEG-04,45 days,,Mining,Brisbane
+"Carroll, Sullivan and Bass",V-0134,INV-2023-0085,2024-11-14,Logistics - domestic,8069.87,AUD,6301923,CC-IT-03,30 days,PO-89395,Technology,Adelaide
+Kim Inc,V-0411,INV-2023-0086,27/11/2024,Courier services,39389.8,AUD,6301279,CC-OPS-01,net-30,PO-31566,Finance,Perth
+"Sparks, Jackson and Miller",V-0299,INV-2024-0087,2023-02-26,Cleaning services,20829.69,AUD,6300356,CC-MIN-03,,PO-55158,Finance,Sydney
+Young-Martinez,V-0479,INV-2023-0088,19/05/2023,Conference facilities,32329.45,AUD,6447348,MIN04,NET7,,Finance,Perth
+Torres-Pope,V-0115,INV-2024-0089,2024-04-19,Security services,21263.99,AUD,6445671,CC-LEG-03,Net 14,PO-64950,Corporate,Melbourne
+"Flowers, Martin and Kelly",V-0018,INV-2023-0090,08/09/2023,Marketing materials,22004.24,AUD,6422295,CC-IT-02,N45,PO-28777,Finance,Melbourne
+Bowen Group,V-0286,INV-2023-0091,2024-10-03,Security services,24831.48,EUR,6448592,CC-LOG-04,net-30,PO-39536,Technology,Melbourne
+Morgan-Schwartz,V-0288,INV-2023-0092,2024-02-02,Maintenance services,16580.12,AUD,6301514,CC-FIN-01,Net 7,PO-34662,Finance,Darwin
+"Wright, Garcia and Deleon",V-0107,INV-2023-0093,05-Aug-2023,Conference facilities,5954.08,CAD,6519902,CC-FIN-04,45 days,PO-95029,Mining,Brisbane
+"Brooks, Lam and Hayes",V-0051,INV-2024-0094,2023-07-28,Legal services,2381.2,AUD,6424272,CC-MIN-03,NET60,PO-95800,Mining,Brisbane
+Mcdaniel Group,V-0371,INV-2023-0095,2023-12-27,Conference facilities,27372.66,AUD,6428584,CC-MKT-01,14 days,,Technology,Melbourne
+"Wood, Hunter and Australia Pty Ltd",V-0192,CN-2023-0096,2023-01-07,Credit legal services,-108.66,AUD,6300280,,NET30,,Mining,Canberra
+Ryan PLC,V-0041,INV-2023-0097,2024-12-14,Office furniture,41420.3,AUD,6421531,CC-MIN-04,EOM,PO-20837,Energy,Darwin
+King-York,V-0440,INV-2023-0098,2023-08-24,Courier services,34645.16,AUD,6424593,CC-MKT-02,net-30,PO-62205,Mining,Melbourne
+"Kim, Gonzales and Mills",V-0435,INV-2024-0099,29/01/2024,Freight charges,39545.85,,6300879,,7 days,,Mining,Canberra
+Jackson-Lawson,V-0183,INV-2023-0100,2024-11-27,Marketing materials,4376.14,AUD,6421344,CC-IT-02,30 days,,Mining,Perth
+Novak and CORPORATION,V-0068,INV-2024-0101,2023-04-16,Travel expenses,27755.57,AUD,6440202,,NET7,PO-32227,Operations,Melbourne
+Novak Corporation,V-0075,INV-2024-0102,2023-03-20,Software licences,36072.88,AUD,6441752,LEG03,7 days,PO-53193,Energy,Canberra
+"Evans, Hayden and INC",V-0305,INV-2023-0103,12-Feb-2024,Logistics - domestic,36770.23,AUD,6515339,CC-MIN-03,NET14,,Retail,Adelaide
+"Andrews, Higgins and Carter",V-0483,CN-2024-0104,2024-12-10,Credit courier services,-3988.5,AUD,6303965,CC-IT-02,14 days,,Finance,Perth
+"Osborn, Gaines and Davis",V-0446,INV-2024-0105,19-Dec-2024,Security services,29731.62,USD,6515816,LEG05,end of month,PO-53463,Energy,Sydney
+"Anderson, Roberts and Gilmore",V-0262,CN-2023-0106,2024-04-01,Credit training services,-3873.09,AUD,6300402,CC-ENG-01,Net 14,,Mining,Brisbane
+Valentine-Holland,V-0267,INV-2024-0107,2024-12-14,IT equipment,15083.18,AUD,6301791,CC-LEG-02,45 days,PO-40389,Technology,Melbourne
+Peterson-Beard P/L,V-0203,INV-2024-0108,2024-02-03,Maintenance services,10368.65,AUD,6429459,CC-OPS-05,Net 60,PO-74157,Technology,Brisbane
+"Thomas, Murray and INCORPORATED",V-0301,INV-2024-0109,2024-09-21,Office furniture,6783.99,AUD,6516116,CC-LEG-05,7 days,PO-73788,Technology,Darwin
+Smith PLC,V-0086,INV-2024-0110,2024-04-06,Courier services,18016.05,AUD,6449200,CC-ENG-04,60 days,,Retail,Melbourne
+"Burns, Hernandez and Ryan",V-0276,INV-2024-0111,2024-07-16,Telecommunications,5798.91,AUD,6308880,CC-MKT-04,NET14,PO-14224,Mining,Canberra
+"Brown, Valdez and Lucas",V-0061,INV-2024-0112,2024-12-28,Legal services,8382.48,AUD,6510972,CC-LOG-05,N45,PO-45041,Finance,Darwin
+"Farmer, Dorsey and Bell",V-0385,INV-2024-0113,2024-11-02,Courier services,6721.27,AUD,6516434,CC-ENG-02,60 days,PO-93050,Retail,Sydney
+Strickland-Palmer,V-0356,INV-2024-0114,2023-12-02,Courier services,38729.35,AUD,6445869,CC-OPS-05,30 days,PO-47171,Finance,Melbourne
+King-Miller,V-0176,INV-2023-0115,2023-04-12,Subscription - annual,23033.13,AUD,6447479,CC-MKT-04,N30,,Mining,Brisbane
+Torres Group,V-0333,INV-2024-0116,17/12/2024,Legal services,32808.71,,6441276,CC-LEG-05,Net 14,PO-25806,Energy,Darwin
+Marshall-Petersen Pty Ltd,V-0197,INV-2024-0117,2023-05-21,Subscription - annual,37682.57,AUD,6511120,CC-MKT-05,EOM,PO-29840,Finance,Darwin
+"Valentine, Joyce and PTY LTD",V-0460,INV-2024-0118,2024-03-15,Freight charges,12464.54,AUD,6300439,CC-IT-02,End of Month,PO-17152,Retail,Melbourne
+"Johnson, Miller and King",V-0256,INV-2023-0119,05-Jan-2024,Freight charges,19403.23,AUD,6517717,,Net 30,PO-62163,Technology,Darwin
+Boone-Simmons,V-0360,INV-2023-0120,2023-10-12,IT equipment,25614.1,AUD,6306401,CC-OPS-03,Net 30,,Finance,Adelaide
+"Newton, Moore and Perry",V-0337,INV-2023-0121,2024-12-19,Equipment hire,47655.51,AUD,6302735,CC-LOG-02,EOM,PO-13847,Energy,Brisbane
+Kelly-Norman,V-0500,INV-2024-0122,2024-06-07,Equipment hire,42982.05,AUD,6429402,,,PO-57707,Operations,Melbourne
+"Sanford, Rivera and Garcia",V-0284,INV-2024-0123,2023-08-18,Legal services,45801.15,AUD,6301956,CC-MKT-02,,PO-70960,Retail,Canberra
+Arnold and LIMITED,V-0234,INV-2024-0124,2024-09-29,Travel expenses,29625.38,AUD,6518954,FIN02,net-30,PO-11257,Corporate,Canberra
+Reynolds Ltd,V-0373,INV-2023-0125,2024-03-05,Office supplies,48630.71,AUD,6423792,CC-MIN-03,Net 7,PO-93521,Corporate,Adelaide
+"Marshall, Dominguez and Incorporated",V-0494,INV-2024-0126,18/12/2024,IT support,15971.08,,6512230,CC-OPS-02,45 days,PO-56961,Operations,Perth
+Powell Inc,V-0062,INV-2024-0127,2023-06-01,Software licences,48423.16,,6304262,CC-LEG-01,,PO-23357,Operations,Sydney
+Gonzalez Corporation,V-0114,CN-2023-0128,2024-08-19,Credit subscription - annual,-421.19,CAD,6442110,CC-OPS-03,NET14,,Retail,Darwin
+INTERCOMPANY - PROCUREMENT,V-INTCO,INV-2023-0129,2023-12-29,Consulting fees,13821.59,AUD,6514835,CC-ENG-04,N14,,Retail,Adelaide
+Pollard and Sons,V-0279,INV-2024-0130,2024-05-06,Equipment hire,17267.3,AUD,6302946,,Net 45,PO-71824,Retail,Adelaide
+Walker LLC,V-0052,INV-2023-0131,2023-08-13,Data services,19482.28,USD,6512885,CC-FIN-05,Net 45,PO-56095,Finance,Melbourne
+Dixon Inc,V-0415,INV-2024-0132,2023-06-29,IT equipment,2902.78,,6440011,,EOM,,Operations,Adelaide
+"Washington, Ryan and Cummings",V-0057,INV-2023-0133,18/01/2024,Office furniture,19840.22,AUD,6512580,,N7,PO-87194,Energy,Brisbane
+"Turner, Riggs and Roman",V-0091,INV-2024-0134,2024-08-04,Cloud services,15979.02,AUD,6428129,CC-LEG-03,NET45,PO-21629,Technology,Darwin
+"Gardner, Robinson and Lawrence",V-0006,INV-2023-0135,2023-12-25,Catering services,36048.64,AUD,6442725,CC-MIN-04,Net 60,PO-85766,Technology,Melbourne
+"Miller, Lucas and P/L",V-0434,INV-2023-0136,2023-03-17,Marketing materials,8129.13,AUD,6425536,CC-ENG-01,7 days,PO-23272,Operations,Perth
+"Watson, Anderson and Brown",V-0374,INV-2024-0137,2023-09-01,Marketing materials,28631.31,AUD,6300062,CC-MIN-01,7 days,,Technology,Brisbane
+Gomez-Jenkins,V-0060,INV-2024-0138,2024-11-07,Printing services,27251.89,AUD,6303056,CC-ENG-01,N30,PO-29808,Technology,Sydney
+Gibson-Morris,V-0278,INV-2023-0139,2024-07-20,Marketing materials,40938.42,AUD,6449383,CC-FIN-04,EOM,PO-77740,Technology,Adelaide
+Kerr-Evans,V-0230,INV-2023-0140,2023-07-17,Legal services,4010.59,AUD,6519749,CC-IT-03,Net 14,PO-62082,Retail,Brisbane
+Blake and Sons,V-0007,INV-2024-0141,2023-04-26,Freight charges,28373.04,AUD,6421730,CC-OPS-03,N60,PO-73646,Energy,Sydney
+"Diaz, Anderson and Browning",V-0317,INV-2023-0142,10-Feb-2024,IT support,34556.64,AUD,6306102,CC-MKT-03,45 days,,Retail,Melbourne
+Miller-Wright,V-0227,INV-2024-0143,2024-09-11,Maintenance services,22141.66,USD,6448462,,45 days,PO-78719,Corporate,Melbourne
+GILBERT Pty. Ltd.,V-0429,INV-2024-0144,2024-12-22,Travel expenses,41192.96,AUD,6420500,CC-FIN-03,N60,PO-43903,Technology,Sydney
+"Edwards, Baker and Anderson",V-0084,INV-2023-0145,2023-08-15,Office furniture,10415.88,AUD,6427767,,N45,,Energy,Canberra
+"Guerrero, Peck and Coleman",V-0239,INV-2024-0146,2024-08-21,Cleaning services,49971.53,EUR,6304890,OPS04,End of Month,PO-44229,Technology,Brisbane
+"Joyce, Wilson and Lam",V-0124,INV-2024-0147,2024-11-07,Freight charges,36092.03,AUD,6306857,CC-MIN-04,NET7,PO-39145,Technology,Canberra
+"Higgins, Strickland and Martin",V-0184,INV-2023-0148,2023-10-28,Freight charges,37071.85,AUD,6515499,CC-OPS-02,45 days,PO-53426,Finance,Brisbane
+"Hoffman, Baker and Richards",V-0028,INV-2023-0149,28-Apr-2024,Cleaning services,6078.82,AUD,6440885,CC-LEG-02,7 days,PO-33639,Energy,Brisbane
+"Diaz, Gibbs and Corporation",V-0325,INV-2023-0150,13/08/2024,Equipment hire,39282.02,AUD,6447035,CC-MIN-04,NET14,PO-11845,Retail,Canberra
+INTERCOMPANY - LEGAL,V-INTCO,INV-2023-0151,2023-08-20,Travel expenses,15673.4,AUD,6302736,CC-OPS-01,end of month,PO-54280,Technology,Melbourne
+"Higgins, Strickland and Martin",V-0184,INV-2024-0152,2023-01-20,Conference facilities,49245.49,,6512017,CC-LOG-01,Net 7,PO-16286,Technology,Canberra
+"Tapia, Vaughn and Lee",V-0214,CN-2024-0153,30/04/2024,Credit maintenance services,-3491.2,AUD,6428524,,Net 14,,Energy,Melbourne
+"Brown, Romero and Collins",V-0426,INV-2024-0154,2023-10-30,Security services,24868.1,AUD,6303842,CC-MKT-01,7 days,PO-21807,Corporate,Darwin
+Herman-Walker,V-0330,INV-2024-0155,2023-09-28,Catering services,40677.6,AUD,6305123,CC-MIN-01,Net 14,PO-96947,Mining,Brisbane
+"Jackson, Miller and Robertson",V-0138,INV-2024-0156,2023-07-07,Marketing materials,48119.27,AUD,6446909,CC-LEG-01,Net 30,PO-87430,Finance,Darwin
+"brown, harris and dougherty",V-0399,INV-2023-0157,09-May-2024,Catering services,44390.94,,6300202,CC-FIN-03,Net 7,PO-42581,Technology,Darwin
+Hernandez-Jones,V-0424,INV-2023-0158,2023-01-12,Consulting fees,25327.82,AUD,6511226,CC-ENG-03,NET14,PO-59628,Operations,Sydney
+Kerr-Evans CORPORATION,V-0230,INV-2024-0159,2024-10-31,Marketing materials,20675.69,,6429899,CC-IT-05,N60,PO-17113,Retail,Perth
+Armstrong-Andrews,V-0308,INV-2024-0160,2023-04-27,Office furniture,11165.18,AUD,6308973,,30 days,,Corporate,Canberra
+Wilson-Jimenez,V-0401,INV-2024-0161,17-Feb-2023,Subscription - annual,33639.87,AUD,6449655,LEG04,7 days,PO-73298,Retail,Melbourne
+Thomas and Corporation,V-0418,INV-2024-0162,04-Mar-2024,Staff catering,38142.5,AUD,6307419,CC-LEG-02,end of month,PO-81802,Technology,Darwin
+"Mckee, Gardner and Davenport",V-0103,INV-2024-0163,2024-11-19,Staff catering,32539.31,EUR,6301890,CC-LOG-05,end of month,,Retail,Perth
+Arnold Ltd,V-0013,INV-2023-0164,2023-07-24,Data services,8130.68,AUD,6424835,FIN05,NET14,PO-83566,Finance,Canberra
+"Fisher, Wilson and Brown",V-0355,INV-2024-0165,02-Mar-2024,Office furniture,15701.43,,6303327,CC-ENG-02,End of Month,PO-81645,Operations,Canberra
+Kerr-Evans,V-0230,INV-2023-0166,27/06/2023,Catering services,18922.19,AUD,6512636,CC-IT-01,Net 30,PO-52287,Retail,Darwin
+"Graham, Olsen and Costa",V-0252,INV-2023-0167,2024-12-25,Software licences,47853.69,AUD,6516814,CC-MIN-01,End of Month,,Retail,Adelaide
+"Cole, Glass and Cunningham",V-0422,INV-2023-0168,2024-11-15,Software licences,45234.37,AUD,6425258,CC-MIN-01,Net 45,PO-59146,Finance,Perth
+Davis PLC,V-0388,INV-2023-0169,21-Jun-2023,Engineering services,26944.94,,6516950,CC-OPS-02,End of Month,PO-19452,Operations,Sydney
+"Arroyo, Miller and LIMITED",V-0045,INV-2023-0170,2023-09-22,Training services,31547.84,,6428762,MKT05,Net 14,,Retail,Darwin
+Ware and Sons,V-0392,INV-2023-0171,2024-04-30,Software licences,6905.43,AUD,6302360,,NET7,PO-10659,Energy,Adelaide
+Dickson-Brady,V-0108,INV-2024-0172,2023-08-05,Printing services,42587.8,AUD,6303183,CC-OPS-02,14 days,,Corporate,Brisbane
+Ruiz Ltd,V-0250,INV-2023-0173,2023-04-13,IT equipment,45015.92,AUD,6309571,CC-LEG-05,,PO-42266,Technology,Darwin
+Rodriguez-Johnson INCORPORATED,V-0185,INV-2024-0174,2023-11-09,Catering services,8870.93,AUD,6518824,CC-FIN-03,EOM,PO-76476,Retail,Adelaide
+Hancock and Sons,V-0109,INV-2024-0175,31/10/2024,Travel expenses,19685.67,AUD,6302193,CC-ENG-05,Net 7,PO-90482,Retail,Adelaide
+"James, Stewart and Higgins",V-0290,INV-2023-0176,10-May-2024,Office supplies,11019.07,,6303834,CC-MKT-02,60 days,,Technology,Brisbane
+"Diaz, Gibbs and Smith",V-0325,INV-2024-0177,2024-08-15,Consulting fees,18895.31,AUD,6428465,CC-IT-04,N60,PO-55224,Energy,Adelaide
+Hernandez PLC,V-0226,CN-2024-0178,2023-08-05,Credit consulting fees,-1843.0,AUD,6516793,CC-LOG-01,net-30,,Corporate,Melbourne
+Donovan-Harris Pty Ltd,V-0083,CN-2023-0179,2023-02-27,Credit consulting fees,-2607.37,AUD,6424644,CC-OPS-02,NET60,,Finance,Melbourne
+Newton and Sons,V-0094,INV-2023-0180,2024-12-03,Training services,29867.01,AUD,6511778,CC-MKT-02,End of Month,,Energy,Adelaide
+Morgan-French,V-0273,INV-2024-0181,2024-11-06,Cloud services,27010.37,AUD,6448553,CC-MIN-03,NET60,PO-73192,Energy,Brisbane
+Moore-Collins,V-0390,INV-2024-0182,2023-05-18,Engineering services,11702.39,AUD,6444223,CC-FIN-01,Net 7,PO-59155,Technology,Canberra
+"Hensley, Powell and David",V-0080,INV-2024-0183,2024-07-02,Travel expenses,30632.85,NZD,6516770,CC-ENG-02,N45,PO-62183,Retail,Canberra
+Rowe Group,V-0229,INV-2023-0184,2023-08-08,Data services,16988.05,AUD,6422633,CC-MIN-01,,,Corporate,Adelaide
+Freeman-Chang,V-0206,CN-2023-0185,2023-06-29,Credit training services,-103.02,AUD,6303190,CC-MKT-05,NET7,,Operations,Darwin
+Riggs PLC,V-0142,CN-2024-0186,2024-02-20,Credit cleaning services,-126.06,AUD,6309160,CC-LOG-03,NET7,,Finance,Sydney
+Jones Inc,V-0450,INV-2024-0187,30/04/2023,Facility management,43818.04,AUD,6446178,CC-ENG-02,60 days,PO-13584,Mining,Sydney
+"Rodriguez, Brennan and Garrison",V-0113,INV-2024-0188,27-Feb-2024,Cleaning services,26829.03,AUD,6301523,MIN03,N60,,Technology,Darwin
+Bell-Lane,V-0378,INV-2024-0189,2023-07-31,Subscription - annual,12559.8,AUD,6421964,CC-OPS-04,Net 7,PO-58653,Energy,Adelaide
+Ware and Sons,V-0392,INV-2023-0190,2024-08-13,Cleaning services,39983.57,AUD,6306450,CC-LEG-04,N60,PO-11549,Energy,Adelaide
+Rangel LLC,V-0442,INV-2023-0191,2023-10-03,Cloud services,17220.51,AUD,6446099,,net-30,PO-23090,Retail,Melbourne
+Figueroa LIMITED,V-0101,INV-2023-0192,2024-03-07,Courier services,31569.53,AUD,6444915,,,PO-43330,Technology,Sydney
+Rodriguez-Johnson,V-0185,INV-2024-0193,2023-12-19,Catering services,17619.42,AUD,6514663,CC-LOG-03,End of Month,PO-59947,Energy,Darwin
+Rodriguez-Hall,V-0328,INV-2024-0194,2023-03-15,IT support,11488.08,AUD,6309918,CC-MIN-03,45 days,PO-34102,Operations,Darwin
+"Richardson, Farmer and Andrews",V-0381,INV-2023-0195,2024-02-11,IT equipment,46846.0,,6448584,,End of Month,PO-42426,Energy,Darwin
+Anderson-Bailey Incorporated,V-0088,INV-2024-0196,07-Jul-2024,Security services,22297.76,EUR,6519680,CC-ENG-05,N7,PO-73131,Retail,Sydney
+"CARROLL, SULLIVAN AND BASS",V-0134,INV-2023-0197,2023-12-19,Security services,515.02,USD,6444908,CC-MKT-04,N14,PO-83472,Operations,Melbourne
+Welch-Hogan,V-0425,INV-2024-0198,2024-10-02,Engineering services,40017.96,AUD,6304664,,N30,PO-69682,Mining,Darwin
+Abbott-Munoz,V-0010,INV-2023-0199,10-Jul-2023,Logistics - domestic,13532.84,AUD,6511477,CC-LEG-01,45 days,PO-70776,Corporate,Brisbane
+Novak Corp,V-0075,INV-2023-0200,16-Jul-2023,Facility management,40880.81,AUD,6516304,,Net 60,PO-37321,Technology,Brisbane

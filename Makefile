@@ -23,6 +23,7 @@ categorise:
 build-cube:
 	@echo "Running build-cube"
 	python src/cube/builder.py --db data/db/spend_cube.db
+	python src/recommendations/engine.py --db data/db/spend_cube.db
 
 serve-dashboard:
 	@echo "Running serve-dashboard"
