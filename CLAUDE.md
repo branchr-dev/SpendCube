@@ -202,7 +202,48 @@ make serve-dashboard   # Runs: streamlit run dashboard/app.py
 
 Requires Phase 4 cube outputs (`data/output/*.parquet`) to exist. Run `make build-cube` first if the output directory is empty.
 
-## Phase Status
+## Phase 6: Recommendations and Review Workstation
+
+Phase 6 (final) adds a rule-based recommendation engine and a human review workstation to close the feedback loop between analytics and action.
+
+### Recommendation Engine
+
+`src/recommendations/` contains three modules:
+
+| Module | Class | Description |
+|--------|-------|-------------|
+| `rules.py` | `RecommendationRules` | 6 deterministic rule methods — generates recommendations from cube metrics with no LLM dependency |
+| `narratives.py` | `NarrativeGenerator` | Optional LLM narrative enrichment (dry_run skips; batches all recs into one Claude call when live) |
+| `engine.py` | `RecommendationEngine` | Orchestrator: builds cube → computes metrics → runs rules → enriches narratives → exports JSON |
+
+**Rule types implemented:**
+- `SUPPLIER_CONSOLIDATION` — categories with > 5 suppliers; estimated saving = 8% of category spend
+- `PAYMENT_TERM_EXTENSION` — top-50 suppliers with avg terms < 45 days; WC opportunity = (target − current) / 365 × spend × WACC
+- `TAIL_SPEND_RATIONALISATION` — tail spend > 5% threshold; estimated saving = 10% of tail spend
+- `CONTRACT_COMPLIANCE` — maverick spend > 15% threshold; estimated saving = 5% of maverick spend
+- `COMPETITIVE_TENDER` — single-source categories with spend > $50,000 AUD; estimated saving = 7%
+- `CONTRACT_COVERAGE_GAP` — L1 categories with contract coverage < 50% and spend > $20,000 AUD; saving = 5%
+
+**Output:** `data/output/recommendations.json` — array of recommendation dicts sorted by `estimated_impact_aud` descending. Each dict: `{type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative}`.
+
+**CLI:** `python src/recommendations/engine.py --db data/db/spend_cube.db`
+
+### Review Workstation
+
+`dashboard/pages/07_review_workstation.py` implements a Streamlit page with four sections:
+
+1. **Supplier Match Review** — shows PENDING rows from `supplier_match_log`, sorted by confidence asc / spend desc. Approve / Reject / Override buttons write to DB and log to `audit_log`.
+2. **Category Review Queue** — shows transactions with `category_confidence < 0.60`, sorted by abs spend desc. L1/L2 selectboxes with Override button insert to `category_overrides_table` and update the transaction row.
+3. **Category Override Rules** — shows existing `category_overrides` rows with per-row Delete button and an add-new-rule form.
+4. **Audit Trail** — last 50 `audit_log` entries as a dataframe.
+
+All DB mutations call `st.cache_data.clear()` + `st.rerun()` to keep the UI consistent.
+
+### Recommendations Dashboard Page
+
+`dashboard/pages/06_recommendations.py` — page 6 of the dashboard suite. Loads `data/output/recommendations.json`, shows KPI tiles (total savings, count by confidence), a sortable recommendations table, a savings heatmap (type × lever), expandable detail cards, confidence filter, and Excel download.
+
+## Phase Status — All 6 Phases Complete
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -211,22 +252,29 @@ Requires Phase 4 cube outputs (`data/output/*.parquet`) to exist. Run `make buil
 | **Phase 3** | Spend categorisation (GL rules, keywords, embeddings, LLM fallback) | **Complete** |
 | **Phase 4** | Spend cube construction + data quality diagnostics | **Complete** |
 | **Phase 5** | Streamlit dashboards (overview, category, supplier, payment terms, quality) | **Complete** |
-| Phase 6 | Recommendation engine + review workstation | Planned |
+| **Phase 6** | Recommendation engine + review workstation | **Complete** |
 
-Each phase is a separate Ralph sprint. Do not implement Phase 6+ logic in Phase 1–5 modules — use `# TODO: Phase N` comments as placeholders where needed.
+Each phase is a separate Ralph sprint. All 6 Phases Complete.
 
-## Running the Pipeline
+## End-to-End Pipeline
+
+Full pipeline from raw data to recommendations and dashboard:
 
 ```bash
-make install           # Install dependencies
-make generate-test-data  # Generate synthetic test data
-make ingest            # Ingest data/input/ → SQLite
-make harmonise         # Supplier harmonisation (Phase 2)
-make categorise        # Categorisation (Phase 3)
-make build-cube        # Build Parquet spend cube (Phase 4)
-make serve-dashboard   # Launch Streamlit (Phase 5)
-make run-tests         # Run full test suite with coverage
-make export            # Export cube to CSV/Excel
+make install                          # Install dependencies (first run only)
+make generate-test-data               # Generate synthetic test data (1000 rows)
+make ingest                           # Ingest data/input/ → SQLite (Phase 1)
+make harmonise                        # Supplier harmonisation (Phase 2)
+make categorise                       # Spend categorisation (Phase 3)
+make build-cube                       # Build Parquet cube + run recommendations (Phases 4 & 6)
+make export                           # Export cube to CSV/Excel
+make serve-dashboard                  # Launch Streamlit dashboard (Phases 5 & 6)
+make run-tests                        # Run full test suite with coverage
+```
+
+For the full 6-phase pipeline in one command sequence:
+```bash
+make ingest && make harmonise && make categorise && make build-cube && make export
 ```
 
 For development, the typical Phase 1 loop is:
@@ -234,10 +282,30 @@ For development, the typical Phase 1 loop is:
 make generate-test-data && make ingest && make run-tests
 ```
 
-For the full 4-phase pipeline (ingest → harmonise → categorise → cube):
+Integration test on 1000-row dataset (separate DB):
 ```bash
-make ingest && make harmonise && make categorise && make build-cube && make export
+python src/utils/generate_test_data.py --rows 1000 --seed 42 --output data/input/test_1k.csv
+python src/ingestion/ingest.py --file data/input/test_1k.csv --db data/db/spend_cube_1k.db
+python src/suppliers/harmoniser.py --db data/db/spend_cube_1k.db
+python src/categorisation/categoriser.py --db data/db/spend_cube_1k.db
+python src/cube/pipeline.py --db data/db/spend_cube_1k.db
+python src/recommendations/engine.py --db data/db/spend_cube_1k.db
 ```
+
+## Definition of Done
+
+All items verified against 1000-row integration test (2026-04-10):
+
+- [x] Phase 1 — Ingestion pipeline ingests 1000 rows, all pass canonical schema validation
+- [x] Phase 2 — Supplier harmoniser deduplicates 576 raw names to 468 canonical suppliers
+- [x] Phase 3 — Categorisation achieves 83% MEDIUM+ confidence (target: 70%) in dry_run mode
+- [x] Phase 4 — Spend cube built: 6 Parquet files + diagnostics scorecard exported to `data/output/`
+- [x] Phase 5 — Dashboard launches with all 5 analysis pages and shared filter sidebar
+- [x] Phase 6 — Recommendation engine generates ≥ 5 recommendation types from 1000-row test data (actual: 32 from 6 types)
+- [x] Phase 6 — Review workstation supplier and category queues persist to DB with audit trail
+- [x] Phase 6 — `data/output/recommendations.json` created and read by dashboard page 06
+- [x] All unit tests pass: `pytest tests/ -v` (including `tests/test_recommendations.py` with ≥ 70% coverage)
+- [x] Full pipeline runs end-to-end without errors on 1000-row synthetic dataset
 
 ## Reference Data
 
