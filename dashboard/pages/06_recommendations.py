@@ -78,11 +78,11 @@ def _recommendations_table(recs: list[dict]) -> None:
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
 
-def _savings_heatmap(recs: list[dict]) -> None:
-    st.subheader("Savings Heatmap — Type × Lever")
+def _savings_heatmap(recs: list[dict]) -> tuple[str | None, str | None]:
+    st.subheader("Savings Heatmap — Type × Lever (click a cell to filter recommendations below)")
     if not recs:
         st.info("No data for heatmap.")
-        return
+        return None, None
 
     df = pd.DataFrame(
         [
@@ -97,7 +97,7 @@ def _savings_heatmap(recs: list[dict]) -> None:
 
     if df["type"].nunique() < 1 or df["lever"].nunique() < 1:
         st.info("Not enough variety in recommendation types/levers for a heatmap.")
-        return
+        return None, None
 
     fig = heatmap(
         df,
@@ -106,7 +106,16 @@ def _savings_heatmap(recs: list[dict]) -> None:
         values="estimated_impact_aud",
         title=f"Estimated Impact ({get_currency_label()}) by Recommendation Type and Lever",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="recs_heatmap", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    if points:
+        sel_lever = points[0].get("x")
+        sel_type = points[0].get("y")
+        parts = [p for p in [sel_type, sel_lever] if p]
+        if parts:
+            st.caption(f"Cross-filter active: {' × '.join(parts)} — click chart background to clear")
+            return sel_type, sel_lever
+    return None, None
 
 
 def _detail_cards(recs: list[dict]) -> None:
@@ -195,8 +204,17 @@ def main() -> None:
 
     st.markdown("---")
 
-    # --- Savings heatmap ---
-    _savings_heatmap(recs)
+    # --- Savings heatmap (click to filter detail cards) ---
+    sel_type, sel_lever = _savings_heatmap(recs)
+
+    # Apply heatmap selection to filter detail cards
+    recs_detail = recs
+    if sel_type:
+        recs_detail = [r for r in recs_detail if r.get("type") == sel_type]
+    if sel_lever:
+        recs_detail = [r for r in recs_detail if r.get("lever") == sel_lever]
+    if (sel_type or sel_lever) and len(recs_detail) < len(recs):
+        st.caption(f"Showing {len(recs_detail)} of {len(recs)} recommendations.")
 
     st.markdown("---")
 
@@ -206,7 +224,7 @@ def main() -> None:
     st.markdown("---")
 
     # --- Detail cards ---
-    _detail_cards(recs)
+    _detail_cards(recs_detail)
 
 
 if __name__ == "__main__":

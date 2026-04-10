@@ -143,7 +143,7 @@ def _spend_by_category(df: pd.DataFrame) -> list[str]:
     return selected
 
 
-def _spend_by_bu(df: pd.DataFrame) -> None:
+def _spend_by_bu(df: pd.DataFrame) -> list[str]:
     bu_col = None
     for candidate in ("business_unit", "plant_site", "cost_centre"):
         if candidate in df.columns and df[candidate].notna().any():
@@ -152,7 +152,7 @@ def _spend_by_bu(df: pd.DataFrame) -> None:
 
     if bu_col is None or df.empty:
         st.info("No business unit / site data available.")
-        return
+        return []
 
     bu_data = (
         df.groupby(bu_col)["base_amount"]
@@ -165,7 +165,7 @@ def _spend_by_bu(df: pd.DataFrame) -> None:
 
     if bu_data.empty:
         st.info("No business unit spend data.")
-        return
+        return []
 
     fig = horizontal_bar(
         bu_data,
@@ -173,7 +173,12 @@ def _spend_by_bu(df: pd.DataFrame) -> None:
         y="Business Unit / Site",
         title="Spend by Business Unit / Site",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="supplier_spend_by_bu", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    selected = [p["y"] for p in points if "y" in p]
+    if selected:
+        st.caption(f"Cross-filter active: {', '.join(selected[:3])} — click chart background to clear")
+    return selected
 
 
 def _related_entities(
@@ -379,13 +384,21 @@ def main() -> None:
     with col_left:
         cat_sel = _spend_by_category(sup_txn)
     with col_right:
-        _spend_by_bu(sup_txn)
+        bu_sel = _spend_by_bu(sup_txn)
 
-    cf_sup = sup_txn[sup_txn["category_l1"].isin(cat_sel)] if cat_sel else sup_txn
+    # Apply category and BU cross-filters to the trend
+    cf_sup = sup_txn.copy()
+    if cat_sel:
+        cf_sup = cf_sup[cf_sup["category_l1"].isin(cat_sel)]
+    if bu_sel:
+        for candidate in ("business_unit", "plant_site", "cost_centre"):
+            if candidate in cf_sup.columns:
+                cf_sup = cf_sup[cf_sup[candidate].isin(bu_sel)]
+                break
 
     st.markdown("---")
 
-    # --- Spend trend (cross-filtered by category selection if active) ---
+    # --- Spend trend (cross-filtered by category and/or BU selection) ---
     _spend_trend(cf_sup)
 
     st.markdown("---")

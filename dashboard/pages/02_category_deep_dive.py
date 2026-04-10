@@ -287,7 +287,7 @@ def main() -> None:
 
     st.markdown("---")
     st.subheader("Transaction Value Distribution")
-    _transaction_boxplot(cat_filtered)
+    _transaction_boxplot(cf)
 
     st.markdown("---")
 

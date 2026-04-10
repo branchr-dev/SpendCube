@@ -92,8 +92,10 @@ def _spend_by_month(filtered: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _category_and_bu(filtered: pd.DataFrame) -> None:
+def _category_and_bu(filtered: pd.DataFrame) -> tuple[list[str], list[str]]:
     col_left, col_right = st.columns(2)
+    selected_cats: list[str] = []
+    selected_bus: list[str] = []
 
     with col_left:
         if "category_l1" in filtered.columns and not filtered.empty:
@@ -110,7 +112,11 @@ def _category_and_bu(filtered: pd.DataFrame) -> None:
                 st.info("No category data available.")
             else:
                 fig = horizontal_bar(cat_data, x="Spend", y="Category L1", title="Spend by Category L1 (Top 10)")
-                st.plotly_chart(fig, use_container_width=True)
+                event = st.plotly_chart(fig, on_select="rerun", key="overview_cat_bar", use_container_width=True)
+                points = (event or {}).get("selection", {}).get("points", [])
+                selected_cats = [p["y"] for p in points if "y" in p]
+                if selected_cats:
+                    st.caption(f"Cross-filter active: {', '.join(selected_cats[:3])} — click chart background to clear")
         else:
             st.info("No category data available.")
 
@@ -128,9 +134,15 @@ def _category_and_bu(filtered: pd.DataFrame) -> None:
                 st.info("No business unit data available.")
             else:
                 fig = horizontal_bar(bu_data, x="Spend", y="Business Unit", title="Spend by Business Unit")
-                st.plotly_chart(fig, use_container_width=True)
+                event = st.plotly_chart(fig, on_select="rerun", key="overview_bu_bar", use_container_width=True)
+                points = (event or {}).get("selection", {}).get("points", [])
+                selected_bus = [p["y"] for p in points if "y" in p]
+                if selected_bus:
+                    st.caption(f"Cross-filter active: {', '.join(selected_bus[:3])} — click chart background to clear")
         else:
             st.info("No business unit data available.")
+
+    return selected_cats, selected_bus
 
 
 def _top_suppliers(filtered: pd.DataFrame) -> list[str]:
@@ -356,27 +368,34 @@ def main() -> None:
     st.markdown("---")
 
     selected_suppliers = _top_suppliers(filtered)
-    cf = filtered[filtered["canonical_supplier_name"].isin(selected_suppliers)] if selected_suppliers else filtered
+    cf_supplier = filtered[filtered["canonical_supplier_name"].isin(selected_suppliers)] if selected_suppliers else filtered
 
     st.markdown("---")
 
-    _spend_by_month(cf)
+    _spend_by_month(cf_supplier)
 
     st.markdown("---")
 
-    _category_and_bu(cf)
+    selected_cats, selected_bus = _category_and_bu(filtered)
+
+    # Build cross-filtered view for deeper analytics below
+    cf_detail = filtered.copy()
+    if selected_cats and "category_l1" in cf_detail.columns:
+        cf_detail = cf_detail[cf_detail["category_l1"].isin(selected_cats)]
+    if selected_bus and "business_unit" in cf_detail.columns:
+        cf_detail = cf_detail[cf_detail["business_unit"].isin(selected_bus)]
 
     st.markdown("---")
 
-    _pareto_and_donut(filtered)
+    _pareto_and_donut(cf_detail)
 
     st.markdown("---")
     st.subheader("Category x Business Unit Intensity")
-    _category_bu_heatmap(filtered)
+    _category_bu_heatmap(cf_detail)
 
     st.markdown("---")
     st.subheader("Opportunity Prioritisation")
-    _opportunity_scatter(filtered)
+    _opportunity_scatter(cf_detail)
 
     st.markdown("---")
 

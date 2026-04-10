@@ -115,15 +115,15 @@ def _terms_histogram(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _supplier_terms_heatmap(df: pd.DataFrame) -> None:
+def _supplier_terms_heatmap(df: pd.DataFrame) -> tuple[str | None, str | None]:
     if "payment_terms_days" not in df.columns or "canonical_supplier_name" not in df.columns or df.empty:
         st.info("No data available for heatmap.")
-        return
+        return None, None
 
     terms_df = df[df["payment_terms_days"].notna()].copy()
     if terms_df.empty:
         st.info("No payment terms data for heatmap.")
-        return
+        return None, None
 
     terms_df["terms_bucket"] = terms_df["payment_terms_days"].apply(_assign_bucket)
 
@@ -161,13 +161,22 @@ def _supplier_terms_heatmap(df: pd.DataFrame) -> None:
         )
     )
     fig.update_layout(
-        title=f"Top 15 Suppliers × Payment Terms Bucket (Spend {get_currency_label()})",
-        paper_bgcolor="white",
-        font=dict(size=12),
+        title=f"Top 15 Suppliers × Payment Terms Bucket — click a cell to drill down",
+        paper_bgcolor="#FFFFFF",
+        font=dict(family="Inter, Helvetica, Arial, sans-serif", size=12, color="#1C2833"),
         xaxis=dict(title="Payment Terms Bucket"),
         yaxis=dict(title="Supplier"),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    event = st.plotly_chart(fig, on_select="rerun", key="pt_supplier_heatmap", use_container_width=True)
+    points = (event or {}).get("selection", {}).get("points", [])
+    if points:
+        sel_supplier = points[0].get("y")
+        sel_bucket = points[0].get("x")
+        if sel_supplier or sel_bucket:
+            parts = [p for p in [sel_supplier, sel_bucket] if p]
+            st.caption(f"Cross-filter active: {' × '.join(parts)} — click chart background to clear")
+            return sel_supplier, sel_bucket
+    return None, None
 
 
 def _working_capital_table(df: pd.DataFrame, target_days: float, wacc: float) -> None:
@@ -375,18 +384,25 @@ def main() -> None:
 
     st.markdown("---")
 
-    # --- Supplier × terms bucket heatmap ---
-    _supplier_terms_heatmap(filtered)
+    # --- Supplier × terms bucket heatmap (click to drill down) ---
+    sel_supplier_hm, sel_bucket_hm = _supplier_terms_heatmap(filtered)
+
+    # Apply heatmap selection on top of scatter selection
+    cf_detail = cf.copy()
+    if sel_supplier_hm and "canonical_supplier_name" in cf_detail.columns:
+        cf_detail = cf_detail[cf_detail["canonical_supplier_name"] == sel_supplier_hm]
+    if sel_bucket_hm and "payment_terms_days" in cf_detail.columns:
+        cf_detail = cf_detail[cf_detail["payment_terms_days"].apply(_assign_bucket) == sel_bucket_hm]
 
     st.markdown("---")
 
     # --- Working capital table ---
-    _working_capital_table(cf, float(target_days), float(wacc_pct))
+    _working_capital_table(cf_detail, float(target_days), float(wacc_pct))
 
     st.markdown("---")
 
     # --- Non-standard terms anomaly list ---
-    _non_standard_terms(cf)
+    _non_standard_terms(cf_detail)
 
 
 if __name__ == "__main__":
