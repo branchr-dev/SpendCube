@@ -165,3 +165,11 @@ Story completed successfully by Ralph loop iteration 8
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 9
 
+US-010 complete: sidebar KPI strip, chart container polish — Sun  3 May 2026 18:47:04 BST
+
+---
+
+### [US-010] - 2026-05-03 18:47:06
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 10
+

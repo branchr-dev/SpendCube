@@ -224,7 +224,8 @@
         "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — same chart container class change to 'border rounded-xl p-5 bg-card shadow-sm' and section titles to use 'section-header' class.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:47:06Z"
     },
     {
       "id": "US-011",
