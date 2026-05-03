@@ -162,3 +162,33 @@ Story completed successfully by Ralph loop iteration 8
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+
+---
+
+## US-009 COMPLETE — 2026-05-03
+Added '## Data Model Hardening — Incremental Ingestion' section to CLAUDE.md.
+
+Section covers:
+- Two-table ingestion pattern (transactions_raw landing zone → transactions fact table)
+- ingestion_batches table columns and status states (processing | complete | failed)
+- transactions_raw pipeline_status states (queued | processing | processed | review_required | failed)
+- source_row_hash formula — SHA256(json.dumps(raw_row_dict, sort_keys=True, default=str))
+- IncrementalPromoter location and promote() behaviour (supplier resolution, categorisation, dry_run=True guarantee)
+- PgvectorEmbeddingStore and PgvectorCategoryStore — pgvector cache pattern with pickle fallback
+- Backwards compatibility guarantees (ingest_to_db() preserved; new tables created in SQLite; pickle fallback when no Supabase URL)
+- grep 'Data Model Hardening' CLAUDE.md returns match at line 561 ✓
+
+
+---
+
+### [US-009] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+
+
+---
+
+### [US-009] - 2026-05-03 22:24:58
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+

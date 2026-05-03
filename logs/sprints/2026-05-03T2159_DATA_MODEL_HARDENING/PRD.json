@@ -209,7 +209,8 @@
         "Section documents: backwards compatibility — Ingestor.ingest_to_db() preserved; all existing tests use SQLite in-memory; new tables are added to SQLAlchemy metadata and created in SQLite too",
         "Verify: grep 'Data Model Hardening' CLAUDE.md returns a match"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:24:58Z"
     }
   ],
   "verification": {

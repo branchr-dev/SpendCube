@@ -549,3 +549,68 @@ STORY_COMPLETE: US-008
 [2026-05-03 22:23:41] [OK] Marked US-008 as passed
 [2026-05-03 22:23:41] [INFO] Logged progress for US-008: PASSED
 [2026-05-03 22:23:41] [STEP] Committing changes...
+[2026-05-03 22:23:43] [INFO] Starting iteration 9
+[2026-05-03 22:23:43] [INFO] Processing story: US-009
+[2026-05-03 22:23:43] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Update CLAUDE.md with data model hardening conventions
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add a 'Data Model Hardening' section to the SpendCube v2 Architecture section in CLAUDE.md documenting the two-table ingestion pattern, batch tracking, source_row_hash formula, IncrementalPromoter behaviour, pgvector embedding store pattern, and backwards compatibility guarantees for local dev and tests.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md
+- Add section '## Data Model Hardening — Incremental Ingestion' under the SpendCube v2 Architecture section
+- Section documents: ingestion_batches table purpose and key columns (status states: processing | complete | failed)
+- Section documents: transactions_raw table as the pre-pipeline staging layer; pipeline_status states (queued | processing | processed | review_required | failed)
+- Section documents: source_row_hash formula — SHA256(json.dumps(raw_row_dict, sort_keys=True, default=str)); full-row hash for maximum dedup correctness
+- Section documents: IncrementalPromoter class location (src/ingestion/promoter.py) and promote() method behaviour — only harmonises new supplier names, always sets dry_run=True so no LLM calls
+- Section documents: PgvectorEmbeddingStore (supplier_embeddings table) and PgvectorCategoryStore (description_embeddings table) — pgvector cache pattern; pickle fallback when SQLite or pgvector extension absent
+- Section documents: backwards compatibility — Ingestor.ingest_to_db() preserved; all existing tests use SQLite in-memory; new tables are added to SQLAlchemy metadata and created in SQLite too
+- Verify: grep 'Data Model Hardening' CLAUDE.md returns a match
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Update CLAUDE.md with data model hardening conventions`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-05-03 22:24:58] [OK] Story US-009 completed!
+[2026-05-03 22:24:58] [OK] Marked US-009 as passed
+[2026-05-03 22:24:58] [INFO] Logged progress for US-009: PASSED
+[2026-05-03 22:24:58] [STEP] Committing changes...
