@@ -79,3 +79,70 @@ STORY_COMPLETE: US-001
 [2026-05-03 22:05:38] [OK] Marked US-001 as passed
 [2026-05-03 22:05:38] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 22:05:38] [STEP] Committing changes...
+[2026-05-03 22:05:40] [INFO] Starting iteration 2
+[2026-05-03 22:05:40] [INFO] Processing story: US-002
+[2026-05-03 22:05:40] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Add ingestion_batches and transactions_raw table definitions to database.py
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Edit src/models/database.py to add SQLAlchemy Core table definitions for ingestion_batches and transactions_raw, add source_raw_id to transactions_table, and add four helper functions: create_batch(), insert_raw_transactions() with deduplication, get_queued_raw_rows(), and mark_raw_rows_processed(). All new tables are added to the shared metadata object so they are created in SQLite for local dev and tests.
+
+## Acceptance Criteria
+- Edit file: src/models/database.py
+- Add to metadata: ingestion_batches_table with columns id (Text PK), engagement_id (Text), filename (Text), row_count (Integer), new_rows (Integer), duplicate_rows (Integer), status (Text), uploaded_at (Text), completed_at (Text)
+- Add to metadata: transactions_raw_table with columns id (Text PK), engagement_id (Text), batch_id (Text), source_row_hash (Text), pipeline_status (Text), invoice_number (Text), invoice_date (Text), raw_supplier_name (Text), base_amount (Float), raw_data (Text), created_at (Text)
+- Add column source_raw_id (Text, nullable=True) to the existing transactions_table definition
+- Add function create_batch(engine, engagement_id, filename, row_count) -> str: inserts a row into ingestion_batches with status='processing' and returns the batch id (UUID string)
+- Add function insert_raw_transactions(engine, records: list[dict], batch_id: str, engagement_id: str) -> tuple[int, int]: inserts records in chunks of 5000 using INSERT OR IGNORE (SQLite) / INSERT ... ON CONFLICT DO NOTHING (Postgres) on source_row_hash; returns (new_rows_count, duplicate_rows_count)
+- Add function get_queued_raw_rows(engine, engagement_id: str, batch_id: str) -> pd.DataFrame: returns all transactions_raw rows with pipeline_status='queued' for the given engagement_id and batch_id
+- Add function mark_raw_rows_processed(engine, row_ids: list[str], status: str) -> None: updates pipeline_status for the given ids in transactions_raw
+- Add function update_batch_status(engine, batch_id: str, status: str, new_rows: int, duplicate_rows: int) -> None: updates ingestion_batches row with final counts and completed_at timestamp
+- Detect Postgres vs SQLite in insert_raw_transactions: check if 'postgresql' in str(engine.url) to choose ON CONFLICT DO NOTHING vs OR IGNORE syntax
+- Verify: python -c "from src.models.database import ingestion_batches_table, transactions_raw_table, create_batch, insert_raw_transactions, get_queued_raw_rows, mark_raw_rows_processed, update_batch_status; print('OK')" succeeds
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Add ingestion_batches and transactions_raw table definitions to database.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 22:07:16] [OK] Story US-002 completed!
+[2026-05-03 22:07:16] [OK] Marked US-002 as passed
+[2026-05-03 22:07:16] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 22:07:16] [STEP] Committing changes...

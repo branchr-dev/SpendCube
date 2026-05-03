@@ -83,7 +83,8 @@
         "Detect Postgres vs SQLite in insert_raw_transactions: check if 'postgresql' in str(engine.url) to choose ON CONFLICT DO NOTHING vs OR IGNORE syntax",
         "Verify: python -c \"from src.models.database import ingestion_batches_table, transactions_raw_table, create_batch, insert_raw_transactions, get_queued_raw_rows, mark_raw_rows_processed, update_batch_status; print('OK')\" succeeds"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:07:16Z"
     },
     {
       "id": "US-003",
