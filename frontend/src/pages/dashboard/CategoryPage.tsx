@@ -14,11 +14,13 @@ import {
 import FilterBar from '@/components/dashboard/FilterBar'
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendBarChart from '@/components/charts/SpendBarChart'
+import { DrilldownBreadcrumb } from '@/components/DrilldownBreadcrumb'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
 import { formatCurrency, formatNumber } from '@/lib/formatters'
 import type { CategoryRow } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
+import type { DrilldownLevel, DrilldownState } from '@/hooks/useDrilldown'
 
 interface L2Summary {
   l2: string
@@ -143,11 +145,33 @@ export default function CategoryPage() {
     ? [...selectedL2Entry.l3s].sort((a, b) => (b.total_spend ?? 0) - (a.total_spend ?? 0))
     : []
 
+  const drilldownState: DrilldownState = selectedL2 && selectedL1
+    ? { level: 'category_l2', category_l1: selectedL1, category_l2: selectedL2 }
+    : selectedL1
+    ? { level: 'category_l1', category_l1: selectedL1 }
+    : { level: 'overview' }
+
+  function handleBreadcrumbDrillTo(_level: DrilldownLevel, context: Partial<DrilldownState>) {
+    setSelectedL1(context.category_l1 ?? null)
+    setSelectedL2(context.category_l2 ?? null)
+  }
+
+  function handleBreadcrumbReset() {
+    setSelectedL1(null)
+    setSelectedL2(null)
+  }
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-xl font-semibold">Category Deep Dive</h1>
 
       <FilterBar filters={filters} onChange={handleFilterChange} options={filterOptions} />
+
+      <DrilldownBreadcrumb
+        state={drilldownState}
+        drillTo={handleBreadcrumbDrillTo}
+        reset={handleBreadcrumbReset}
+      />
 
       {selectedL1Entry && (
         <div className="grid grid-cols-3 gap-4">

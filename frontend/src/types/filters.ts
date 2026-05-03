@@ -20,6 +20,8 @@ export interface FilterOptions {
   legal_entities: string[]
   currencies: string[]
   countries: string[]
+  abc_segments?: ABCSegment[]
+  categorisation_statuses?: string[]
 }
 
 export function defaultFilters(): FilterState {

@@ -14,9 +14,11 @@ import {
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendAreaChart from '@/components/charts/SpendAreaChart'
 import SpendPieChart from '@/components/charts/SpendPieChart'
+import { DrilldownBreadcrumb } from '@/components/DrilldownBreadcrumb'
 import { api } from '@/lib/api'
 import { formatCurrency, formatNumber } from '@/lib/formatters'
 import type { SupplierRow, MonthRow, CategoryRow } from '@/types'
+import type { DrilldownLevel, DrilldownState } from '@/hooks/useDrilldown'
 
 type SortKey = 'canonical_supplier_name' | 'total_spend' | 'transaction_count' | 'avg_payment_days'
 type SortDir = 'asc' | 'desc'
@@ -111,9 +113,31 @@ export default function SupplierPage() {
     { key: 'avg_payment_days', label: 'Avg Payment Days', align: 'right' },
   ]
 
+  const drilldownState: DrilldownState = selectedSupplier
+    ? {
+        level: 'supplier',
+        supplier_id: selectedSupplierId ?? undefined,
+        supplier_name: selectedSupplier.canonical_supplier_name,
+      }
+    : { level: 'overview' }
+
+  function handleBreadcrumbDrillTo(_level: DrilldownLevel, _context: Partial<DrilldownState>) {
+    // No intermediate levels in supplier drilldown
+  }
+
+  function handleBreadcrumbReset() {
+    setSelectedSupplierId(null)
+  }
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-xl font-semibold">Supplier Deep Dive</h1>
+
+      <DrilldownBreadcrumb
+        state={drilldownState}
+        drillTo={handleBreadcrumbDrillTo}
+        reset={handleBreadcrumbReset}
+      />
 
       <Input
         placeholder="Search suppliers…"

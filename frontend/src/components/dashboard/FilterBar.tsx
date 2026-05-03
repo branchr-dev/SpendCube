@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { FilterState, FilterOptions, defaultFilters } from '@/types/filters'
+import type { ABCSegment } from '@/types'
 
 interface MultiSelectProps {
   label: string
@@ -67,9 +68,13 @@ interface FilterBarProps {
   filters: FilterState
   onChange: (f: FilterState) => void
   options: FilterOptions
+  showConfidenceFilter?: boolean
 }
 
-export default function FilterBar({ filters, onChange, options }: FilterBarProps) {
+export default function FilterBar({ filters, onChange, options, showConfidenceFilter = false }: FilterBarProps) {
+  const abcOptions: ABCSegment[] = options.abc_segments ?? []
+  const catStatusOptions = options.categorisation_statuses ?? []
+
   return (
     <div className="flex flex-wrap items-end gap-3 p-4 bg-muted/30 rounded-lg border">
       <div className="flex flex-col gap-1">
@@ -121,6 +126,112 @@ export default function FilterBar({ filters, onChange, options }: FilterBarProps
           onChange={e => onChange({ ...filters, supplier_search: e.target.value })}
         />
       </div>
+      {options.legal_entities.length > 0 && (
+        <div className="flex flex-col gap-1 min-w-40">
+          <label className="text-xs text-muted-foreground">Legal Entity</label>
+          <MultiSelect
+            label="Legal Entities"
+            options={options.legal_entities}
+            selected={filters.legal_entities}
+            onChange={v => onChange({ ...filters, legal_entities: v })}
+          />
+        </div>
+      )}
+      {options.currencies.length > 0 && (
+        <div className="flex flex-col gap-1 min-w-36">
+          <label className="text-xs text-muted-foreground">Currency</label>
+          <MultiSelect
+            label="Currencies"
+            options={options.currencies}
+            selected={filters.currencies}
+            onChange={v => onChange({ ...filters, currencies: v })}
+          />
+        </div>
+      )}
+      {options.countries.length > 0 && (
+        <div className="flex flex-col gap-1 min-w-40">
+          <label className="text-xs text-muted-foreground">Country</label>
+          <MultiSelect
+            label="Countries"
+            options={options.countries}
+            selected={filters.countries}
+            onChange={v => onChange({ ...filters, countries: v })}
+          />
+        </div>
+      )}
+      {abcOptions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">ABC Segment</label>
+          <div className="flex items-center gap-2 h-9 px-1">
+            {abcOptions.map(seg => (
+              <label key={seg} className="flex items-center gap-1 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={filters.abc_segments.includes(seg)}
+                  onChange={() => {
+                    const next = filters.abc_segments.includes(seg)
+                      ? filters.abc_segments.filter(s => s !== seg)
+                      : [...filters.abc_segments, seg]
+                    onChange({ ...filters, abc_segments: next as ABCSegment[] })
+                  }}
+                />
+                {seg}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      {catStatusOptions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Status</label>
+          <div className="flex items-center gap-2 h-9 px-1">
+            {['All', ...catStatusOptions].map(status => (
+              <label key={status} className="flex items-center gap-1 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="categorisation_status"
+                  className="h-4 w-4"
+                  checked={
+                    status === 'All'
+                      ? filters.categorisation_statuses.length === 0
+                      : filters.categorisation_statuses[0] === status
+                  }
+                  onChange={() => {
+                    onChange({
+                      ...filters,
+                      categorisation_statuses: status === 'All' ? [] : [status],
+                    })
+                  }}
+                />
+                {status}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      {showConfidenceFilter && (
+        <div className="flex flex-col gap-1 min-w-44">
+          <label className="text-xs text-muted-foreground">
+            Min Confidence:{' '}
+            {filters.min_confidence != null
+              ? `${Math.round(filters.min_confidence * 100)}%`
+              : 'Any'}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={filters.min_confidence ?? 0}
+            onChange={e => {
+              const val = parseFloat(e.target.value)
+              onChange({ ...filters, min_confidence: val === 0 ? undefined : val })
+            }}
+            className="h-9 w-full accent-primary"
+          />
+        </div>
+      )}
       <Button variant="outline" size="sm" onClick={() => onChange(defaultFilters())}>
         Clear
       </Button>
