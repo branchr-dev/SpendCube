@@ -7,6 +7,7 @@ or fuzzy matching. Caches embeddings to disk to avoid recomputation.
 
 from __future__ import annotations
 
+import json
 import logging
 import pickle
 import sys
@@ -35,6 +36,85 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
+# Pgvector Embedding Store
+# ---------------------------------------------------------------------------
+
+class PgvectorEmbeddingStore:
+    """Persistent embedding cache backed by the supplier_embeddings Postgres table."""
+
+    _CHUNK_SIZE = 500
+
+    def __init__(self, engine, engagement_id: str) -> None:
+        self._engine = engine
+        self._engagement_id = engagement_id
+        self._available: Optional[bool] = None
+
+    def is_available(self) -> bool:
+        """Return True only if engine is Postgres and the pgvector extension is present."""
+        if self._available is not None:
+            return self._available
+        if "postgresql" not in str(self._engine.url):
+            self._available = False
+            return False
+        try:
+            from sqlalchemy import text
+            with self._engine.connect() as conn:
+                conn.execute(text("SELECT 1::vector"))
+            self._available = True
+        except Exception:
+            self._available = False
+        return self._available
+
+    def get(self, names: list[str]) -> dict[str, np.ndarray]:
+        """Query supplier_embeddings for the given names and return name -> vector dict."""
+        if not names:
+            return {}
+        from sqlalchemy import text
+        placeholders = ", ".join(f":n{i}" for i in range(len(names)))
+        params = {f"n{i}": name for i, name in enumerate(names)}
+        params["engagement_id"] = self._engagement_id
+        sql = text(
+            f"SELECT normalised_name, embedding FROM supplier_embeddings "
+            f"WHERE engagement_id = :engagement_id AND normalised_name IN ({placeholders})"
+        )
+        result: dict[str, np.ndarray] = {}
+        with self._engine.connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        for row in rows:
+            raw = row[1]
+            if isinstance(raw, str):
+                vec = np.array(json.loads(raw), dtype=np.float32)
+            else:
+                vec = np.array(raw, dtype=np.float32)
+            result[row[0]] = vec
+        return result
+
+    def store(self, name_vector_pairs: list[tuple[str, np.ndarray]]) -> None:
+        """Upsert name-vector pairs to supplier_embeddings in chunks of 500."""
+        if not name_vector_pairs:
+            return
+        from sqlalchemy import text
+        for i in range(0, len(name_vector_pairs), self._CHUNK_SIZE):
+            chunk = name_vector_pairs[i : i + self._CHUNK_SIZE]
+            with self._engine.begin() as conn:
+                for name, vec in chunk:
+                    vec_str = "[" + ",".join(str(float(v)) for v in vec) + "]"
+                    conn.execute(
+                        text(
+                            "INSERT INTO supplier_embeddings "
+                            "(id, engagement_id, normalised_name, embedding) "
+                            "VALUES (gen_random_uuid(), :engagement_id, :name, :embedding::vector) "
+                            "ON CONFLICT (engagement_id, normalised_name) DO NOTHING"
+                        ),
+                        {
+                            "engagement_id": self._engagement_id,
+                            "name": name,
+                            "embedding": vec_str,
+                        },
+                    )
+
+
+# ---------------------------------------------------------------------------
 # Stage 4 — Embedding Matcher
 # ---------------------------------------------------------------------------
 
@@ -51,16 +131,20 @@ class EmbeddingMatcher:
         self,
         model_name: str = "all-MiniLM-L6-v2",
         cache_path: str = "data/cache/supplier_embeddings.pkl",
+        pgvector_store: Optional[PgvectorEmbeddingStore] = None,
     ) -> None:
         """
         Load sentence-transformers model and initialise embedding cache.
 
         Args:
-            model_name:  Sentence-transformer model to use.
-            cache_path:  Path to pickle file for persisting embedding cache.
+            model_name:      Sentence-transformer model to use.
+            cache_path:      Path to pickle file for persisting embedding cache.
+            pgvector_store:  Optional pgvector-backed store. When provided and
+                             available, used as primary cache instead of pickle.
         """
         self._cache_path = Path(cache_path)
         self._cache_path.parent.mkdir(parents=True, exist_ok=True)
+        self._pgvector_store = pgvector_store
 
         # Load disk cache if it exists
         self._cache: dict[str, np.ndarray] = {}
@@ -118,11 +202,25 @@ class EmbeddingMatcher:
         if not _SENTENCE_TRANSFORMERS_AVAILABLE or self._model is None:
             raise RuntimeError("sentence-transformers is not available")
 
+        use_pgvector = (
+            self._pgvector_store is not None
+            and self._pgvector_store.is_available()
+        )
+
+        if use_pgvector:
+            # Populate in-memory cache from pgvector for names not already present.
+            pg_missing = [n for n in names if n not in self._cache]
+            if pg_missing:
+                pg_hits = self._pgvector_store.get(pg_missing)
+                self._cache.update(pg_hits)
+
         uncached = [n for n in names if n not in self._cache]
         if uncached:
             vectors = self._model.encode(uncached, convert_to_numpy=True)
             for name, vec in zip(uncached, vectors):
                 self._cache[name] = vec
+            if use_pgvector:
+                self._pgvector_store.store(list(zip(uncached, vectors)))
             self._save_cache()
 
         return np.array([self._cache[n] for n in names])
