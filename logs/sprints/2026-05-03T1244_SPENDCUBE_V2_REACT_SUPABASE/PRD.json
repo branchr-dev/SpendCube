@@ -9,7 +9,6 @@
     "track": "code"
   },
   "summary": "Migrate SpendCube from a Streamlit+SQLite prototype to a production-grade React+FastAPI+Supabase web application. All six phases of the Python analytics pipeline (ingestion, supplier harmonisation, categorisation, cube building, recommendations, review workstation) are preserved in their entirety — a FastAPI backend wraps the existing src/ modules as a thin HTTP adapter. The frontend is rebuilt in React+TypeScript with shadcn/ui and Recharts for a professional client-facing dashboard. Multi-tenancy is achieved via an engagement_id column on all database tables scoped per client. The result is a stable, deployable application that can be handed to a client with a URL, login credentials, and their CSV data.",
-
   "decisions": {
     "monorepo_structure": "frontend/ and backend/ directories are added alongside the existing src/ directory. All pipeline logic in src/ is preserved untouched and imported by the FastAPI backend via sys.path. Tests in tests/ continue to run against the original code.",
     "parquet_eliminated": "Parquet files are not used in v2. All cube data is served live from Postgres views/aggregations. This removes filesystem state from the deployment and makes the architecture cloud-native.",
@@ -22,7 +21,6 @@
     "deployment_targets": "Vercel for the React frontend (zero-config, SPA routing via vercel.json). Railway for the FastAPI backend (Dockerfile-based deploy). Supabase cloud for Postgres + Auth. All secrets via environment variables — no hardcoded values anywhere.",
     "savings_rates_yaml": "The savings_rates.yaml and keyword_rules.yaml reference files remain in data/reference/ and are read by the Python pipeline at runtime. The backend mounts the data/ directory as a read-only volume in production."
   },
-
   "context": {
     "existing_tables": {
       "transactions": "45-column table storing all canonical transactions post-ingestion. All Text types for IDs and dates (Postgres-compatible). Needs engagement_id column added.",
@@ -56,7 +54,6 @@
       "The existing tests use in-memory SQLite engines (conftest.py fixtures) — do not break these by changing the database.py interface signature"
     ]
   },
-
   "userStories": [
     {
       "id": "US-001",
@@ -74,7 +71,8 @@
         "Verify: cd backend && pip install -e . && python -m pytest --collect-only exits without import errors",
         "Verify: curl http://localhost:8000/health returns {\"status\": \"ok\", \"version\": \"2.0.0\"} after starting with uvicorn app.main:app --port 8000"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:30:00Z"
     },
     {
       "id": "US-002",
@@ -337,7 +335,6 @@
       "passes": false
     }
   ],
-
   "verification": {
     "queries": {
       "backend_health": "curl http://localhost:8000/health → {\"status\": \"ok\", \"version\": \"2.0.0\"}",
@@ -369,7 +366,6 @@
       "DEPLOYMENT.md provides a complete walkthrough from zero to live deployment"
     ]
   },
-
   "risks": [
     "Pipeline Postgres compatibility (US-004/US-005): The existing src/ modules were written and tested against SQLite. Postgres has stricter type handling for date casting (invoice_date is stored as TEXT — the v_by_month view casts it as ::date which will fail if any rows have non-ISO date strings). Mitigation: run the full integration test (python src/utils/generate_test_data.py --rows 1000 && full pipeline) against a local Postgres instance before declaring US-005 done.",
     "sentence-transformers model size (US-005 Dockerfile): The all-MiniLM-L6-v2 model is ~90MB and is downloaded during docker build. This makes the backend image large (~1.2GB). Mitigation: pre-download in Dockerfile RUN step as specified in US-015, so the model is cached in the image layer and not re-downloaded at container startup.",
@@ -378,7 +374,6 @@
     "SpendCubePipeline Parquet output (US-005): src/cube/pipeline.py likely writes Parquet to output_dir. In v2 we want DB-only output. Review pipeline.py to check if output_dir=None is a valid no-op or if it raises an error. If Parquet output is mandatory, pass output_dir='/tmp/spendcube_parquet_{job_id}' and discard the files.",
     "CORS in production (US-001): Initial CORS allows all origins. Before any client-facing deployment, set ALLOWED_ORIGINS to the Vercel deployment URL only."
   ],
-
   "outOfScope": [
     "Real-time collaboration — multiple analysts editing the same engagement simultaneously",
     "Email notifications — notifying analysts when a pipeline job completes",
