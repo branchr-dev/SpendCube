@@ -13,7 +13,6 @@ import {
   Cell,
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import KpiCard from '@/components/dashboard/KpiCard'
 import RecommendationCard from '@/components/dashboard/RecommendationCard'
@@ -245,6 +244,13 @@ export default function RecommendationsPage() {
       </div>
 
       {portfolio && (
+        <div className="text-center py-4 border rounded-xl bg-card shadow-sm">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Identified Savings</p>
+          <p className="text-5xl font-bold text-green-700">{formatCurrency(portfolio.total_identified_savings ?? 0)}</p>
+        </div>
+      )}
+
+      {portfolio && (
         <div className="grid grid-cols-4 gap-4">
           <KpiCard
             label="Total Identified Savings"
@@ -261,41 +267,30 @@ export default function RecommendationsPage() {
             value={portfolio.recommendation_count ?? 0}
             valueType="number"
           />
-          <div className="flex items-center justify-center rounded-lg border bg-card">
-            <div className="text-center p-4">
-              <div className="text-sm text-muted-foreground mb-2">Sanity Check</div>
-              {portfolio.sanity_check_passed ? (
-                <Badge className="bg-green-100 text-green-800 border-green-200 text-sm px-3 py-1">
-                  Passed
-                </Badge>
-              ) : (
-                <Badge className="bg-red-100 text-red-800 border-red-200 text-sm px-3 py-1">
-                  Warning — review results
-                </Badge>
-              )}
-            </div>
-          </div>
+          <KpiCard
+            label="Sanity Check"
+            value={portfolio.sanity_check_passed ? 'Passed' : 'Review'}
+            valueType="text"
+            accentColor={portfolio.sanity_check_passed ? 'green' : 'risk'}
+          />
         </div>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm text-muted-foreground">Confidence:</span>
-        {(['ALL', 'HIGH', 'MEDIUM', 'LOW'] as Confidence[]).map(c => (
-          <button
-            key={c}
-            onClick={() => setConfidenceFilter(c)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              confidenceFilter === c
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-
       <PriorityMatrix recommendations={recommendations} />
+
+      {leverSummaries.length > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 px-1">
+          {leverSummaries.map(({ lever }, i) => (
+            <span key={lever} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span
+                className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+              />
+              {lever.replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      )}
 
       {leverSummaries.length > 0 && (
         <div className="border rounded-xl p-5 bg-card shadow-sm">
@@ -329,6 +324,23 @@ export default function RecommendationsPage() {
           ))}
         </div>
       )}
+
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
+        <span className="text-sm text-muted-foreground">Filter by confidence:</span>
+        {(['ALL', 'HIGH', 'MEDIUM', 'LOW'] as Confidence[]).map(c => (
+          <button
+            key={c}
+            onClick={() => setConfidenceFilter(c)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              confidenceFilter === c
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-3">
         {displayedRecs.length === 0 ? (
