@@ -153,7 +153,8 @@
         "Create file: backend/tests/test_ingestion_api.py — tests: (1) POST /upload with valid CSV returns columns list, (2) POST /run creates pipeline_jobs row with status=queued, (3) GET /status/{known_id} returns job row, (4) GET /status/{unknown_id} returns 404",
         "Verify: pytest backend/tests/test_ingestion_api.py -v — all tests pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:43:36Z"
     },
     {
       "id": "US-006",

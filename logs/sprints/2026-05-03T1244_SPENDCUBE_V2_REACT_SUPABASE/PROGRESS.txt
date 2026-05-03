@@ -115,3 +115,41 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+---
+
+## US-005 — Ingestion API endpoints — file upload, column mapping, and async pipeline execution
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- backend/app/routers/ingestion.py — APIRouter prefix=/api/engagements/{engagement_id}/ingest, tags=['ingestion']
+  - POST /upload — validates .csv/.xlsx; saves to /tmp/spendcube_{uuid}.{ext}; reads nrows=1 for headers; returns {job_id, file_path, columns, row_count_estimate}
+  - POST /run — validates engagement ownership; INSERTs pipeline_jobs row with status='queued'; calls background_tasks.add_task(_run_pipeline); returns {job_id, status: 'queued'}
+  - GET /status/{job_id} — SELECTs pipeline_jobs WHERE id AND engagement_id; 404 if not found
+  - _run_pipeline() — chains Ingestor → SupplierHarmoniser → SpendCategoriser → run_cube_pipeline with stage updates; handles exceptions → status='failed'
+- backend/app/main.py — updated: imports ingestion router; registers router; adds @app.on_event("startup") to reset stuck jobs (status='running' → 'failed')
+- backend/tests/test_ingestion_api.py — 5 tests covering all acceptance criteria
+
+**Verified:**
+- pytest backend/tests/test_ingestion_api.py -v → 5 passed in 0.31s
+- pytest backend/tests/ -v → 10 passed (all prior tests still green)
+
+**Learnings:**
+- sys.path.insert at module level in ingestion.py (as specified in AC) works alongside the existing sys.path manipulation in app/database.py; no conflict
+- column_mapping is applied as a pandas rename AFTER ingest_file() — safe because ingest_file auto-maps standard column names via DEFAULT source system, and column_mapping handles any non-standard names
+- SpendCubePipeline (run_pipeline function) uses output_dir for Parquet; pass tempfile.TemporaryDirectory() to avoid writing to production paths
+- on_event("startup") is deprecated in newer FastAPI; harmless DeprecationWarning in tests but functional
+- Mocking app.routers.ingestion._run_pipeline in POST /run test prevents actual pipeline execution in TestClient
+
+---
+
+### [US-005] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-005] - 2026-05-03 13:43:36
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

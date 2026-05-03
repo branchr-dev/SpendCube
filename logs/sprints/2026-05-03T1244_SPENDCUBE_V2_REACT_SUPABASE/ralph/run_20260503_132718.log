@@ -292,3 +292,69 @@ STORY_COMPLETE: US-004
 [2026-05-03 13:36:46] [OK] Marked US-004 as passed
 [2026-05-03 13:36:46] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 13:36:46] [STEP] Committing changes...
+[2026-05-03 13:36:48] [INFO] Starting iteration 5
+[2026-05-03 13:36:48] [INFO] Processing story: US-005
+[2026-05-03 13:36:48] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Ingestion API endpoints — file upload, column mapping, and async pipeline execution
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the three ingestion endpoints that power the upload wizard. The first endpoint parses headers from a CSV/Excel file without running the pipeline. The second endpoint kicks off the full pipeline as a FastAPI background task with engagement_id scoping. The third returns job status. The _run_pipeline function chains the existing src/ pipeline modules (Ingestor, harmoniser, SpendCategoriser, SpendCubePipeline) using the Postgres engine and engagement_id.
+
+## Acceptance Criteria
+- Create file: backend/app/routers/ingestion.py — APIRouter with prefix='/api/engagements/{engagement_id}/ingest', tags=['ingestion']
+- Add sys.path manipulation at top of ingestion.py: import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..')) to make src/ importable
+- POST /upload — UploadFile via Form; validates extension is .csv or .xlsx (else 400); saves to /tmp/spendcube_{uuid}.{ext}; reads first 2 rows to detect headers (pandas read_csv nrows=1 or read_excel nrows=1); returns {job_id: str(uuid4()), file_path: str, columns: list[str], row_count_estimate: int}
+- POST /run — body: {job_id: str, file_path: str, column_mapping: dict[str,str]}; validates engagement ownership; INSERTs row into pipeline_jobs with status='queued', engagement_id=engagement_id; calls background_tasks.add_task(_run_pipeline, engagement_id, job_id, file_path, column_mapping); returns {job_id, status: 'queued'}
+- GET /status/{job_id} — SELECTs pipeline_jobs row WHERE id=job_id AND engagement_id=engagement_id; returns {job_id, status, stage, started_at, completed_at, error_message}; 404 if not found
+- Create function _run_pipeline(engagement_id: str, job_id: str, file_path: str, column_mapping: dict, config_path: str = 'config.yaml'): (1) UPDATE pipeline_jobs SET status='running', stage='ingesting' WHERE id=job_id; (2) load config via load_config(config_path); (3) get engine via get_engine(os.environ['SUPABASE_DATABASE_URL']); (4) call init_db(engine) to ensure tables exist; (5) run Ingestor with engagement_id injection; (6) UPDATE stage='harmonising'; (7) run harmoniser; (8) UPDATE stage='categorising'; (9) run SpendCategoriser; (10) UPDATE stage='building_cube'; (11) run SpendCubePipeline (output_dir=None to skip Parquet); (12) UPDATE status='done', completed_at=now(); wrap in try/except: on exception UPDATE status='failed', error_message=str(e)
+- Add startup event in backend/app/main.py: on startup, UPDATE pipeline_jobs SET status='failed', error_message='Server restarted' WHERE status='running' — prevents stuck jobs after restart
+- Register ingestion router in backend/app/main.py
+- Create file: backend/tests/test_ingestion_api.py — tests: (1) POST /upload with valid CSV returns columns list, (2) POST /run creates pipeline_jobs row with status=queued, (3) GET /status/{known_id} returns job row, (4) GET /status/{unknown_id} returns 404
+- Verify: pytest backend/tests/test_ingestion_api.py -v — all tests pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Ingestion API endpoints — file upload, column mapping, and async pipeline execution`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 13:43:36] [OK] Story US-005 completed!
+[2026-05-03 13:43:36] [OK] Marked US-005 as passed
+[2026-05-03 13:43:36] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 13:43:36] [STEP] Committing changes...
