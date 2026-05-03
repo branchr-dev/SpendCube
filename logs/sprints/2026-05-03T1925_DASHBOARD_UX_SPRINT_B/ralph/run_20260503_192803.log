@@ -274,3 +274,67 @@ STORY_COMPLETE: US-004
 [2026-05-03 19:32:23] [OK] Marked US-004 as passed
 [2026-05-03 19:32:23] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 19:32:23] [STEP] Committing changes...
+[2026-05-03 19:32:25] [INFO] Starting iteration 5
+[2026-05-03 19:32:25] [INFO] Processing story: US-005
+[2026-05-03 19:32:25] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Data Quality — inline expandable check guidance
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Make each RED or AMBER diagnostics card clickable to expand inline guidance: what the check measures, what it impacts in the analysis, and concrete steps to fix it. Guidance text is hardcoded per check name — no API call required. GREEN checks are not expandable.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx
+- Add a CHECK_GUIDANCE constant at the top of the file (outside the component): a Record<string, { meaning: string; impacts: string; fix: string }> covering all 9 check names: missing_supplier ('Transactions with no canonical supplier name matched. Impacts supplier consolidation recommendations and spend-by-supplier views. Fix: upload a supplier master file or manually map raw names in the Review Workstation.'), missing_category ('Transactions not assigned to a UNSPSC category after all 6 pipeline passes. Directly reduces recommendation coverage. Fix: add keyword rules in data/reference/keyword_rules.yaml or run the Review Workstation category queue.'), missing_gl_account ('Transactions with no GL account code. Reduces GL-based categorisation accuracy. Fix: ensure the source ERP export includes GL codes and re-ingest.'), missing_cost_centre ('Transactions with no cost centre or business unit. Limits spend-by-BU analysis. Fix: add cost centre column mapping during ingestion.'), low_confidence_category ('Categories assigned with confidence below 0.60. These are likely miscategorised. Fix: review low-confidence transactions in the Review Workstation and add overrides.'), low_confidence_supplier ('Supplier matches with confidence below 0.60. These may be incorrectly harmonised. Fix: review PENDING entries in the Review Workstation supplier queue.'), duplicate_transactions ('Potential duplicate invoice rows detected. Inflates spend totals. Fix: check source data for duplicate invoice numbers and re-ingest after deduplication.'), maverick_spend ('Spend without a purchase order on non-contracted suppliers. Indicates off-contract buying. Fix: enforce PO requirements and expand contract coverage.'), tail_spend_ratio ('Proportion of spend in low-volume tail suppliers. High tail spend increases admin cost and reduces leverage. Fix: consolidate tail suppliers to preferred vendors.')
+- Add optional prop onClick?: () => void and expanded?: boolean to DiagnosticsCheckCard
+- When status is 'RED' or 'AMBER', make the Card clickable: add onClick={onClick} and cursor-pointer className to the Card. Render a small ChevronDown/ChevronUp icon (h-3 w-3 text-muted-foreground) in the top-right corner next to the Badge.
+- When expanded is true, render a div below the progress bar with className='mt-3 pt-3 border-t space-y-2 text-xs': show three rows labelled 'What it measures:', 'Impact:', 'How to fix:' each with their text from CHECK_GUIDANCE[check_name] ?? {meaning:'',impacts:'',fix:''}. Labels in font-medium, values in text-muted-foreground.
+- Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — add state: const [expandedCheck, setExpandedCheck] = useState<string | null>(null). Pass to each card: onClick={c.status !== 'GREEN' ? () => setExpandedCheck(prev => prev === c.check_name ? null : c.check_name) : undefined} expanded={expandedCheck === c.check_name}.
+- Import ChevronDown, ChevronUp from lucide-react in DiagnosticsCheckCard.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Data Quality — inline expandable check guidance`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 19:33:50] [OK] Story US-005 completed!
+[2026-05-03 19:33:50] [OK] Marked US-005 as passed
+[2026-05-03 19:33:50] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 19:33:50] [STEP] Committing changes...

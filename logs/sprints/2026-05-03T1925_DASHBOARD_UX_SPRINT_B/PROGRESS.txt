@@ -54,3 +54,30 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005 Complete — 2026-05-03
+
+### Inline expandable check guidance added to DiagnosticsCheckCard
+
+- Added CHECK_GUIDANCE Record<string, {meaning, impacts, fix}> for all 9 check names
+- Added onClick and expanded props to DiagnosticsCheckCard
+- RED/AMBER cards render ChevronDown/ChevronUp icon and cursor-pointer; GREEN cards are not clickable
+- When expanded, renders border-t guidance panel with 3 labelled rows (What it measures / Impact / How to fix)
+- DataQualityPage: added expandedCheck useState<string|null>; toggle on click; passes onClick/expanded to each card
+- Build: zero TypeScript errors ✓
+- Committed: 8c03c93
+
+
+---
+
+### [US-005] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
+
+---
+
+### [US-005] - 2026-05-03 19:33:50
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
