@@ -14,6 +14,7 @@ import {
 import FilterBar from '@/components/dashboard/FilterBar'
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendBarChart from '@/components/charts/SpendBarChart'
+import { SEMANTIC_COLORS } from '@/components/charts/constants'
 import { DrilldownBreadcrumb } from '@/components/DrilldownBreadcrumb'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
@@ -125,9 +126,17 @@ export default function CategoryPage() {
 
   const hierarchy = buildHierarchy(categoryData)
 
-  const l1BarData = [...hierarchy.values()]
-    .sort((a, b) => b.total_spend - a.total_spend)
-    .map(entry => ({ label: entry.l1, value: entry.total_spend }))
+  const l1Entries = [...hierarchy.values()].sort((a, b) => b.total_spend - a.total_spend)
+  const totalSpend = l1Entries.reduce((sum, e) => sum + e.total_spend, 0)
+
+  function fragColor(supplierCount: number): string {
+    if (supplierCount <= 2) return SEMANTIC_COLORS.opportunity
+    if (supplierCount <= 5) return SEMANTIC_COLORS.attention
+    return SEMANTIC_COLORS.risk
+  }
+
+  const l1BarData = l1Entries.map(entry => ({ label: entry.l1, value: entry.total_spend }))
+  const l1Colors = l1Entries.map(entry => fragColor(entry.supplier_count))
 
   const selectedL1Entry = selectedL1 ? hierarchy.get(selectedL1) : null
 
@@ -174,11 +183,18 @@ export default function CategoryPage() {
       />
 
       {selectedL1Entry && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <KpiCard
             label={`${selectedL1} — Total Spend`}
             value={selectedL1Entry.total_spend}
             valueType="currency"
+            accentColor={
+              selectedL1Entry.supplier_count <= 2
+                ? 'opportunity'
+                : selectedL1Entry.supplier_count <= 5
+                ? 'amber'
+                : 'risk'
+            }
           />
           <KpiCard
             label="Supplier Count"
@@ -190,6 +206,47 @@ export default function CategoryPage() {
             value={selectedL1Entry.transaction_count}
             valueType="number"
           />
+          <KpiCard
+            label="Share of Total"
+            value={totalSpend > 0 ? (selectedL1Entry.total_spend / totalSpend) * 100 : 0}
+            valueType="pct"
+          />
+        </div>
+      )}
+
+      {!isLoading && !selectedL1Entry && (
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm font-medium mb-3">Fragmentation Scorecard</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>L1 Category</TableHead>
+                <TableHead className="text-right">Total Spend</TableHead>
+                <TableHead className="text-right">% of Total</TableHead>
+                <TableHead className="text-right">Suppliers</TableHead>
+                <TableHead className="text-right">Avg Invoice</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {l1Entries.map((entry, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{entry.l1}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(entry.total_spend)}</TableCell>
+                  <TableCell className="text-right">
+                    {totalSpend > 0 ? ((entry.total_spend / totalSpend) * 100).toFixed(1) : '0.0'}%
+                  </TableCell>
+                  <TableCell className="text-right">{formatNumber(entry.supplier_count)}</TableCell>
+                  <TableCell className="text-right">
+                    {entry.transaction_count > 0
+                      ? formatCurrency(entry.total_spend / entry.transaction_count)
+                      : '—'}
+                  </TableCell>
+                  <TableCell>{fragmentationBadge(entry.supplier_count)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -216,8 +273,10 @@ export default function CategoryPage() {
             data={l1BarData}
             title=""
             horizontal
+            colors={l1Colors}
             valueFormatter={v => formatCurrency(v)}
             onBarClick={handleL1Click}
+            clickHint
           />
         )}
       </div>
@@ -244,6 +303,7 @@ export default function CategoryPage() {
             horizontal
             valueFormatter={v => formatCurrency(v)}
             onBarClick={handleL2Click}
+            showLabel
           />
         </div>
       )}

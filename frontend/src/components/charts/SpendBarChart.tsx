@@ -1,6 +1,7 @@
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,6 +21,7 @@ interface SpendBarChartProps {
   title: string
   horizontal?: boolean
   color?: string
+  colors?: string[]
   valueFormatter?: (v: number) => string
   maxItems?: number
   onBarClick?: (label: string) => void
@@ -32,6 +34,7 @@ export default function SpendBarChart({
   title,
   horizontal = false,
   color = CHART_COLORS[0],
+  colors,
   valueFormatter,
   maxItems,
   onBarClick,
@@ -84,6 +87,9 @@ export default function SpendBarChart({
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
             >
+              {colors && chartData.map((_entry, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index] ?? CHART_COLORS[0]} />
+              ))}
               {showLabel && (
                 <LabelList
                   dataKey="value"
@@ -106,6 +112,9 @@ export default function SpendBarChart({
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
             >
+              {colors && chartData.map((_entry, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index] ?? CHART_COLORS[0]} />
+              ))}
               {showLabel && (
                 <LabelList
                   dataKey="value"
