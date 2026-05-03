@@ -112,7 +112,7 @@ export default function DiagnosticsCheckCard({ check_name, status, value_pct, de
         {affectsRecommendations && (
           <Badge className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1">⚠ Affects recommendations</Badge>
         )}
-        <div className="mt-2">
+        <div className="mt-2 rounded overflow-hidden bg-muted">
           <Progress value={Math.min(value_pct, 100)} className={PROGRESS_CLASS[status]} />
         </div>
         {expanded && isExpandable && (
