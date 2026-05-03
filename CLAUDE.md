@@ -893,3 +893,107 @@ Two columns added after the `'Suppliers'` column in the Fragmentation Scorecard 
 | `'Spend / Supplier'` | `entry.total_spend / Math.max(entry.supplier_count, 1)` | No special colouring |
 
 Both `TableHead` elements use `className='text-right'`. Values formatted with `formatCurrency()`.
+
+## Dashboard UX Conventions (Sprint C)
+
+### Five Evaluation Dimensions
+
+Sprint C improvements were assessed against five procurement-specific criteria:
+
+| Dimension | Description |
+|-----------|-------------|
+| **Speed to First Insight** | How quickly a user can identify the most important finding on each page without drilling in |
+| **Opportunity Completeness** | Whether every quantifiable savings/WC lever is surfaced with enough context to act |
+| **Analytical Depth** | Whether charts support follow-on questions (who, what category, what terms) within the same page |
+| **Data Credibility** | Whether data quality issues are visible and linked to their impact on recommendations |
+| **Client Presentation Readiness** | Whether the dashboard can be shown in a client workshop without preparation or explanation |
+
+### Chart Navigation Pattern
+
+`OverviewPage` wires `onBarClick` and `onCellClick` to programmatic navigation via `useNavigate()` from `react-router-dom`. Clicking a supplier bar navigates to `/engagements/${engagementId}/supplier`; clicking a treemap cell navigates to `/category`. No pre-filter state is pushed — the user lands on the destination page and can drill in from there.
+
+```tsx
+import { useNavigate } from 'react-router-dom'
+const navigate = useNavigate()
+
+// Supplier bar chart
+<SpendBarChart onBarClick={() => navigate(`/engagements/${engagementId}/supplier`)} clickHint={true} />
+
+// Category treemap
+<SpendTreemap onCellClick={() => navigate(`/engagements/${engagementId}/category`)} />
+```
+
+### Concentration Stat Formula
+
+Computed client-side from already-fetched `supplierData` (no extra API call):
+
+```ts
+const top10Spend = supplierData.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0)
+const allSpend   = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0)
+// Display: allSpend > 0 ? `Top 10 = ${((top10Spend / allSpend) * 100).toFixed(1)}% of total spend` : ''
+```
+
+Rendered as `text-xs text-muted-foreground` beside the chart title in a `flex justify-between` header row. The `SupplierPage` concentration banner shows both Top 5 and Top 10 values using the same pattern against `sorted` (post-filter) data.
+
+### SpendBarChart — `selectedLabel` Prop
+
+`frontend/src/components/charts/SpendBarChart.tsx`
+
+- `selectedLabel?: string` — when set, renders `Cell` components for every bar. The matching bar gets `opacity={1} stroke='#ffffff' strokeWidth={2}`; all other bars get `opacity={0.55}`.
+- When `selectedLabel` is not set but `colors` is provided, Cell components are rendered with per-bar fills at full opacity (existing behaviour).
+- When neither is set, the `Bar` renders with its single `fill` prop — no `Cell` children.
+- Used by `CategoryPage` to visually confirm the active L1 selection: `selectedLabel={selectedL1 ?? undefined}`.
+
+### Payment Days Colour Convention
+
+Applied consistently in `SupplierPage` (table + drawer) and `PaymentTermsPage` (supplier-level table):
+
+| Days range | Background | Text | Meaning |
+|------------|-----------|------|---------|
+| `< 30` | `bg-rose-50` | `text-rose-700` | Short terms — WC opportunity exists |
+| `30–44` | `bg-amber-50` | `text-amber-700` | Below target — monitor |
+| `>= 45` | *(no class)* | *(default)* | At or above 45-day target — acceptable |
+
+```tsx
+const daysCls = (avgDays: number) =>
+  avgDays < 30  ? 'text-right font-medium bg-rose-50 text-rose-700' :
+  avgDays < 45  ? 'text-right font-medium bg-amber-50 text-amber-700' :
+                  'text-right'
+```
+
+WC opportunity per supplier uses `WACC = 8%`, `target = 45 days`:
+```ts
+const computeWc = (avgDays: number, spend: number) =>
+  avgDays < 45 ? ((45 - avgDays) / 365) * spend * 0.08 : 0
+```
+
+### Data Quality Summary Strip
+
+`DataQualityPage` replaces the isolated `max-w-xs` score card with a full-width summary strip:
+
+```tsx
+<div className="flex items-center gap-6 p-4 border rounded-xl bg-card shadow-sm flex-wrap">
+  <p className="text-base font-semibold">{passingCount} of {checks.length} checks passing</p>
+  <div className="flex gap-3">
+    {/* Coloured dot + count for RED / AMBER / GREEN */}
+  </div>
+  {/* Badge: 'Good' / 'Needs attention' / 'Review required' based on overall_score */}
+</div>
+```
+
+- `passingCount = checks.filter(c => c.status === 'GREEN').length`
+- Badge thresholds: `overall_score >= 80` → green `'Good'`; `>= 50` → amber `'Needs attention'`; else red `'Review required'`
+- The old `text-4xl` score display and `scoreColor`/`scoreBorder` variables are removed entirely.
+
+### Sidebar Nav Order — Opportunity Assessment Workflow
+
+Nav items reordered in `frontend/src/components/Layout.tsx` to match the natural opportunity assessment sequence:
+
+1. **Overview** — total picture and headline KPIs
+2. **Recommendations** — the savings action list
+3. **Category** — category-level fragmentation and sourcing analysis
+4. **Supplier** — supplier consolidation, terms, and parent grouping
+5. **Payment Terms** — WC opportunity by terms bucket
+6. **Data Quality** — data completeness and confidence (diagnostic, not primary)
+
+Review Workstation (`99_` prefix) stays at the bottom. This order surfaces the most client-facing content first and positions Data Quality as a supporting diagnostic rather than a primary view.
