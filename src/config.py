@@ -27,6 +27,7 @@ class PathsConfig(BaseModel):
     output_dir: str
     db_path: str
     reference_dir: str
+    database_url: Optional[str] = None
 
 
 class LLMConfig(BaseModel):

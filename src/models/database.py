@@ -76,6 +76,7 @@ transactions_table = Table(
     Column("review_notes", Text),
     Column("review_date", Text),
     Column("raw_data", Text),
+    Column("engagement_id", Text, nullable=True),
 )
 
 supplier_master_table = Table(
@@ -89,6 +90,7 @@ supplier_master_table = Table(
     Column("identifiers", Text),
     Column("created_at", Text),
     Column("updated_at", Text),
+    Column("engagement_id", Text, nullable=True),
 )
 
 supplier_match_log_table = Table(
@@ -103,6 +105,7 @@ supplier_match_log_table = Table(
     Column("evidence", Text),
     Column("review_status", Text),
     Column("created_at", Text),
+    Column("engagement_id", Text, nullable=True),
 )
 
 category_overrides_table = Table(
@@ -118,6 +121,7 @@ category_overrides_table = Table(
     Column("reviewer", Text),
     Column("reason", Text),
     Column("created_at", Text),
+    Column("engagement_id", Text, nullable=True),
 )
 
 audit_log_table = Table(
@@ -131,17 +135,23 @@ audit_log_table = Table(
     Column("new_value", Text),
     Column("changed_by", Text),
     Column("changed_at", Text),
+    Column("engagement_id", Text, nullable=True),
 )
 
 # ---------------------------------------------------------------------------
 # Engine
 # ---------------------------------------------------------------------------
 
-def get_engine(db_path: str) -> Engine:
-    return create_engine(
-        f"sqlite:///{db_path}",
-        connect_args={"check_same_thread": False},
-    )
+def get_engine(db_url: str) -> Engine:
+    if db_url.startswith("postgresql://") or db_url.startswith("postgresql+psycopg2://"):
+        return create_engine(db_url, pool_pre_ping=True)
+    elif db_url.startswith("sqlite://"):
+        return create_engine(db_url, connect_args={"check_same_thread": False})
+    else:
+        return create_engine(
+            f"sqlite:///{db_url}",
+            connect_args={"check_same_thread": False},
+        )
 
 
 def init_db(engine: Engine) -> None:
@@ -152,15 +162,16 @@ def init_db(engine: Engine) -> None:
 # Insert
 # ---------------------------------------------------------------------------
 
-def insert_transactions(engine: Engine, records: list[dict]) -> int:
+def insert_transactions(engine: Engine, records: list[dict], engagement_id: Optional[str] = None) -> int:
     if not records:
         return 0
-    # Serialise dict fields to JSON strings
     rows = []
     for rec in records:
         row = dict(rec)
         if isinstance(row.get("raw_data"), dict):
             row["raw_data"] = json.dumps(row["raw_data"])
+        if engagement_id is not None:
+            row["engagement_id"] = engagement_id
         rows.append(row)
     with engine.begin() as conn:
         result = conn.execute(insert(transactions_table), rows)
