@@ -96,3 +96,15 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+## US-006 — Category cockpit: fragmentation colour coding and scorecard table
+- SpendBarChart.tsx: added Cell import and optional colors?: string[] prop; renders per-bar Cell fills when provided
+- CategoryPage.tsx: imported SEMANTIC_COLORS; computed l1Colors array (opportunity/attention/risk); added Fragmentation Scorecard table when no L1 selected; expanded KPI row to 4 cards with Share of Total and accentColor on spend card; passed clickHint and colors to L1 chart; added showLabel to L2 chart
+- Build: zero TypeScript errors
+
+---
+
+### [US-006] - 2026-05-03 18:41:06
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+

@@ -154,7 +154,8 @@
         "For the L2 bar chart when rendered, pass showLabel={true} to show the spend value on each bar",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:41:06Z"
     },
     {
       "id": "US-007",
