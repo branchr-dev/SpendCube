@@ -27,6 +27,7 @@ interface SpendBarChartProps {
   onBarClick?: (label: string) => void
   showLabel?: boolean
   clickHint?: boolean
+  selectedLabel?: string
 }
 
 export default function SpendBarChart({
@@ -40,6 +41,7 @@ export default function SpendBarChart({
   onBarClick,
   showLabel = false,
   clickHint = false,
+  selectedLabel,
 }: SpendBarChartProps) {
   if (!data || data.length === 0) {
     return (
@@ -87,9 +89,15 @@ export default function SpendBarChart({
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
             >
-              {colors && chartData.map((_entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index] ?? CHART_COLORS[0]} />
-              ))}
+              {(colors || selectedLabel) && chartData.map((entry, index) => {
+                const fill = colors?.[index] ?? color
+                if (selectedLabel && entry.name === selectedLabel) {
+                  return <Cell key={`cell-${index}`} fill={fill} opacity={1} stroke='#ffffff' strokeWidth={2} />
+                } else if (selectedLabel) {
+                  return <Cell key={`cell-${index}`} fill={fill} opacity={0.55} />
+                }
+                return <Cell key={`cell-${index}`} fill={colors![index] ?? color} />
+              })}
               {showLabel && (
                 <LabelList
                   dataKey="value"
@@ -112,9 +120,15 @@ export default function SpendBarChart({
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
             >
-              {colors && chartData.map((_entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index] ?? CHART_COLORS[0]} />
-              ))}
+              {(colors || selectedLabel) && chartData.map((entry, index) => {
+                const fill = colors?.[index] ?? color
+                if (selectedLabel && entry.name === selectedLabel) {
+                  return <Cell key={`cell-${index}`} fill={fill} opacity={1} stroke='#ffffff' strokeWidth={2} />
+                } else if (selectedLabel) {
+                  return <Cell key={`cell-${index}`} fill={fill} opacity={0.55} />
+                }
+                return <Cell key={`cell-${index}`} fill={colors![index] ?? color} />
+              })}
               {showLabel && (
                 <LabelList
                   dataKey="value"
