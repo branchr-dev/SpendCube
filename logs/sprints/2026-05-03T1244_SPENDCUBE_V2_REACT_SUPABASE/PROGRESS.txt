@@ -219,3 +219,38 @@ Story completed successfully by Ralph loop iteration 6
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+---
+
+## US-008 — React frontend scaffold — Vite, TypeScript, Tailwind, shadcn/ui, routing, API client
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- frontend/package.json — Vite React TypeScript project, all runtime and dev dependencies
+- frontend/tsconfig.json, tsconfig.app.json, tsconfig.node.json — TypeScript config with strict mode + @/ alias
+- frontend/vite.config.ts — @tailwindcss/vite plugin + path alias @/ → ./src/
+- frontend/index.html — SPA entry point
+- frontend/components.json — shadcn/ui config (New York style, slate base, CSS variables)
+- frontend/src/index.css — Tailwind v4 @import with @theme CSS variable definitions
+- frontend/src/vite-env.d.ts — Vite client types reference (fixes import.meta.env TS errors)
+- frontend/src/lib/utils.ts — cn() helper (clsx + tailwind-merge)
+- frontend/src/lib/supabase.ts — createClient() exported singleton
+- frontend/src/lib/api.ts — Axios instance with Supabase JWT auth interceptor + 401 → signOut redirect
+- frontend/src/types/index.ts — All 13 TypeScript interfaces (Engagement, SupplierRow, CategoryRow, MonthRow, PaymentTermsRow, OverviewData, Recommendation, PortfolioSummary, DiagnosticsCheck, PipelineJob, SupplierMatchLog, CategoryOverride, AuditLogEntry)
+- frontend/src/hooks/useAuth.ts — useAuth() hook with onAuthStateChange subscription
+- frontend/src/components/ProtectedRoute.tsx — loading/no-session guards, Outlet for children
+- frontend/src/components/Layout.tsx — sidebar nav + top bar + Outlet for page content
+- frontend/src/components/ui/ — 12 shadcn/ui components: button, card, badge, input, label, skeleton, table, dialog, select, tabs, progress, sheet, collapsible, sonner
+- frontend/src/App.tsx — React Router v6 route tree with ProtectedRoute + Layout nesting
+- frontend/src/main.tsx — BrowserRouter + QueryClientProvider (staleTime: 5min) + Toaster wrapper
+
+**Verified:**
+- `npm run build` → exits 0, zero TypeScript errors, zero Vite build errors
+- Output: dist/assets/index-*.css (26.65 kB gzip 5.36 kB) + dist/assets/index-*.js (493 kB gzip 144 kB)
+
+**Learnings:**
+- Tailwind v4 uses @theme directive to define CSS variables as theme tokens, replacing tailwind.config.js. The @apply directive with custom utility classes (bg-background, border-border etc.) fails in v4 — use CSS variables directly in @layer base instead.
+- vite-env.d.ts with `/// <reference types="vite/client" />` is required for import.meta.env to typecheck in strict mode.
+- shadcn/ui components are written manually (not via `npx shadcn@latest add`) because the CLI is interactive; the New York style component source is stable and can be authored directly.
+- @radix-ui/react-label must be installed separately; it is not bundled with other Radix packages.
+
