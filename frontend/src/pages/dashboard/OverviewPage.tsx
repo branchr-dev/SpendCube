@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { DollarSign, Lightbulb, AlertTriangle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,7 +10,7 @@ import SpendTreemap from '@/components/charts/SpendTreemap'
 import { CHART_COLORS } from '@/components/charts/constants'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
-import { formatCurrency } from '@/lib/formatters'
+import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { OverviewData, MonthRow, SupplierRow, CategoryRow, PaymentTermsRow, DiagnosticsCheck } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
 
@@ -20,6 +20,7 @@ interface RecommendationsResponse {
 
 export default function OverviewPage() {
   const { id: engagementId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { filters, updateFilter, toQueryParams } = useFilters()
   const qp = toQueryParams()
 
@@ -127,9 +128,13 @@ export default function OverviewPage() {
   const maverickPct = overview?.maverick_spend_pct ?? 0
   const maverickAccent = maverickPct > 25 ? 'risk' : maverickPct > 10 ? 'amber' : 'green'
 
+  const top10Spend = supplierData.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0)
+  const allSpend = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0)
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Spend Overview</h1>
+      {overview?.data_freshness && <p className="text-sm text-muted-foreground -mt-4">{formatDate(overview.data_freshness)}</p>}
 
       <FilterBar filters={filters} onChange={handleFilterChange} options={filterOptions} />
 
@@ -151,9 +156,11 @@ export default function OverviewPage() {
               valueType="number"
             />
             <KpiCard
-              label="Invoice Count"
-              value={overview?.invoice_count ?? 0}
-              valueType="number"
+              label="Tail Spend"
+              value={overview?.tail_spend_pct ?? 0}
+              valueType="pct"
+              accentColor={overview?.tail_spend_pct != null && overview.tail_spend_pct > 30 ? 'risk' : overview?.tail_spend_pct != null && overview.tail_spend_pct > 15 ? 'amber' : 'green'}
+              benchmarkLabel="% of spend in tail suppliers"
             />
             <KpiCard
               label="Maverick Spend"
@@ -211,12 +218,22 @@ export default function OverviewPage() {
           {loadingSuppliers ? (
             <Skeleton className="h-80" />
           ) : (
-            <SpendBarChart
-              data={supplierBarData}
-              title="Top 10 Suppliers"
-              horizontal
-              valueFormatter={v => formatCurrency(v, currency)}
-            />
+            <>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="section-header mb-0">Top 10 Suppliers</h3>
+                <span className="text-xs text-muted-foreground">
+                  {allSpend > 0 ? `Top 10 = ${((top10Spend / allSpend) * 100).toFixed(1)}% of total spend` : ''}
+                </span>
+              </div>
+              <SpendBarChart
+                data={supplierBarData}
+                title=""
+                horizontal
+                valueFormatter={v => formatCurrency(v, currency)}
+                onBarClick={() => navigate(`/engagements/${engagementId}/supplier`)}
+                clickHint={true}
+              />
+            </>
           )}
         </div>
         <div className="col-span-2 border rounded-xl p-5 bg-card shadow-sm">
@@ -227,6 +244,7 @@ export default function OverviewPage() {
               data={treemapData}
               title="Spend by Category"
               valueFormatter={v => formatCurrency(v, currency)}
+              onCellClick={() => navigate(`/engagements/${engagementId}/category`)}
             />
           )}
         </div>
