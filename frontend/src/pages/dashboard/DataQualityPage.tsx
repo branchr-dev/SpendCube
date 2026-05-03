@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -37,6 +38,7 @@ type DiagnosticsResponse = Record<string, CheckResult>
 
 export default function DataQualityPage() {
   const { id: engagementId } = useParams<{ id: string }>()
+  const [expandedCheck, setExpandedCheck] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<DiagnosticsResponse>({
     queryKey: ['diagnostics', engagementId],
@@ -106,6 +108,8 @@ export default function DataQualityPage() {
                 value_pct={c.value_pct}
                 description={c.description}
                 affectsRecommendations={['missing_category', 'low_confidence_category'].includes(c.check_name)}
+                onClick={c.status !== 'GREEN' ? () => setExpandedCheck(prev => prev === c.check_name ? null : c.check_name) : undefined}
+                expanded={expandedCheck === c.check_name}
               />
             ))}
       </div>
