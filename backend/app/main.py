@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.middleware.auth import SupabaseAuthMiddleware
-from app.routers import engagements
+from app.routers import engagements, ingestion
 
 app = FastAPI(title="SpendCube API", version="2.0.0")
 
@@ -21,6 +21,28 @@ app.add_middleware(
 app.add_middleware(SupabaseAuthMiddleware)
 
 app.include_router(engagements.router)
+app.include_router(ingestion.router)
+
+
+@app.on_event("startup")
+async def _reset_stuck_jobs() -> None:
+    db_url = os.getenv("SUPABASE_DATABASE_URL")
+    if not db_url:
+        return
+    try:
+        from app.database import get_engine
+        from sqlalchemy import text
+
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "UPDATE pipeline_jobs SET status = 'failed', "
+                    "error_message = 'Server restarted' WHERE status = 'running'"
+                )
+            )
+    except Exception:
+        pass
 
 
 @app.get("/health")
