@@ -194,3 +194,21 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+## US-007 — Recommendations and review workstation API endpoints
+**Completed:** 2026-05-03
+
+### Files created
+- `backend/app/routers/recommendations.py` — POST /run (runs RecommendationEngine, stores JSON in engagements table) + GET / (returns stored JSON, 404 if not run)
+- `backend/app/routers/review.py` — full review workstation: supplier queue, approve/reject/override, category queue, category overrides CRUD, audit log
+- `backend/tests/test_review_api.py` — 11 tests covering all key endpoints
+
+### Files modified
+- `backend/app/main.py` — registered recommendations and review routers
+
+### Notes
+- All 30 backend tests pass (11 new + 19 existing)
+- `verify_engagement_ownership` used on all endpoints for auth + ownership check
+- Audit log inserted via helper `_insert_audit()` on every mutation
+- Category override requires canonical_supplier_id OR gl_account (validated at API level, returns 400 otherwise)
+- Recommendations GET reads directly from engagements.recommendations_json (no ownership check via verify_engagement_ownership — uses direct WHERE owner_email clause instead, consistent with the ownership check pattern)

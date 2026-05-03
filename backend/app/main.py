@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.middleware.auth import SupabaseAuthMiddleware
-from app.routers import engagements, ingestion, cube
+from app.routers import engagements, ingestion, cube, recommendations, review
 
 app = FastAPI(title="SpendCube API", version="2.0.0")
 
@@ -23,6 +23,8 @@ app.add_middleware(SupabaseAuthMiddleware)
 app.include_router(engagements.router)
 app.include_router(ingestion.router)
 app.include_router(cube.router)
+app.include_router(recommendations.router)
+app.include_router(review.router)
 
 
 @app.on_event("startup")
