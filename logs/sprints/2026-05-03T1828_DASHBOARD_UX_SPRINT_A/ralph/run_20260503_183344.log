@@ -722,3 +722,9 @@ STORY_COMPLETE: US-011
 [2026-05-03 18:48:40] [OK] Marked US-011 as passed
 [2026-05-03 18:48:40] [INFO] Logged progress for US-011: PASSED
 [2026-05-03 18:48:40] [STEP] Committing changes...
+[2026-05-03 18:48:42] [INFO] Starting iteration 12
+[2026-05-03 18:48:42] [OK] All stories complete! Ralph is done.
+
+=================================================================================
+ALL STORIES COMPLETE - Sun  3 May 2026 18:48:42 BST
+=================================================================================

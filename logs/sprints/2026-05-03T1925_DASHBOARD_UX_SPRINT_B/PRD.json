@@ -1,0 +1,223 @@
+{
+  "project": {
+    "id": "DASHBOARD-UX-B-2026-05",
+    "name": "Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B",
+    "track": "code"
+  },
+  "summary": "Sprint B completes the dashboard UX uplift with four areas: (1) Recommendations page overhaul — lever summary strip with visual savings breakdown chart and a priority matrix scatter replacing the tabs-only navigation; (2) Data Quality improvements — severity sorting, progress bars, impact labels, and inline expandable guidance per check; (3) Supplier parent company grouping — collapsible group rows revealing consolidated spend across subsidiaries; (4) Overview annotated trend — period-average reference line on the monthly chart so anomalies are immediately visible. All changes are frontend-only.",
+  "decisions": {
+    "recommendations_layout": "Replace the Tabs UI with two new views above the cards: a lever summary strip (one card per lever showing total savings + count) and a savings composition bar chart. The individual recommendation cards remain below, filtered by the selected lever card. This gives composition overview at a glance before reading individual recommendations.",
+    "priority_matrix": "Use Recharts ScatterChart for the priority matrix. Map confidence to numeric x-axis: HIGH=0.9, MEDIUM=0.6, LOW=0.3. Y-axis is estimated_impact_aud. ZAxis (bubble size) maps to addressable_baseline. Color each bubble by lever type using CHART_COLORS. A tooltip shows rec type, context, and impact on hover.",
+    "diagnostics_sort": "Sort checks client-side RED→AMBER→GREEN using a severity score map. This is pure client-side ordering — no backend change.",
+    "diagnostics_guidance": "Hardcode a CHECK_GUIDANCE map (check_name → { meaning, impacts, fix }) in DiagnosticsCheckCard. Clicking any non-GREEN card toggles an inline expanded section. No API call needed — guidance is static domain knowledge.",
+    "supplier_grouping": "Group supplier rows by parent_company_name. Suppliers with no parent_company_name form an 'Independent Suppliers' group. Group header rows show group name, total group spend, subsidiary count — collapsible with useState. This uses the already-fetched supplierData array client-side, no new API calls.",
+    "reference_line": "Add a ReferenceLine component (from recharts, already available) to SpendAreaChart when showReferenceLine prop is true. The reference value is computed as the mean of all total_spend values in the data array. Rendered as a dashed horizontal line with a label 'Avg'.",
+    "no_backend_changes": "All enhancements are frontend-only. No new API endpoints required. All data is already available from existing queries."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Main fact table — all spend rows",
+      "supplier_master": "Canonical supplier records with parent_company_name"
+    },
+    "key_files": [
+      "frontend/src/pages/dashboard/RecommendationsPage.tsx — full overhaul: lever summary strip, savings bar chart, priority matrix scatter, keep recommendation cards",
+      "frontend/src/pages/dashboard/DataQualityPage.tsx — sort by severity, pass new props to DiagnosticsCheckCard",
+      "frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — add progress bar, impact badge, inline expandable guidance",
+      "frontend/src/pages/dashboard/SupplierPage.tsx — add parent company group rows with collapsible expand",
+      "frontend/src/pages/dashboard/OverviewPage.tsx — pass showReferenceLine to SpendAreaChart",
+      "frontend/src/components/charts/SpendAreaChart.tsx — add showReferenceLine prop using recharts ReferenceLine",
+      "frontend/src/components/ui/progress.tsx — already exists as shadcn Progress component",
+      "frontend/src/components/charts/constants.ts — SEMANTIC_COLORS and CHART_COLORS already defined from Sprint A",
+      "frontend/src/types/index.ts — Recommendation type already has lever, confidence, estimated_impact_aud, addressable_baseline, baseline_spend"
+    ],
+    "patterns_to_follow": [
+      "Recharts is the only chart library — ScatterChart, Scatter, ZAxis, ReferenceLine are all available from the existing recharts import",
+      "shadcn Progress component is at frontend/src/components/ui/progress.tsx — import { Progress } from '@/components/ui/progress'",
+      "CHART_COLORS and SEMANTIC_COLORS exported from frontend/src/components/charts/constants.ts (added in Sprint A)",
+      "All monetary values formatted via formatCurrency() from @/lib/formatters",
+      "Collapsible sections use React useState for open/closed — do not use shadcn Collapsible for simple inline toggles",
+      "Sprint A established: chart containers use 'border rounded-xl p-5 bg-card shadow-sm', section headers use 'section-header' class",
+      "KpiCard accentColor prop available from Sprint A",
+      "Filter context via useFilters() hook"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "SpendAreaChart — period average reference line",
+      "description": "Add an optional dashed horizontal reference line to SpendAreaChart showing the period average. This makes monthly anomalies (spikes, dips) immediately visible without mental arithmetic. The line is labelled 'Avg' and shown in muted colour.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/charts/SpendAreaChart.tsx",
+        "Add import: ReferenceLine from 'recharts' (add to the existing recharts import statement)",
+        "Add optional prop showReferenceLine?: boolean (default false)",
+        "When showReferenceLine is true, compute avgSpend: the arithmetic mean of all data[n].total_spend values. If data is empty skip rendering the line.",
+        "Render a ReferenceLine inside the AreaChart: y={avgSpend} stroke='#94a3b8' strokeDasharray='4 4' strokeWidth={1.5}. Add a label prop: { value: 'Avg', position: 'insideTopRight', fontSize: 11, fill: '#94a3b8' }",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — pass showReferenceLine={true} to the SpendAreaChart for the monthly trend chart",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-03T18:28:46Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Recommendations — lever summary strip and savings composition chart",
+      "description": "Add two new visualisation sections above the individual recommendation cards: (1) a savings composition horizontal bar chart showing estimated savings per lever, giving instant portfolio composition view; (2) a row of lever summary cards (one per lever) showing total savings and count, which filter the recommendation cards when clicked. The existing Tabs navigation is replaced by the lever summary cards.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx",
+        "Import SpendBarChart from @/components/charts. Import SEMANTIC_COLORS from '@/components/charts/constants'.",
+        "Below the portfolio KPI row and confidence filter buttons, add a 'Savings by Lever' section: compute leverSummaries — an array of { lever: string, totalImpact: number, count: number } grouped from recommendations, sorted by totalImpact desc. Render as SpendBarChart with data=leverSummaries.map(l => ({ label: l.lever.replace(/_/g,' '), value: l.totalImpact })), title='Savings by Lever', horizontal={true}, valueFormatter={v => formatCurrency(v)}, showLabel={false}. Wrap in the standard chart container div 'border rounded-xl p-5 bg-card shadow-sm'.",
+        "Below the savings bar chart, add a lever summary strip: a flex flex-wrap gap-3 row of cards, one per lever. Each card is a div with onClick handler, className that shows selected state: when selectedLever === lever use 'border-2 border-primary bg-primary/5 rounded-xl p-4 cursor-pointer', else 'border rounded-xl p-4 cursor-pointer hover:bg-muted/50'. Inside each card: lever name in text-sm font-semibold (humanized, replace _ with space), total impact in text-lg font-bold text-green-700, count in text-xs text-muted-foreground '{count} recommendations'.",
+        "Add state: const [selectedLever, setSelectedLever] = useState<string | null>(null). Clicking a lever card toggles it: setSelectedLever(prev => prev === lever ? null : lever).",
+        "Remove the existing Tabs / TabsList / TabsTrigger / TabsContent structure entirely. Replace it with a simple filtered list: const displayedRecs = (selectedLever ? filtered.filter(r => (r.lever ?? 'OTHER') === selectedLever) : filtered).sort((a,b) => (b.estimated_impact_aud ?? 0) - (a.estimated_impact_aud ?? 0)).",
+        "Render displayedRecs as RecommendationCard components in a space-y-3 div. If displayedRecs is empty, show a p tag text-muted-foreground 'No recommendations match the current filters.'",
+        "Remove Tabs imports since they are no longer needed.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Recommendations — priority matrix scatter chart",
+      "description": "Add a priority matrix scatter chart to the Recommendations page. X-axis is confidence (HIGH/MEDIUM/LOW mapped to 0.9/0.6/0.3), Y-axis is estimated_impact_aud, bubble size is proportional to addressable_baseline. Each bubble is coloured by lever type. Hovering a bubble shows the recommendation context, type, and impact. This lets the user quickly spot high-confidence, high-impact opportunities.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx",
+        "Import ScatterChart, Scatter, XAxis as RScatterXAxis, YAxis as RScatterYAxis, ZAxis, Tooltip as RScatterTooltip, ResponsiveContainer, Cell from 'recharts'. Use aliased names only if they conflict with existing imports.",
+        "Create a new component inline or in the file: PriorityMatrix({ recommendations }: { recommendations: Recommendation[] }). This is a function component, not exported.",
+        "Inside PriorityMatrix: map each recommendation to a scatter point: { x: confidence === 'HIGH' ? 0.9 : confidence === 'MEDIUM' ? 0.6 : 0.3, y: estimated_impact_aud ?? 0, z: Math.max((addressable_baseline ?? 0) / 1000, 100), label: context ?? '', type: type ?? '', impact: estimated_impact_aud ?? 0, lever: lever ?? 'OTHER' }",
+        "Get unique levers from recommendations. Render one Scatter component per lever, each with a distinct fill color from CHART_COLORS (index by leverIndex). Pass data filtered to that lever.",
+        "Wrap ScatterChart in ResponsiveContainer width='100%' height={280}.",
+        "XAxis: type='number', domain=[0.2, 1.0], ticks=[0.3, 0.6, 0.9], tickFormatter mapping back to string: 0.3→'Low', 0.6→'Medium', 0.9→'High', label={{ value: 'Confidence', position: 'insideBottom', offset: -5, fontSize: 11 }}",
+        "YAxis: type='number', tickFormatter={v => formatCurrency(v)}, label={{ value: 'Est. Savings', angle: -90, position: 'insideLeft', fontSize: 11 }}",
+        "ZAxis: range=[40, 400] (controls min/max bubble size)",
+        "Custom Tooltip: renders a div showing label, type (humanized), formatCurrency(impact)",
+        "Render PriorityMatrix above the savings bar chart, wrapped in 'border rounded-xl p-5 bg-card shadow-sm'. Title as h3 className='section-header': 'Priority Matrix — Impact vs. Confidence'. Only render if recommendations.length > 0.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Data Quality — severity sort, progress bars, and impact flags",
+      "description": "Three focused improvements to the Data Quality page: sort checks by severity (RED first, then AMBER, then GREEN) so the most critical issues appear first; add a visual Progress bar to each check card below the percentage; add an 'Affects recommendations' badge to the two checks that directly degrade recommendation quality.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — sort the checks array before rendering: const SEVERITY_ORDER: Record<string, number> = { RED: 0, AMBER: 1, GREEN: 2 }. Sort: checks.sort((a,b) => (SEVERITY_ORDER[a.status] ?? 2) - (SEVERITY_ORDER[b.status] ?? 2)).",
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx",
+        "Add import: import { Progress } from '@/components/ui/progress'",
+        "Add optional prop affectsRecommendations?: boolean",
+        "In the card body, after the description paragraph, add a Progress component: value={Math.min(value_pct, 100)}. Style the progress indicator colour by status: for GREEN use default, for AMBER add className='[&>div]:bg-amber-500', for RED add className='[&>div]:bg-red-500'. Wrap in a div className='mt-2'.",
+        "When affectsRecommendations is true, render a Badge below the description: className='text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1' with text '⚠ Affects recommendations'.",
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — when rendering DiagnosticsCheckCard, pass affectsRecommendations={['missing_category', 'low_confidence_category'].includes(c.check_name)}.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Data Quality — inline expandable check guidance",
+      "description": "Make each RED or AMBER diagnostics card clickable to expand inline guidance: what the check measures, what it impacts in the analysis, and concrete steps to fix it. Guidance text is hardcoded per check name — no API call required. GREEN checks are not expandable.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx",
+        "Add a CHECK_GUIDANCE constant at the top of the file (outside the component): a Record<string, { meaning: string; impacts: string; fix: string }> covering all 9 check names: missing_supplier ('Transactions with no canonical supplier name matched. Impacts supplier consolidation recommendations and spend-by-supplier views. Fix: upload a supplier master file or manually map raw names in the Review Workstation.'), missing_category ('Transactions not assigned to a UNSPSC category after all 6 pipeline passes. Directly reduces recommendation coverage. Fix: add keyword rules in data/reference/keyword_rules.yaml or run the Review Workstation category queue.'), missing_gl_account ('Transactions with no GL account code. Reduces GL-based categorisation accuracy. Fix: ensure the source ERP export includes GL codes and re-ingest.'), missing_cost_centre ('Transactions with no cost centre or business unit. Limits spend-by-BU analysis. Fix: add cost centre column mapping during ingestion.'), low_confidence_category ('Categories assigned with confidence below 0.60. These are likely miscategorised. Fix: review low-confidence transactions in the Review Workstation and add overrides.'), low_confidence_supplier ('Supplier matches with confidence below 0.60. These may be incorrectly harmonised. Fix: review PENDING entries in the Review Workstation supplier queue.'), duplicate_transactions ('Potential duplicate invoice rows detected. Inflates spend totals. Fix: check source data for duplicate invoice numbers and re-ingest after deduplication.'), maverick_spend ('Spend without a purchase order on non-contracted suppliers. Indicates off-contract buying. Fix: enforce PO requirements and expand contract coverage.'), tail_spend_ratio ('Proportion of spend in low-volume tail suppliers. High tail spend increases admin cost and reduces leverage. Fix: consolidate tail suppliers to preferred vendors.')",
+        "Add optional prop onClick?: () => void and expanded?: boolean to DiagnosticsCheckCard",
+        "When status is 'RED' or 'AMBER', make the Card clickable: add onClick={onClick} and cursor-pointer className to the Card. Render a small ChevronDown/ChevronUp icon (h-3 w-3 text-muted-foreground) in the top-right corner next to the Badge.",
+        "When expanded is true, render a div below the progress bar with className='mt-3 pt-3 border-t space-y-2 text-xs': show three rows labelled 'What it measures:', 'Impact:', 'How to fix:' each with their text from CHECK_GUIDANCE[check_name] ?? {meaning:'',impacts:'',fix:''}. Labels in font-medium, values in text-muted-foreground.",
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — add state: const [expandedCheck, setExpandedCheck] = useState<string | null>(null). Pass to each card: onClick={c.status !== 'GREEN' ? () => setExpandedCheck(prev => prev === c.check_name ? null : c.check_name) : undefined} expanded={expandedCheck === c.check_name}.",
+        "Import ChevronDown, ChevronUp from lucide-react in DiagnosticsCheckCard.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Supplier page — parent company grouping",
+      "description": "Group the supplier table by parent_company_name to reveal consolidated enterprise spend. Each group is a collapsible header row showing the parent name, total group spend, and subsidiary count. Suppliers with no parent form an 'Independent' group rendered at the bottom. Clicking a group header expands/collapses its supplier rows.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx",
+        "Add state: const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set()). Toggle: const toggleGroup = (g: string) => setExpandedGroups(prev => { const n = new Set(prev); n.has(g) ? n.delete(g) : n.add(g); return n; })",
+        "Add a state: const [groupByParent, setGroupByParent] = useState(false). Add a toggle button in the toolbar area above the table (next to the search input): Button variant='outline' size='sm' onClick={() => setGroupByParent(p => !p)} — label 'Group by Parent' when false, 'Show All' when true. Use Building2 icon from lucide-react.",
+        "When groupByParent is false: render the table exactly as it is now (sorted flat list).",
+        "When groupByParent is true: compute groups from the sorted array. Group key = row.parent_company_name ?? '__independent__'. Build a Map<string, { rows: SupplierRow[], totalSpend: number }>. Sort groups by totalSpend desc. The '__independent__' group always appears last.",
+        "Render the table with group headers interleaved. For each group: (1) A TableRow acting as a group header with className='bg-muted/40 cursor-pointer hover:bg-muted/60' onClick={() => toggleGroup(groupKey)}. This row spans all columns (or uses colSpan). Show: ChevronRight/ChevronDown icon, group display name (parent_company_name or 'Independent Suppliers'), group total spend formatted, supplier count 'N suppliers'. (2) If expandedGroups.has(groupKey): render the individual supplier rows for that group as normal TableRow entries with a left indent: TableCell gets pl-8 on the first column.",
+        "All groups start collapsed (expandedGroups is empty Set initially).",
+        "The search filter still works — filter the rows before grouping so search narrows within groups.",
+        "Import ChevronRight, ChevronDown from lucide-react.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Recommendation card — impact share bar and lever colour accent",
+      "description": "Enhance RecommendationCard with a thin horizontal bar showing this recommendation's impact as a share of the total portfolio savings. Add a coloured left-border accent keyed to lever type, so scanning the card list gives instant visual grouping without reading labels.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/RecommendationCard.tsx",
+        "Add props: portfolioTotal?: number (total portfolio savings for computing share bar), leverIndex?: number (0-based index of lever in the lever order, used for colour accent).",
+        "Import CHART_COLORS from '@/components/charts/constants'.",
+        "Add a lever colour accent: when leverIndex is provided, add a border-l-4 style to the Card using an inline style or a dynamic className. Use CHART_COLORS[leverIndex % CHART_COLORS.length] as the border-left-color via inline style: style={{ borderLeftWidth: '4px', borderLeftStyle: 'solid', borderLeftColor: CHART_COLORS[leverIndex % CHART_COLORS.length] }}.",
+        "When portfolioTotal is provided and portfolioTotal > 0, add an impact share bar below the action text: a div with className='mt-2'. Inside: a div flex justify-between text-xs text-muted-foreground mb-1 showing 'Share of portfolio savings' and formatPct((estimated_impact_aud / portfolioTotal) * 100). Below that a div with className='h-1.5 rounded-full bg-muted overflow-hidden'. Inside that div a div with className='h-full rounded-full bg-green-500' and style={{ width: `${Math.min((estimated_impact_aud / portfolioTotal) * 100, 100)}%` }}.",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — compute portfolioTotal = portfolio?.total_identified_savings ?? 0. Pass portfolioTotal={portfolioTotal} to each RecommendationCard. Compute leverIndex for each rec: the index of rec.lever in the leverSummaries array (from US-002). Pass leverIndex={leverIndex}.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Category scorecard — avg invoice size and spend density columns",
+      "description": "Add two analytical columns to the Category Fragmentation Scorecard table: Avg Invoice Size (total_spend / transaction_count) and Spend Density (total_spend / supplier_count, i.e. average spend per supplier). These metrics help a category manager immediately assess whether a category is dominated by a few large invoices or fragmented across many small ones.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx",
+        "In the Fragmentation Scorecard table (the Table rendered when selectedL1Entry is null), add two new TableHead columns after 'Suppliers': 'Avg Invoice' and 'Spend / Supplier'.",
+        "For each row in the scorecard, compute: avgInvoice = entry.total_spend / Math.max(entry.transaction_count, 1), spendPerSupplier = entry.total_spend / Math.max(entry.supplier_count, 1).",
+        "Render both as text-right TableCell using formatCurrency(). For avgInvoice: if > 50000 add className='text-right font-medium text-amber-600' (large average invoice — worth noting). For spendPerSupplier: no special colouring.",
+        "Add TableHead for both columns with className='text-right'.",
+        "Ensure the existing columns (L1 Category, Total Spend, % of Total, Suppliers, Status) remain in the same order — new columns appear after Suppliers.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "CLAUDE.md update — Dashboard UX Sprint B conventions",
+      "description": "Update CLAUDE.md with the new patterns and components introduced in Sprint B.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — find the '## Dashboard UX Conventions (Sprint A)' section added by Sprint A and append a new '## Dashboard UX Conventions (Sprint B)' section immediately after it",
+        "Document: SpendAreaChart showReferenceLine prop and how the average is computed, RecommendationCard portfolioTotal and leverIndex props, DiagnosticsCheckCard new props (affectsRecommendations, onClick, expanded, CHECK_GUIDANCE map), Supplier page groupByParent toggle and expandedGroups state pattern, Category Fragmentation Scorecard new columns (avgInvoice, spendPerSupplier)",
+        "Document the priority matrix pattern: confidence string → numeric mapping (HIGH=0.9, MEDIUM=0.6, LOW=0.3), ZAxis for bubble size",
+        "Keep concise — bullet points and code snippets only"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {},
+    "expected_counts": {},
+    "checks": [
+      "cd frontend && npm run build — zero TypeScript errors",
+      "Verify SpendAreaChart renders a dashed reference line at the data average when showReferenceLine=true",
+      "Verify Recommendations page: lever summary strip cards + savings bar chart visible, Tabs removed",
+      "Verify Recommendations page: priority matrix ScatterChart renders with bubbles",
+      "Verify Data Quality checks sorted RED→AMBER→GREEN with Progress bars visible",
+      "Verify DiagnosticsCheckCard expands inline guidance on click for RED/AMBER cards",
+      "Verify Supplier page 'Group by Parent' button toggles collapsible group rows",
+      "Verify Category Fragmentation Scorecard table has Avg Invoice and Spend / Supplier columns"
+    ]
+  },
+  "risks": [
+    "Recharts ScatterChart ZAxis bubble sizing — the range=[40,400] controls pixel sizes, not data values. Test with a wide range of addressable_baseline values to ensure bubbles are not too large or invisible.",
+    "Recommendations page removes the Tabs import entirely — ensure no other component on the page still references TabsList/TabsContent or the build will error.",
+    "Supplier parent grouping: parent_company_name may be null for most suppliers, resulting in a very large 'Independent Suppliers' group. The group starts collapsed so this is fine visually, but test with datasets where most suppliers have no parent.",
+    "Progress component CSS selector '[&>div]:bg-amber-500' — this targets the inner div of shadcn Progress component. Verify the selector works with the installed shadcn version by checking frontend/src/components/ui/progress.tsx to confirm the inner element is a div."
+  ],
+  "outOfScope": [
+    "Supplier sparkline column in the table (requires per-supplier monthly data — expensive to batch-fetch)",
+    "Cross-page active filter indicator dot on nav items",
+    "Recommendations 'mark as actioned' state",
+    "Data Quality drill-down to actual problem transaction rows (requires backend endpoint)",
+    "Dark mode",
+    "Mobile responsive design"
+  ]
+}

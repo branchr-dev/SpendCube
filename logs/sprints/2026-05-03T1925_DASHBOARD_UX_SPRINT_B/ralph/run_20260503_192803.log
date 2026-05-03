@@ -1,0 +1,79 @@
+[2026-05-03 19:28:03] [INFO] Ralph loop starting
+[2026-05-03 19:28:03] [INFO] Created progress file: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Sun  3 May 2026 19:28:03 BST
+PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-03 19:28:03] [INFO] Starting iteration 1
+[2026-05-03 19:28:03] [INFO] Processing story: US-001
+[2026-05-03 19:28:03] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: SpendAreaChart — period average reference line
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add an optional dashed horizontal reference line to SpendAreaChart showing the period average. This makes monthly anomalies (spikes, dips) immediately visible without mental arithmetic. The line is labelled 'Avg' and shown in muted colour.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/charts/SpendAreaChart.tsx
+- Add import: ReferenceLine from 'recharts' (add to the existing recharts import statement)
+- Add optional prop showReferenceLine?: boolean (default false)
+- When showReferenceLine is true, compute avgSpend: the arithmetic mean of all data[n].total_spend values. If data is empty skip rendering the line.
+- Render a ReferenceLine inside the AreaChart: y={avgSpend} stroke='#94a3b8' strokeDasharray='4 4' strokeWidth={1.5}. Add a label prop: { value: 'Avg', position: 'insideTopRight', fontSize: 11, fill: '#94a3b8' }
+- Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — pass showReferenceLine={true} to the SpendAreaChart for the monthly trend chart
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - SpendAreaChart — period average reference line`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+Done. Changes made:
+- `SpendAreaChart.tsx`: added `ReferenceLine` import, `showReferenceLine` prop, computed `avgSpend`, rendered the dashed reference line conditionally.
+- `OverviewPage.tsx`: passed `showReferenceLine={true}` to the monthly trend chart.
+- Build passes with zero TypeScript errors.
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-03 19:28:46] [OK] Story US-001 completed!
+[2026-05-03 19:28:46] [OK] Marked US-001 as passed
+[2026-05-03 19:28:46] [INFO] Logged progress for US-001: PASSED
+[2026-05-03 19:28:46] [STEP] Committing changes...
