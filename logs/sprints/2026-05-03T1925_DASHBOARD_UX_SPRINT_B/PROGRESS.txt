@@ -28,3 +28,22 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+
+## US-003 Complete — 2026-05-03 19:31
+
+### Priority Matrix scatter chart added to RecommendationsPage
+
+- Imported ScatterChart, Scatter, XAxis/YAxis/ZAxis, Tooltip, ResponsiveContainer, Cell from recharts with aliased names
+- PriorityMatrix component: maps recommendations to scatter points (x=confidence, y=impact, z=bubble size from addressable_baseline/1000)
+- One Scatter per lever, coloured by CHART_COLORS index; Cell used per point for fill
+- Custom Tooltip shows context label, humanized type, formatCurrency(impact)
+- Renders above savings bar chart; returns null if recommendations.length === 0
+- Build: zero TypeScript errors ✓
+
+
+---
+
+### [US-003] - 2026-05-03 19:31:47
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 3
+

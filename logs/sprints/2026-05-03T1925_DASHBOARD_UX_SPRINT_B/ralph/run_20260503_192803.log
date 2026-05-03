@@ -142,3 +142,71 @@ STORY_COMPLETE: US-002
 [2026-05-03 19:30:02] [OK] Marked US-002 as passed
 [2026-05-03 19:30:02] [INFO] Logged progress for US-002: PASSED
 [2026-05-03 19:30:02] [STEP] Committing changes...
+[2026-05-03 19:30:04] [INFO] Starting iteration 3
+[2026-05-03 19:30:04] [INFO] Processing story: US-003
+[2026-05-03 19:30:04] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Recommendations — priority matrix scatter chart
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add a priority matrix scatter chart to the Recommendations page. X-axis is confidence (HIGH/MEDIUM/LOW mapped to 0.9/0.6/0.3), Y-axis is estimated_impact_aud, bubble size is proportional to addressable_baseline. Each bubble is coloured by lever type. Hovering a bubble shows the recommendation context, type, and impact. This lets the user quickly spot high-confidence, high-impact opportunities.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx
+- Import ScatterChart, Scatter, XAxis as RScatterXAxis, YAxis as RScatterYAxis, ZAxis, Tooltip as RScatterTooltip, ResponsiveContainer, Cell from 'recharts'. Use aliased names only if they conflict with existing imports.
+- Create a new component inline or in the file: PriorityMatrix({ recommendations }: { recommendations: Recommendation[] }). This is a function component, not exported.
+- Inside PriorityMatrix: map each recommendation to a scatter point: { x: confidence === 'HIGH' ? 0.9 : confidence === 'MEDIUM' ? 0.6 : 0.3, y: estimated_impact_aud ?? 0, z: Math.max((addressable_baseline ?? 0) / 1000, 100), label: context ?? '', type: type ?? '', impact: estimated_impact_aud ?? 0, lever: lever ?? 'OTHER' }
+- Get unique levers from recommendations. Render one Scatter component per lever, each with a distinct fill color from CHART_COLORS (index by leverIndex). Pass data filtered to that lever.
+- Wrap ScatterChart in ResponsiveContainer width='100%' height={280}.
+- XAxis: type='number', domain=[0.2, 1.0], ticks=[0.3, 0.6, 0.9], tickFormatter mapping back to string: 0.3→'Low', 0.6→'Medium', 0.9→'High', label={{ value: 'Confidence', position: 'insideBottom', offset: -5, fontSize: 11 }}
+- YAxis: type='number', tickFormatter={v => formatCurrency(v)}, label={{ value: 'Est. Savings', angle: -90, position: 'insideLeft', fontSize: 11 }}
+- ZAxis: range=[40, 400] (controls min/max bubble size)
+- Custom Tooltip: renders a div showing label, type (humanized), formatCurrency(impact)
+- Render PriorityMatrix above the savings bar chart, wrapped in 'border rounded-xl p-5 bg-card shadow-sm'. Title as h3 className='section-header': 'Priority Matrix — Impact vs. Confidence'. Only render if recommendations.length > 0.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Recommendations — priority matrix scatter chart`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-03 19:31:47] [OK] Story US-003 completed!
+[2026-05-03 19:31:47] [OK] Marked US-003 as passed
+[2026-05-03 19:31:47] [INFO] Logged progress for US-003: PASSED
+[2026-05-03 19:31:47] [STEP] Committing changes...

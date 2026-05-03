@@ -98,7 +98,8 @@
         "Render PriorityMatrix above the savings bar chart, wrapped in 'border rounded-xl p-5 bg-card shadow-sm'. Title as h3 className='section-header': 'Priority Matrix — Impact vs. Confidence'. Only render if recommendations.length > 0.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T18:31:47Z"
     },
     {
       "id": "US-004",
