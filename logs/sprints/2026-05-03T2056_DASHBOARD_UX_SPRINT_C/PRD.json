@@ -79,7 +79,8 @@
         "When neither colors nor selectedLabel is provided, the Bar renders with its single fill prop as before (no Cell children) — ensure this case still works",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:04:15Z"
     },
     {
       "id": "US-003",

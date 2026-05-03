@@ -74,3 +74,64 @@ STORY_COMPLETE: US-001
 [2026-05-03 21:03:36] [OK] Marked US-001 as passed
 [2026-05-03 21:03:36] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 21:03:36] [STEP] Committing changes...
+[2026-05-03 21:03:38] [INFO] Starting iteration 2
+[2026-05-03 21:03:38] [INFO] Processing story: US-002
+[2026-05-03 21:03:38] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: SpendBarChart — selectedLabel prop for bar highlight
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add a selectedLabel prop to SpendBarChart so the currently-selected bar can be visually distinguished from others. When a bar is selected, it renders at full opacity with a 2px white stroke border; other bars render at 0.65 opacity. This is needed by the Category page to confirm which L1 bar is active.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/charts/SpendBarChart.tsx
+- Add optional prop selectedLabel?: string to the SpendBarChartProps interface and destructure it in the function signature (default undefined)
+- Inside the Bar component's Cell rendering: when colors is provided or selectedLabel is provided, render Cell components for every bar. For each bar: if selectedLabel is set and entry.name === selectedLabel, render <Cell key={...} fill={colors?.[index] ?? color} opacity={1} stroke='#ffffff' strokeWidth={2} />. If selectedLabel is set and entry.name !== selectedLabel, render <Cell key={...} fill={colors?.[index] ?? color} opacity={0.55} />. If selectedLabel is not set and colors is provided, render <Cell key={...} fill={colors[index] ?? color} />.
+- When neither colors nor selectedLabel is provided, the Bar renders with its single fill prop as before (no Cell children) — ensure this case still works
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - SpendBarChart — selectedLabel prop for bar highlight`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 21:04:15] [OK] Story US-002 completed!
+[2026-05-03 21:04:15] [OK] Marked US-002 as passed
+[2026-05-03 21:04:15] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 21:04:15] [STEP] Committing changes...
