@@ -717,3 +717,66 @@ STORY_COMPLETE: US-010
 [2026-05-03 14:11:06] [OK] Marked US-010 as passed
 [2026-05-03 14:11:06] [INFO] Logged progress for US-010: PASSED
 [2026-05-03 14:11:06] [STEP] Committing changes...
+[2026-05-03 14:11:08] [INFO] Starting iteration 11
+[2026-05-03 14:11:08] [INFO] Processing story: US-011
+[2026-05-03 14:11:08] [STEP] Spawning Claude with prompt for US-011
+--- PROMPT FOR US-011 ---
+You are working on story US-011: Spend Overview and Category Deep Dive pages
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the first two dashboard pages using the shared components from US-010. Spend Overview is the landing page and must show an immediate picture of total spend, trend, top suppliers, and category split. Category Deep Dive enables L1→L2→L3 drill-down with fragmentation analysis. Both pages use the hooks pattern from US-010 and query the /cube/ endpoints.
+
+## Acceptance Criteria
+- Create file: frontend/src/pages/dashboard/OverviewPage.tsx
+- OverviewPage uses useQuery to fetch from: /cube/overview (key: ['overview', engagementId, filters]), /cube/by-month (key: ['by-month', engagementId, filters]), /cube/by-supplier?limit=10 (key: ['top-suppliers', engagementId, filters]), /cube/by-category (key: ['by-category-overview', engagementId, filters]). All useQuery calls pass filters from useFilters() as query params.
+- OverviewPage renders: FilterBar at page top; row of 4 KpiCards: Total Spend (formatCurrency), Supplier Count (formatNumber), Invoice Count (formatNumber), Maverick Spend % (formatPct); SpendAreaChart below KPIs spanning full width; side-by-side row: SpendBarChart horizontal top-10 suppliers (left, 60% width) and SpendPieChart category split (right, 40%); Skeleton placeholders while loading.
+- Create file: frontend/src/pages/dashboard/CategoryPage.tsx
+- CategoryPage uses useQuery for /cube/by-category (full data, no l1 filter initially). Groups data client-side into L1 → L2 → L3 structure using reduce. useState for selected_l1: string|null and selected_l2: string|null.
+- CategoryPage renders: FilterBar; row of KpiCards: when l1 selected show (selected category spend, supplier count, avg confidence); L1 horizontal bar chart — clicking a bar sets selected_l1; when l1 selected: L2 bar chart filtered to that l1 (clicking sets selected_l2); when l2 selected: shadcn Table of L3 categories with columns spend + transaction_count + supplier_count; Fragmentation badge (red if supplier_count > 5, amber if 3-5, green if <3) next to the selected L1 name.
+- Verify: npm run build succeeds; both pages have no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-011
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-011: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-011 - Spend Overview and Category Deep Dive pages`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-011 ---
+STORY_COMPLETE: US-011
+--- END OUTPUT ---
+[2026-05-03 14:17:08] [OK] Story US-011 completed!
+[2026-05-03 14:17:08] [OK] Marked US-011 as passed
+[2026-05-03 14:17:08] [INFO] Logged progress for US-011: PASSED
+[2026-05-03 14:17:08] [STEP] Committing changes...

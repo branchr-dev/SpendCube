@@ -275,7 +275,8 @@
         "CategoryPage renders: FilterBar; row of KpiCards: when l1 selected show (selected category spend, supplier count, avg confidence); L1 horizontal bar chart — clicking a bar sets selected_l1; when l1 selected: L2 bar chart filtered to that l1 (clicking sets selected_l2); when l2 selected: shadcn Table of L3 categories with columns spend + transaction_count + supplier_count; Fragmentation badge (red if supplier_count > 5, amber if 3-5, green if <3) next to the selected L1 name.",
         "Verify: npm run build succeeds; both pages have no TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T13:17:08Z"
     },
     {
       "id": "US-012",
