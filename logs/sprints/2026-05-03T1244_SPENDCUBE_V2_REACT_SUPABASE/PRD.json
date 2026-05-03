@@ -239,7 +239,8 @@
         "  Step 3: 4-step progress list (Ingesting Data, Harmonising Suppliers, Categorising Spend, Building Analytics Cube) with status icons: grey circle (pending), spinning (active stage), green checkmark (done), red X (failed). Polls via useIngestion.startPolling(). On status=done: shows green success banner 'Data processed successfully' + 'View Dashboard' button linking to /engagements/:id/overview. On status=failed: shows red error banner with error_message + 'Try Again' button.",
         "Verify: npm run build succeeds with zero TypeScript errors after adding these files"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T13:07:35Z"
     },
     {
       "id": "US-010",

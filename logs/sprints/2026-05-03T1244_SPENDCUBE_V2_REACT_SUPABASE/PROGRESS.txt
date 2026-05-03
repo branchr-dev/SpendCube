@@ -261,3 +261,40 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+---
+
+## US-009 — Auth pages, engagement selector, and upload entry point
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- frontend/src/components/ui/switch.tsx — shadcn Switch using @radix-ui/react-switch
+- frontend/src/pages/auth/LoginPage.tsx — email + password login with useAuth().signIn(), spinner, sonner toast on error, navigates to /engagements on success
+- frontend/src/pages/engagements/EngagementListPage.tsx — TanStack Query useQuery(['engagements']), Card grid, skeleton loading, empty state, Open + New Engagement buttons
+- frontend/src/pages/engagements/NewEngagementPage.tsx — form with client_name, engagement_title (default: 'Procurement Spend Diagnostic'), currency_label (default: 'AUD'), llm_dry_run Switch (default: on); POST /api/engagements; navigates to /engagements/:id/upload on 201
+- frontend/src/hooks/useIngestion.ts — step/jobId/columns/fileInfo/columnMapping/jobStatus state; uploadFile() with Axios onUploadProgress; runPipeline() advances to step 3; startPolling() every 3s via setInterval; stopPolling(); reset()
+- frontend/src/pages/ingest/UploadPage.tsx — 3-step wizard: (1) react-dropzone + progress bar, (2) 8-field column mapping table with auto-select, (3) 4-stage pipeline progress with StageIcon, success/error banners
+- frontend/src/App.tsx — updated imports to new subdirectory paths; UploadPage wired to /engagements/:id/upload route
+
+**Verified:**
+- `npm run build` → exits 0, zero TypeScript errors (tsc -b passes before vite build)
+
+**Learnings:**
+- @radix-ui/react-switch was not in the original package.json; installed separately. All other Radix packages were pre-installed.
+- SelectItem with value="" can cause Radix Select to behave unexpectedly; use "__none__" sentinel instead.
+- latestStateRef.current pattern (ref tracking latest state) solves stale closure issue in runPipeline useCallback without needing state in the deps array.
+- pollingStartedRef (useRef) avoids extra state render for the one-shot polling start effect.
+- stopPollingRef allows the cleanup useEffect (with empty deps []) to call the latest stopPolling without adding it to deps and risk re-registering the cleanup.
+
+---
+
+### [US-009] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-009] - 2026-05-03 14:07:35
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+

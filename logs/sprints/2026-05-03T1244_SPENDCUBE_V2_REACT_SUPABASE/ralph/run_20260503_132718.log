@@ -571,3 +571,80 @@ STORY_COMPLETE: US-008
 [2026-05-03 14:00:07] [OK] Marked US-008 as passed
 [2026-05-03 14:00:07] [INFO] Logged progress for US-008: PASSED
 [2026-05-03 14:00:07] [STEP] Committing changes...
+[2026-05-03 14:00:09] [INFO] Starting iteration 9
+[2026-05-03 14:00:09] [INFO] Processing story: US-009
+[2026-05-03 14:00:09] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Auth pages, engagement selector, and upload entry point
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the user-facing auth flow and the upload wizard. Login page uses Supabase Auth. The engagement list and new-engagement form are the landing pages after login. The upload wizard is a 3-step component: drop file → map columns → watch pipeline progress with polling. This is the client's first end-to-end interaction with the application.
+
+## Acceptance Criteria
+- Create file: frontend/src/pages/auth/LoginPage.tsx — email + password inputs (shadcn Input), Sign In button (shadcn Button), calls useAuth().signIn(), shows spinner during loading, shows error toast (sonner toast.error) on failure, redirects to /engagements on success
+- Create file: frontend/src/pages/engagements/EngagementListPage.tsx — uses useQuery(['engagements'], () => api.get('/api/engagements').then(r=>r.data)); renders each engagement as a shadcn Card grid showing client_name, engagement_title, formatted created_at; 'Open' button navigates to /engagements/:id/overview; 'New Engagement' button navigates to /engagements/new; skeleton cards while loading; empty state message if array empty
+- Create file: frontend/src/pages/engagements/NewEngagementPage.tsx — form with: Client Name (required text input), Engagement Title (required text input, default 'Procurement Spend Diagnostic'), Currency Label (text input, default 'AUD'), LLM Dry Run toggle (shadcn Switch, default on, with helper text 'Disable only when Anthropic API key is configured on the server'). Submit calls POST /api/engagements, navigates to /engagements/:id/upload on 201 response, shows error toast on failure.
+- Create file: frontend/src/hooks/useIngestion.ts — manages state: {step: 1|2|3, jobId, columns, fileInfo, columnMapping, jobStatus}. Functions: uploadFile(file: File) -> calls POST .../upload, updates state with job_id and columns; runPipeline(mapping) -> calls POST .../run; startPolling(jobId) -> polls GET .../status/{jobId} every 3 seconds using setInterval; stopPolling() -> clears interval. Returns all state + functions.
+- Create file: frontend/src/pages/ingest/UploadPage.tsx — 3-step wizard:
+-   Step 1: react-dropzone accepting .csv .xlsx; shows file name + estimated row count after drop; progress bar during upload API call; 'Continue' button (disabled until file uploaded successfully)
+-   Step 2: Table showing 8 canonical fields (Supplier Name, Supplier ID, Invoice Number, Invoice Date, Amount, Currency, GL Code, Cost Centre) each with a Select dropdown populated by detected columns from step 1; auto-selects if column name contains the canonical field keyword (case-insensitive); 'Start Processing' button calls useIngestion.runPipeline() with the mapping
+-   Step 3: 4-step progress list (Ingesting Data, Harmonising Suppliers, Categorising Spend, Building Analytics Cube) with status icons: grey circle (pending), spinning (active stage), green checkmark (done), red X (failed). Polls via useIngestion.startPolling(). On status=done: shows green success banner 'Data processed successfully' + 'View Dashboard' button linking to /engagements/:id/overview. On status=failed: shows red error banner with error_message + 'Try Again' button.
+- Verify: npm run build succeeds with zero TypeScript errors after adding these files
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Auth pages, engagement selector, and upload entry point`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+
+All files created and build verified clean:
+
+- **`frontend/src/components/ui/switch.tsx`** — shadcn Switch (installed `@radix-ui/react-switch`)
+- **`frontend/src/pages/auth/LoginPage.tsx`** — email/password login, spinner, error toast, redirects to `/engagements`
+- **`frontend/src/pages/engagements/EngagementListPage.tsx`** — TanStack Query card grid, skeleton loading, empty state, Open/New buttons
+- **`frontend/src/pages/engagements/NewEngagementPage.tsx`** — form with defaults, LLM dry-run Switch, POST `/api/engagements`, navigates to `/upload` on 201
+- **`frontend/src/hooks/useIngestion.ts`** — full state machine with `uploadFile` (Axios progress), `runPipeline` (advances to step 3), `startPolling` (3s interval), `stopPolling`, `reset`
+- **`frontend/src/pages/ingest/UploadPage.tsx`** — 3-step wizard: dropzone → 8-field column mapping with auto-select → 4-stage pipeline progress with status icons, success/error banners
+- **`frontend/src/App.tsx`** — updated imports + UploadPage wired to `upload` route
+
+`npm run build` exits 0 with zero TypeScript errors.
+--- END OUTPUT ---
+[2026-05-03 14:07:35] [OK] Story US-009 completed!
+[2026-05-03 14:07:35] [OK] Marked US-009 as passed
+[2026-05-03 14:07:35] [INFO] Logged progress for US-009: PASSED
+[2026-05-03 14:07:35] [STEP] Committing changes...
