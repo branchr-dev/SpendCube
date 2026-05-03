@@ -218,3 +218,74 @@ STORY_COMPLETE: US-003
 [2026-05-03 22:08:50] [OK] Marked US-003 as passed
 [2026-05-03 22:08:50] [INFO] Logged progress for US-003: PASSED
 [2026-05-03 22:08:50] [STEP] Committing changes...
+[2026-05-03 22:08:52] [INFO] Starting iteration 4
+[2026-05-03 22:08:52] [INFO] Processing story: US-004
+[2026-05-03 22:08:52] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Create src/ingestion/promoter.py — IncrementalPromoter class
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create src/ingestion/promoter.py containing the IncrementalPromoter class. This class reads queued rows from transactions_raw for a specific batch, runs supplier harmonisation only on raw_supplier_name values not already present in supplier_master for the engagement, runs categorisation on all queued rows, writes enriched rows to the transactions table, and marks raw rows as processed or review_required. LLM categorisation is never called — rows below 0.60 confidence go to review_required status.
+
+## Acceptance Criteria
+- Create file: src/ingestion/promoter.py
+- Class IncrementalPromoter with __init__(self, engine, config) storing both as instance attributes
+- Method promote(self, engagement_id: str, batch_id: str) -> dict returns dict with keys: promoted_count, review_required_count, failed_count
+- promote() step 1: call get_queued_raw_rows(engine, engagement_id, batch_id) from src.models.database — if empty DataFrame returned, return early with all counts = 0
+- promote() step 2: extract unique raw_supplier_names from queued rows; query supplier_master table to find which normalised names are already known for this engagement; run SupplierHarmoniser only for the unknown raw_supplier_names (import from src.suppliers.harmoniser); for known names look up canonical_supplier_id directly from supplier_master
+- promote() step 3: enrich the queued rows DataFrame with canonical_supplier_id, canonical_supplier_name, canonical_supplier_confidence from step 2 results
+- promote() step 4: run SpendCategoriser (import from src.categorisation.categoriser) on the enriched queued rows DataFrame; the categoriser must be instantiated with dry_run forced to True (config.llm.dry_run = True) so no LLM calls are made regardless of config
+- promote() step 5: split result into promoted rows (category_confidence >= 0.60 or categorised by MANUAL/DETERMINISTIC methods) and review_required rows (category_confidence < 0.60 or None)
+- promote() step 6: call insert_transactions(engine, promoted_records, engagement_id) from src.models.database to write promoted rows to the transactions table; set source_raw_id on each record to the transactions_raw row id
+- promote() step 7: call mark_raw_rows_processed(engine, promoted_ids, 'processed') for successfully promoted rows and mark_raw_rows_processed(engine, review_ids, 'review_required') for review queue rows
+- promote() step 8: return counts
+- Verify: Create file exists — ls src/ingestion/promoter.py
+- Verify: python -c "from src.ingestion.promoter import IncrementalPromoter; print('import OK')"
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Create src/ingestion/promoter.py — IncrementalPromoter class`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+Commit successful.
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-03 22:15:15] [OK] Story US-004 completed!
+[2026-05-03 22:15:15] [OK] Marked US-004 as passed
+[2026-05-03 22:15:15] [INFO] Logged progress for US-004: PASSED
+[2026-05-03 22:15:15] [STEP] Committing changes...

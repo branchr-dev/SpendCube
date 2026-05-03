@@ -123,7 +123,8 @@
         "Verify: Create file exists — ls src/ingestion/promoter.py",
         "Verify: python -c \"from src.ingestion.promoter import IncrementalPromoter; print('import OK')\""
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:15:15Z"
     },
     {
       "id": "US-005",

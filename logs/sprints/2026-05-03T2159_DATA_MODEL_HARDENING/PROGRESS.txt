@@ -49,3 +49,10 @@ Key design decisions:
 - Promoted/review split is purely by confidence >= 0.60 (MANUAL/DETERMINISTIC methods always score >= 0.60, so no special-case needed).
 - Verifications: ls src/ingestion/promoter.py ✓; python3 -c "from src.ingestion.promoter import IncrementalPromoter; print('import OK')" ✓
 
+
+---
+
+### [US-004] - 2026-05-03 22:15:15
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
