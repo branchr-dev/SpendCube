@@ -1,0 +1,25 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+# Created: Sun  3 May 2026 18:33:44 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 — Semantic colour tokens and typography scale [COMPLETE]
+- Date: 2026-05-03
+- Commit: 770da15
+- Note: Project uses Tailwind v4 (@tailwindcss/vite) — no tailwind.config.js exists.
+  Semantic colors added to @theme block in index.css (not a JS config file).
+  In Tailwind v4, @theme CSS custom properties auto-generate all utility classes
+  (bg-opportunity, text-risk, etc.) — no separate JS config needed.
+- All 6 dashboard h1 titles updated from text-xl font-semibold → text-2xl font-bold.
+- SEMANTIC_COLORS constant added to frontend/src/components/charts/constants.ts.
+- .section-header utility class added in @layer utilities.
+- Build: tsc + vite build passed with zero TypeScript errors.
+
+
+---
+
+### [US-001] - 2026-05-03 18:35:12
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+

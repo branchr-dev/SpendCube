@@ -1,0 +1,264 @@
+{
+  "project": {
+    "id": "DASHBOARD-UX-A-2026-05",
+    "name": "Dashboard UX Sprint A — Visual System & Core Cockpits",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A",
+    "track": "code"
+  },
+  "summary": "Comprehensive UI/UX uplift of the SpendCube React dashboard to maximise speed-to-insight for category managers. Sprint A covers: a semantic colour/typography foundation, enriched KPI cards with delta indicators, a treemap-based Overview page with spend signals, a fragmentation-first Category cockpit, a side-drawer Supplier profile, an opportunity-ranked Payment Terms page, a collapsible context-aware FilterBar, and chart interaction affordances (click hints, empty states, % labels). All changes are purely frontend — no backend or Python pipeline modifications.",
+  "decisions": {
+    "recharts_treemap": "Use Recharts Treemap component (already a dependency) for category spend composition. More readable than pie for 6-10 categories at different scales.",
+    "shadcn_sheet_for_supplier": "Use shadcn/ui Sheet (side drawer) for supplier detail panel. Keeps the supplier table visible while showing detail — avoids the current below-table append that requires scrolling.",
+    "semantic_color_tokens": "Add semantic CSS custom properties (--color-opportunity, --color-risk, --color-attention) in index.css. Extend tailwind config with these as named colors so utility classes like bg-opportunity/10 work.",
+    "collapsible_filterbar": "FilterBar collapses to a single pill row by default. Expand button opens the full filter panel. Active filters displayed as removable pills even when collapsed.",
+    "no_backend_changes": "All enhancements are frontend-only. Supplier detail charts will use supplier_id query param on existing cube endpoints; fall back to client-side filtering if the backend does not support that param.",
+    "treemap_library": "Recharts Treemap is available from the existing recharts import. No new dependencies needed.",
+    "section_header_pattern": "A reusable .section-header utility class (border-l-2 border-primary pl-2 text-sm font-semibold mb-3) added via @layer utilities in index.css."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Main fact table — all spend rows with canonical fields",
+      "supplier_master": "Canonical supplier records with parent_company_name"
+    },
+    "key_files": [
+      "frontend/src/pages/dashboard/OverviewPage.tsx — replace pie with treemap, add signal badges, add % labels to supplier bar",
+      "frontend/src/pages/dashboard/CategoryPage.tsx — add colour-coded fragmentation to L1 bars, add fragmentation scorecard table, enrich selected-L1 KPI row",
+      "frontend/src/pages/dashboard/SupplierPage.tsx — replace below-table detail with Sheet drawer, fix chart data filtering to supplier, add ABC badge + spend share column",
+      "frontend/src/pages/dashboard/PaymentTermsPage.tsx — replace bucket bar with opportunity waterfall, add WACC/target inputs, reorder table by WC opportunity desc",
+      "frontend/src/components/dashboard/FilterBar.tsx — add collapsible state, active filter pills",
+      "frontend/src/components/dashboard/KpiCard.tsx — add accentColor left border prop",
+      "frontend/src/components/charts/SpendBarChart.tsx — add showLabel prop, click affordance hint, empty state",
+      "frontend/src/components/charts/constants.ts — add SEMANTIC_COLORS object",
+      "frontend/src/components/charts/index.ts — export new SpendTreemap component",
+      "frontend/src/components/Layout.tsx — add mini KPI strip below engagement name",
+      "frontend/src/index.css — add CSS custom properties and .section-header utility class",
+      "frontend/tailwind.config.js — extend colors with semantic aliases",
+      "frontend/src/types/index.ts — add abc_segment field to SupplierRow if not present"
+    ],
+    "patterns_to_follow": [
+      "All chart components live in frontend/src/components/charts/ and are exported from index.ts",
+      "Pages import from @/components/charts, @/components/dashboard, @/components/ui",
+      "shadcn/ui Sheet is already installed at frontend/src/components/ui/sheet.tsx",
+      "Tailwind utility classes throughout — no CSS modules",
+      "Recharts is the only chart library — do not add tremor, visx, or d3",
+      "All monetary values formatted via formatCurrency() from @/lib/formatters",
+      "TanStack Query for all data fetching with queryKey arrays",
+      "FilterBar receives filters + onChange + options props — context is read via useFilters() in the page"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Semantic colour tokens and typography scale",
+      "description": "Add semantic CSS custom properties and Tailwind colour aliases to establish a consistent visual language. Add opportunity (emerald-500 #10b981), risk (rose-500 #f43f5e), and attention (amber-500 #f59e0b) semantic colours plus a SEMANTIC_COLORS constant for chart usage. Increase all dashboard page title sizes from text-xl to text-2xl font-bold. Add a .section-header utility class for chart section titles.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/index.css — inside :root add: --color-opportunity: #10b981; --color-risk: #f43f5e; --color-attention: #f59e0b; --color-neutral: #64748b",
+        "Edit file: frontend/src/index.css — inside @layer utilities add: .section-header { @apply text-sm font-semibold border-l-2 border-primary pl-2 mb-3; }",
+        "Edit file: frontend/tailwind.config.js — in theme.extend.colors add: opportunity: '#10b981', risk: '#f43f5e', attention: '#f59e0b' so that bg-opportunity, text-risk, border-attention utility classes resolve without error",
+        "Edit file: frontend/src/components/charts/constants.ts — add export const SEMANTIC_COLORS = { opportunity: '#10b981', risk: '#f43f5e', attention: '#f59e0b', neutral: '#64748b' } after the existing CHART_COLORS",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — change h1 className from 'text-xl font-semibold' to 'text-2xl font-bold'",
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — same h1 change to 'text-2xl font-bold'",
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — same h1 change to 'text-2xl font-bold'",
+        "Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx — same h1 change to 'text-2xl font-bold'",
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — same h1 change to 'text-2xl font-bold'",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — same h1 change to 'text-2xl font-bold'",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-03T17:35:12Z"
+    },
+    {
+      "id": "US-002",
+      "title": "KPI card v2 — status accent border and benchmark label",
+      "description": "Enhance KpiCard to support a coloured left-border accent communicating metric health at a glance, and an optional benchmarkLabel string rendered below the delta. Existing callers with no new props must be visually unchanged.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/KpiCard.tsx",
+        "Add optional prop accentColor?: 'green' | 'amber' | 'red' | 'opportunity' | 'risk' | 'neutral'",
+        "Add optional prop benchmarkLabel?: string",
+        "When accentColor is provided the Card element gets an additional className for a 4px left border: green→'border-l-4 border-l-green-500', amber→'border-l-4 border-l-amber-500', red→'border-l-4 border-l-red-500', opportunity→'border-l-4 border-l-emerald-500', risk→'border-l-4 border-l-rose-500', neutral→'border-l-4 border-l-slate-300'",
+        "When benchmarkLabel is provided render it as a p tag with className='text-xs text-muted-foreground italic mt-1' after the delta section",
+        "Existing callers with no accentColor render identically to before (plain Card with no border-l class)",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "SpendTreemap chart component",
+      "description": "Create a SpendTreemap chart component using Recharts Treemap. Accepts data as [{name, value, color?}], renders with name and formatted value labels inside each cell, calls onCellClick(name) when a cell is clicked. Shows an empty state when data is empty.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/components/charts/SpendTreemap.tsx",
+        "Export default function SpendTreemap with props: data: { name: string; value: number; color?: string }[], title: string, valueFormatter?: (v: number) => string, onCellClick?: (name: string) => void",
+        "Render a title h3 with className='section-header' above the treemap",
+        "Use Recharts Treemap: import { Treemap, ResponsiveContainer } from 'recharts'. Wrap in ResponsiveContainer width='100%' height={320}",
+        "Pass data to Treemap as the data prop with dataKey='value'. Use a custom content prop to render each cell: a React component that receives x, y, width, height, name, value. Render a rect with fill from the item color or CHART_COLORS[index % CHART_COLORS.length]. Inside the cell, if width > 60 and height > 40 render a text element for name (truncated to 16 chars) and a second text element for the formatted value — both white, font-size 11, centered in the cell.",
+        "When onCellClick is provided, the Treemap onClick handler calls onCellClick(payload.name)",
+        "If data is empty or every value is 0, render: <div className='flex items-center justify-center h-80 text-muted-foreground text-sm'>No data available</div> instead of the chart",
+        "Edit file: frontend/src/components/charts/index.ts — add: export { default as SpendTreemap } from './SpendTreemap'",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "SpendBarChart — label support, click affordance hint, empty state",
+      "description": "Add three improvements to SpendBarChart that are needed across multiple pages: optional value labels on bars, a visible click-to-drill-down hint when the chart is interactive, and an empty state when there is no data.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/charts/SpendBarChart.tsx",
+        "Add optional prop showLabel?: boolean (default false). When true, add a Recharts LabelList to the Bar: for horizontal bars position='right', for vertical position='top'. Use the valueFormatter if provided for label text, otherwise the raw numeric value. Set font-size 11 and fill '#64748b'.",
+        "Add optional prop clickHint?: boolean (default false). When true and onBarClick is provided, render below the chart title (in a flex justify-between row): a span className='text-xs text-muted-foreground italic' with text 'Click a bar to explore'.",
+        "If the data array is empty or undefined, render: <div className='flex items-center justify-center h-64 text-muted-foreground text-sm'>No data available</div> and skip the chart render entirely.",
+        "All new props are optional — existing callers work unchanged.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Overview page — treemap, signal badges, enriched KPI cards",
+      "description": "Overhaul the Overview page: replace the category pie chart with SpendTreemap, add three signal badges linking to WC opportunity/recommendations/data issues, apply accentColor to Maverick Spend KPI card based on risk level, and add spend share % to the supplier bar chart labels.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx",
+        "Import SpendTreemap from @/components/charts and CHART_COLORS from @/components/charts/constants",
+        "Replace the SpendPieChart in the col-span-2 grid cell with SpendTreemap. Pass data as categoryPieData mapped to include a color per entry: categoryPieData.map((d, i) => ({ ...d, color: CHART_COLORS[i % CHART_COLORS.length] })). Pass title='Spend by Category' and valueFormatter",
+        "Add a useQuery for payment terms: queryKey ['pt-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/cube/by-payment-terms, enabled: !!engagementId. Compute totalWcOpportunity = ptData.reduce((s,r) => s + (r.wc_opportunity_aud ?? 0), 0)",
+        "Add a useQuery for recommendations: queryKey ['rec-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/recommendations with retry: false. Extract recCount = recData?.recommendations?.length ?? 0. Handle 404 gracefully (recCount stays 0).",
+        "Add a useQuery for diagnostics: queryKey ['diag-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/cube/diagnostics. Compute redCount = count of checks where status === 'RED' or status === 'ALERT'",
+        "Add a signal badges row between the KPI cards grid and the area chart. Render three clickable card-badges using Link from react-router-dom: (1) Link to='payment-terms': DollarSign icon text-emerald-600, label 'WC Opportunity', value formatCurrency(totalWcOpportunity). (2) Link to='recommendations': Lightbulb icon text-blue-600, label 'Recommendations', value recCount or '—'. (3) Link to='quality': AlertTriangle icon, color text-rose-600 if redCount>0 else text-slate-400, label 'Data Issues', value redCount. Each badge is a div with className='flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer'",
+        "Update Maverick Spend KPI card: add accentColor prop dynamically — if maverick_spend_pct > 25 use 'risk', if > 10 use 'amber', else use 'green'",
+        "Update Total Spend KPI card: add accentColor='neutral'",
+        "Import DollarSign, Lightbulb, AlertTriangle from lucide-react. Import Link from react-router-dom.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Category cockpit — fragmentation colour coding and scorecard table",
+      "description": "Upgrade the Category page to surface supplier fragmentation risk without requiring drill-down. Colour-code the L1 bar chart by fragmentation level. When no L1 is selected, show a Fragmentation Scorecard table. When an L1 is selected, add Share of Total and Avg Invoice Size KPIs.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx",
+        "Import SEMANTIC_COLORS from @/components/charts/constants",
+        "Update l1BarData computation to include a color per entry based on supplier_count: supplierCount <= 2 → SEMANTIC_COLORS.opportunity, supplierCount <= 5 → SEMANTIC_COLORS.attention, else → SEMANTIC_COLORS.risk. Note: SpendBarChart must support per-bar color — check if it does. If SpendBarChart does not have per-bar color support, add a colors?: string[] prop to SpendBarChart that maps to each Bar cell's fill via a custom Cell component from recharts.",
+        "Edit file: frontend/src/components/charts/SpendBarChart.tsx — if not already present, add optional prop colors?: string[]. When provided, render individual recharts Cell components inside the Bar with fill={colors[index] ?? CHART_COLORS[0]}. Import Cell from recharts.",
+        "Pass clickHint={true} to the L1 SpendBarChart to show the drill-down hint",
+        "When isLoading is false and selectedL1Entry is null, render a Fragmentation Scorecard section above the bar chart. It is a shadcn Table with columns: L1 Category | Total Spend | % of Total | Suppliers | Avg Invoice | Status. Rows sorted by total_spend desc. % of Total = (entry.total_spend / totalSpend * 100) where totalSpend = sum of all L1 entries. Avg Invoice = entry.total_spend / entry.transaction_count. Status column renders fragmentationBadge(entry.supplier_count). Compute totalSpend from the hierarchy entries.",
+        "When an L1 is selected, expand the KPI row from 3 to 4 cards: keep existing three (spend, supplier count, transactions) and add a fourth 'Share of Total' card showing the percentage. Apply accentColor to the spend card: supplierCount <= 2 → 'opportunity', <= 5 → 'amber', else → 'risk'.",
+        "For the L2 bar chart when rendered, pass showLabel={true} to show the spend value on each bar",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Supplier cockpit — side drawer, fixed chart data, ABC badge, spend share",
+      "description": "Replace the below-table supplier detail section with a right-side Sheet drawer. Fix the bug where supplier detail charts show engagement-wide data instead of supplier-specific data. Add ABC segment badge and spend share % column to the table.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx",
+        "Import Sheet, SheetContent, SheetHeader, SheetTitle from @/components/ui/sheet",
+        "Remove the conditional div section rendered after the table (the div with 'space-y-4 border-t pt-4' and the selectedSupplier check). Replace with a Sheet component: <Sheet open={!!selectedSupplierId} onOpenChange={(open) => { if (!open) setSelectedSupplierId(null) }}>",
+        "SheetContent: side='right', className='w-[500px] sm:w-[560px] overflow-y-auto p-6'. Inside: SheetHeader with SheetTitle={selectedSupplier?.canonical_supplier_name ?? ''}. Below header: the 3-card KPI row (Total Spend, Invoice Count, Avg Payment Days) from the old detail section.",
+        "Fix supplier-specific month data: change the monthData useQuery to fetch with supplier_id param: queryFn fetches /api/engagements/${engagementId}/cube/by-month with params { supplier_id: selectedSupplierId }, enabled: !!engagementId && !!selectedSupplierId. The backend may not support supplier_id on by-month — if the response is empty array, the chart will show 'No data available' (handled by SpendAreaChart empty state or a guard).",
+        "Fix supplier-specific category data: change the categoryData useQuery similarly to pass { supplier_id: selectedSupplierId }",
+        "Add abc_segment?: string to the SupplierRow interface in frontend/src/types/index.ts if it is not already present",
+        "Add ABC badge column in the table: after the supplier name TableCell, insert a TableCell that renders a Badge when abc_segment is present. A→className='bg-emerald-100 text-emerald-800 border-0 text-xs', B→'bg-blue-100 text-blue-800 border-0 text-xs', C→'bg-slate-100 text-slate-600 border-0 text-xs'. If no abc_segment, render nothing.",
+        "Add spend share column: compute totalSupplierSpend = supplierData.reduce((s,r) => s + (r.total_spend ?? 0), 0) in the component. Add a 'Share' column after 'Total Spend' with value formatPct((row.total_spend ?? 0) / totalSupplierSpend * 100). Add 'share' to the columns array with align='right' (it is display-only, not a sort key).",
+        "Update table row click: clicking a row that is already selected should close the drawer (setSelectedSupplierId(null)) — existing toggle logic should already handle this.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Payment Terms — opportunity waterfall, adjustable assumptions",
+      "description": "Replace the static bucket bar chart with a supplier-ranked WC opportunity chart. Add user-adjustable WACC % and target days inputs. Re-sort the supplier table by WC opportunity descending. Apply accentColor to the Total WC Opportunity KPI card.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx",
+        "Replace the const WACC = 0.08 and const TARGET_DAYS = 45 constants with useState: const [waccPct, setWaccPct] = useState(8) and const [targetDays, setTargetDays] = useState(45). Update computeSupplierWc to use waccPct / 100 and targetDays.",
+        "Add an Assumptions section above the charts. A div with className='flex items-center gap-6 p-4 bg-muted/30 rounded-lg border mb-2'. Inside: two labelled input groups. Group 1: label 'Target Days' text-xs, Input type='number' min=30 max=120 value={targetDays} onChange={e => setTargetDays(Number(e.target.value))} className='w-20'. Group 2: label 'WACC %' text-xs, Input type='number' min=1 max=20 step={0.5} value={waccPct} onChange={e => setWaccPct(Number(e.target.value))} className='w-20'. Add a text-xs text-muted-foreground note: 'WC opportunity = (target − current days) / 365 × spend × WACC'.",
+        "Add a WC Opportunity waterfall chart above the existing bucket bar: compute supplierWcData = suppliersSorted (the existing filtered/sorted list) mapped to {label: supplier name truncated to 22 chars, value: computeSupplierWc(avgDays, spend)}, filtered to value > 0, sorted by value desc, sliced to top 15. Render as SpendBarChart data={supplierWcData} title='Top WC Opportunities by Supplier' horizontal={true} valueFormatter={v => formatCurrency(v)} showLabel={false} height can be default.",
+        "Retain the existing bucket bar chart below the opportunity chart but wrap it in a smaller container: div className='mt-4'.",
+        "Re-sort suppliersSorted: change the sort from ascending avg_payment_days to descending WC opportunity. Replace: .sort((a, b) => (a.avg_payment_days ?? 0) - (b.avg_payment_days ?? 0)) with: .sort((a, b) => computeSupplierWc(b.avg_payment_days ?? 0, b.total_spend ?? 0) - computeSupplierWc(a.avg_payment_days ?? 0, a.total_spend ?? 0))",
+        "Apply accentColor='opportunity' to the Total WC Opportunity KpiCard",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Collapsible FilterBar with active filter pills",
+      "description": "Redesign FilterBar to collapse into a compact pill row by default, reclaiming ~80px of vertical space on every page. An expand button opens the full filter panel. Active filters are shown as removable badge pills when collapsed.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/FilterBar.tsx",
+        "Add local state: const [expanded, setExpanded] = useState(false)",
+        "Import SlidersHorizontal from lucide-react. Import Badge from @/components/ui/badge. Import X from lucide-react for pill remove buttons.",
+        "Compute activePills array from current filters — an array of { label: string, onRemove: () => void }. Include pills for: date_from (if set: label='From: '+date_from, onRemove clears it), date_to (same), each entry in business_units (label=value, onRemove removes it), each entry in category_l1s, supplier_search (if non-empty: label='Supplier: '+supplier_search), each legal_entity, each currency, each country, each abc_segment entry. Skip any undefined/empty values.",
+        "When !expanded render: a single flex-row div className='flex items-center gap-2 flex-wrap py-2': (1) Button variant='outline' size='sm' onClick={() => setExpanded(true)}: <SlidersHorizontal className='h-4 w-4 mr-1.5' /> Filters {activePills.length > 0 && <span className='ml-1 bg-primary text-primary-foreground rounded-full text-xs px-1.5'>{activePills.length}</span>}. (2) For each activePill: a span className='inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs rounded-full px-2.5 py-1': pill.label + an X button (button onClick={pill.onRemove}). (3) If activePills.length > 0: a button className='text-xs text-muted-foreground underline ml-1' onClick={() => onChange(defaultFilters())} text 'Clear all'.",
+        "When expanded render: the existing full filter UI (all current JSX) wrapped in the existing container div. At the end of the filter controls row, add a Button variant='ghost' size='sm' onClick={() => setExpanded(false)} text 'Close ↑'.",
+        "The component starts collapsed (expanded=false) by default — this is intentional so pages start clean.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "Layout sidebar mini KPI strip and chart container polish",
+      "description": "Add total spend KPI to the sidebar header below the client name, giving users persistent spend context without leaving any page. Apply consistent chart container styling (rounded-xl, shadow-sm) and section-header class to chart titles across Overview and Category pages.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/Layout.tsx",
+        "Add import: import { formatCurrency } from '@/lib/formatters'. Add import: import { useQuery } from '@tanstack/react-query' if not already imported. Add import: import { api } from '@/lib/api'.",
+        "Add a useQuery inside Layout: queryKey ['sidebar-overview', id], queryFn: () => api.get('/api/engagements/${id}/cube/overview').then(r => r.data), enabled: !!id, staleTime: 5 * 60 * 1000. Store as sidebarOverview.",
+        "In the sidebar header div (the div with className='p-4 border-b'), after the client_name paragraph, add: {sidebarOverview?.total_spend != null && (<><p className='text-base font-bold text-foreground/80 mt-2'>{formatCurrency(sidebarOverview.total_spend, sidebarOverview.currency_label ?? 'AUD')}</p><p className='text-xs text-muted-foreground'>Total Spend</p></>)}",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — change all chart container divs from className='border rounded-lg p-4' to className='border rounded-xl p-5 bg-card shadow-sm'. Update chart section title h3 tags (inside the containers) from className='text-sm font-medium ...' to use className='section-header' instead.",
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — same chart container class change to 'border rounded-xl p-5 bg-card shadow-sm' and section titles to use 'section-header' class.",
+        "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "CLAUDE.md update — Dashboard UX Sprint A conventions",
+      "description": "Update CLAUDE.md with the new visual system, component APIs, and design conventions introduced in this sprint.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — append a new section '## Dashboard UX Conventions (Sprint A)' after the existing 'SpendCube v2 Architecture' section",
+        "Document: SEMANTIC_COLORS constants (opportunity/risk/attention/neutral hex values and when to use each), KpiCard accentColor prop values, SpendTreemap component location and props, SpendBarChart new props (showLabel, clickHint), the .section-header CSS class and when to use it",
+        "Document: chart container class convention ('border rounded-xl p-5 bg-card shadow-sm'), Sheet drawer pattern for detail panels, FilterBar collapsed vs expanded states",
+        "Keep concise — bullet points and code snippets, not prose paragraphs"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {},
+    "expected_counts": {},
+    "checks": [
+      "cd frontend && npm run build — must succeed with zero TypeScript errors after all stories",
+      "Verify SpendTreemap component exists at frontend/src/components/charts/SpendTreemap.tsx",
+      "Verify FilterBar collapses to pill row — expanded state toggled by button",
+      "Verify Supplier page uses Sheet drawer for detail (not below-table section)",
+      "Verify Category L1 bars accept per-bar color via colors prop on SpendBarChart",
+      "Verify Payment Terms page has waccPct and targetDays state inputs",
+      "Verify SEMANTIC_COLORS exported from frontend/src/components/charts/constants.ts",
+      "Verify KpiCard accentColor prop renders a border-l-4 class on the Card"
+    ]
+  },
+  "risks": [
+    "Recharts Treemap custom content rendering — test with 0, 1, and 8+ categories; the content renderer receives x/y/width/height from Recharts internals",
+    "SpendBarChart per-bar Cell coloring requires importing Cell from recharts — verify this does not break existing bar charts that do not use colors prop",
+    "tailwind.config.js may be tailwind.config.ts — check the actual filename before editing",
+    "Supplier-specific /cube/by-month?supplier_id=X calls — backend may return an empty array if supplier_id param is unsupported; SpendAreaChart should gracefully show empty state",
+    "@layer utilities with @apply in index.css requires PostCSS/Tailwind processing — verify the Vite build pipeline processes index.css through Tailwind"
+  ],
+  "outOfScope": [
+    "Sprint B: savings waterfall on Recommendations, priority matrix scatter, data quality drill-down modal, supplier sparkline column",
+    "Backend changes of any kind",
+    "New API endpoints",
+    "Mobile/responsive design",
+    "Dark mode",
+    "Recommendations page visual overhaul",
+    "Accessibility audit"
+  ]
+}

@@ -415,3 +415,9 @@ STORY_COMPLETE: US-006
 [2026-05-03 15:57:56] [OK] Marked US-006 as passed
 [2026-05-03 15:57:56] [INFO] Logged progress for US-006: PASSED
 [2026-05-03 15:57:56] [STEP] Committing changes...
+[2026-05-03 15:57:58] [INFO] Starting iteration 7
+[2026-05-03 15:57:58] [OK] All stories complete! Ralph is done.
+
+=================================================================================
+ALL STORIES COMPLETE - Sun  3 May 2026 15:57:58 BST
+=================================================================================
