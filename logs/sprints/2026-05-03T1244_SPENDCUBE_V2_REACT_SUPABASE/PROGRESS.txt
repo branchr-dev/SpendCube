@@ -153,3 +153,37 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+---
+
+## US-006 — Cube data query endpoints — all five dimensional views plus overview and diagnostics
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- backend/app/routers/cube.py — APIRouter prefix=/api/engagements/{engagement_id}/cube, tags=['cube']
+  - GET /overview — total_spend, invoice_count, supplier_count, category_count, currency_label, maverick_spend_pct, tail_spend_pct, data_freshness; queries transactions table directly; tail_spend_pct computed via cumulative spend algorithm (matching v1 SpendCubeBuilder logic)
+  - GET /by-supplier — dynamic WHERE clause with category_l1, bu, date_from, date_to, supplier_search filters; sort_by allowlisted; returns {data: list, total_count}
+  - GET /by-category — optional l1, date_from, date_to filters; returns flat list sorted by total_spend DESC
+  - GET /by-month — SUBSTR(invoice_date, 1, 7) grouping; rolling_3m_avg computed in Python via pandas rolling(3).mean(); NaN → None
+  - GET /by-payment-terms — bucket CASE expression; wc_opportunity_aud = max(0, (target_days - midpoint) / 365 * spend * wacc); uses config values with 45/0.08 fallbacks
+  - GET /by-bu — business_unit + cost_centre grouping; ordered by total_spend DESC
+  - GET /diagnostics — loads transactions via get_transactions(); instantiates DataQualityDiagnostics(df, config); returns run_all() dict
+- backend/app/main.py — cube router imported and registered
+- backend/tests/test_cube_api.py — 9 tests covering all acceptance criteria
+
+**Verified:**
+- pytest backend/tests/test_cube_api.py -v → 9 passed in 0.48s
+- pytest backend/tests/ -v → 19 passed (no regressions)
+
+**Learnings:**
+- DataQualityDiagnostics takes (transactions_df, config), NOT (engine, engagement_id) as the acceptance criteria stated — must load transactions from DB first then pass DataFrame
+- Queries target transactions table directly rather than Postgres views for flexibility with date/category/bu filters (views lack these columns)
+- tail_spend_pct uses cumulative spend share algorithm (shifted cumsum >= 80% of total → tail), matching the v1 SpendCubeBuilder._add_tail_spend_flag() logic exactly
+- SUBSTR(invoice_date, 1, 7) for month grouping is more portable than DATE_TRUNC since invoice_date is stored as TEXT
+- Patching verify_engagement_ownership as AsyncMock(return_value=_MOCK_ENGAGEMENT) is the cleanest way to bypass auth in cube endpoint tests without touching the engine
+
+---
+
+### [US-006] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
