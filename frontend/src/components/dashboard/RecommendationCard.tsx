@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { formatCurrency, formatPct } from '@/lib/formatters'
+import { CHART_COLORS } from '@/components/charts/constants'
 import type { Recommendation } from '@/types'
 
 const CONFIDENCE_CLASS: Record<string, string> = {
@@ -12,11 +13,25 @@ const CONFIDENCE_CLASS: Record<string, string> = {
   LOW: 'bg-red-100 text-red-800 border-red-200',
 }
 
-export default function RecommendationCard({ rec }: { rec: Recommendation }) {
+interface RecommendationCardProps {
+  rec: Recommendation
+  portfolioTotal?: number
+  leverIndex?: number
+}
+
+export default function RecommendationCard({ rec, portfolioTotal, leverIndex }: RecommendationCardProps) {
   const [open, setOpen] = useState(false)
 
+  const leverAccentStyle = leverIndex !== undefined
+    ? { borderLeftWidth: '4px', borderLeftStyle: 'solid' as const, borderLeftColor: CHART_COLORS[leverIndex % CHART_COLORS.length] }
+    : undefined
+
+  const sharePct = portfolioTotal && portfolioTotal > 0
+    ? ((rec.estimated_impact_aud ?? 0) / portfolioTotal) * 100
+    : null
+
   return (
-    <Card>
+    <Card style={leverAccentStyle}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -33,6 +48,20 @@ export default function RecommendationCard({ rec }: { rec: Recommendation }) {
       </CardHeader>
       <CardContent className="pt-0 space-y-2">
         <p className="text-sm text-muted-foreground">{rec.action}</p>
+        {sharePct !== null && (
+          <div className="mt-2">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Share of portfolio savings</span>
+              <span>{formatPct(sharePct)}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-green-500"
+                style={{ width: `${Math.min(sharePct, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
         <Collapsible open={open} onOpenChange={setOpen}>
           <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
             Calculation Basis

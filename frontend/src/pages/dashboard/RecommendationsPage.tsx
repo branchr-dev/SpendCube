@@ -334,7 +334,20 @@ export default function RecommendationsPage() {
         {displayedRecs.length === 0 ? (
           <p className="text-muted-foreground">No recommendations match the current filters.</p>
         ) : (
-          displayedRecs.map((rec, i) => <RecommendationCard key={i} rec={rec} />)
+          (() => {
+            const portfolioTotal = portfolio?.total_identified_savings ?? 0
+            return displayedRecs.map((rec, i) => {
+              const leverIndex = leverSummaries.findIndex(l => l.lever === (rec.lever ?? 'OTHER'))
+              return (
+                <RecommendationCard
+                  key={i}
+                  rec={rec}
+                  portfolioTotal={portfolioTotal}
+                  leverIndex={leverIndex >= 0 ? leverIndex : undefined}
+                />
+              )
+            })
+          })()
         )}
       </div>
     </div>
