@@ -114,7 +114,8 @@
         "Update colSpan values in empty-state rows and group header rows to account for the new column (was 7, now 8)",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:07:13Z"
     },
     {
       "id": "US-005",

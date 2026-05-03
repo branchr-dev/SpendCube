@@ -205,3 +205,77 @@ STORY_COMPLETE: US-003
 [2026-05-03 21:05:23] [OK] Marked US-003 as passed
 [2026-05-03 21:05:23] [INFO] Logged progress for US-003: PASSED
 [2026-05-03 21:05:23] [STEP] Committing changes...
+[2026-05-03 21:05:25] [INFO] Starting iteration 4
+[2026-05-03 21:05:25] [INFO] Processing story: US-004
+[2026-05-03 21:05:25] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Supplier table — concentration banner, payment days colour, WC opportunity column
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Three additions to the Supplier page table: (1) a concentration banner above the table showing what percentage of total spend the top N suppliers represent; (2) payment days colour coding on the avg_payment_days cell; (3) a WC opportunity column showing the per-supplier working capital opportunity using the same WACC=8% / target=45-day formula from the Payment Terms page.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx
+- Concentration banner: between the search/group-by row and the table, add a div className='flex items-center gap-6 text-sm text-muted-foreground bg-muted/30 rounded-lg px-4 py-2'. Inside, compute: top5Spend = sorted.slice(0,5).reduce((s,r)=>s+(r.total_spend??0),0). top10Spend = sorted.slice(0,10).reduce((s,r)=>s+(r.total_spend??0),0). Render two spans: 'Top 5 suppliers: {formatPct(top5Spend/totalSupplierSpend*100)} of spend' and 'Top 10 suppliers: {formatPct(top10Spend/totalSupplierSpend*100)} of spend'. Guard: only render when totalSupplierSpend > 0 and sorted.length >= 5.
+- Add a computeWc helper function at the top of the component (or file): const computeWc = (avgDays: number, spend: number) => avgDays < 45 ? ((45 - avgDays) / 365) * spend * 0.08 : 0
+- Add 'WC Opp.' column to the columns array: { key: 'wc_opp', label: 'WC Opp.', align: 'right' }
+- In the TableHeader, add a TableHead className='text-right' for 'WC Opp.' after the existing 'Avg Payment Days' column header (update colSpan references too)
+- In each sorted TableRow (non-grouped): add a TableCell className='text-right' after avg_payment_days cell: const wc = computeWc(row.avg_payment_days ?? 0, row.total_spend ?? 0); render wc > 0 ? <span className='text-emerald-600 font-medium'>{formatCurrency(wc)}</span> : <span className='text-muted-foreground'>—</span>
+- Payment days colour: in the avg_payment_days TableCell, replace the plain className with a dynamic one: avgDays < 30 ? 'text-right font-medium bg-rose-50 text-rose-700' : avgDays < 45 ? 'text-right font-medium bg-amber-50 text-amber-700' : 'text-right'. Apply to both grouped and non-grouped rows.
+- Apply the same WC Opp. cell and payment days colouring to grouped supplier rows inside the expandedGroups section
+- Update colSpan values in empty-state rows and group header rows to account for the new column (was 7, now 8)
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Supplier table — concentration banner, payment days colour, WC opportunity column`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+Build passed with zero TypeScript errors. All changes applied to `frontend/src/pages/dashboard/SupplierPage.tsx`:
+
+- **`computeWc` helper** — file-level function using WACC=8% / target=45-day formula
+- **Concentration banner** — shows Top 5 / Top 10 spend share, guarded by `totalSupplierSpend > 0 && sorted.length >= 5`
+- **Payment days colour** — rose for < 30 days, amber for 30–44 days, plain for 45+; applied to both flat and grouped rows
+- **WC Opp. column** — added to `columns` array; each cell renders emerald currency when `wc > 0`, dash otherwise; applied to both flat and grouped rows
+- **colSpan** updated from 7 → 8 in all empty-state and group-header rows
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-03 21:07:13] [OK] Story US-004 completed!
+[2026-05-03 21:07:13] [OK] Marked US-004 as passed
+[2026-05-03 21:07:13] [INFO] Logged progress for US-004: PASSED
+[2026-05-03 21:07:13] [STEP] Committing changes...
