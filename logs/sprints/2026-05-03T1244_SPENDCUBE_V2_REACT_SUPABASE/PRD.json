@@ -174,7 +174,8 @@
         "Register cube router in backend/app/main.py",
         "Verify: pytest backend/tests/test_cube_api.py -v — create this test file with at least: overview returns expected keys, by-month returns sorted list, by-supplier respects limit param"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:51:16Z"
     },
     {
       "id": "US-007",

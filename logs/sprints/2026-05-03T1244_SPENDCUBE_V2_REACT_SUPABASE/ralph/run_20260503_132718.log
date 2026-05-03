@@ -358,3 +358,71 @@ STORY_COMPLETE: US-005
 [2026-05-03 13:43:36] [OK] Marked US-005 as passed
 [2026-05-03 13:43:36] [INFO] Logged progress for US-005: PASSED
 [2026-05-03 13:43:36] [STEP] Committing changes...
+[2026-05-03 13:43:38] [INFO] Starting iteration 6
+[2026-05-03 13:43:38] [INFO] Processing story: US-006
+[2026-05-03 13:43:38] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Cube data query endpoints — all five dimensional views plus overview and diagnostics
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the read endpoints that all dashboard pages consume. All data comes from direct Postgres queries against the views defined in US-002 or aggregations on the transactions table. No Parquet files. All endpoints are scoped to engagement_id and support standard filter query parameters. The diagnostics endpoint runs the existing DataQualityDiagnostics class from src/cube/diagnostics.py.
+
+## Acceptance Criteria
+- Create file: backend/app/routers/cube.py — APIRouter with prefix='/api/engagements/{engagement_id}/cube', tags=['cube']
+- All endpoints verify engagement ownership via verify_engagement_ownership() from backend/app/dependencies.py
+- GET /overview — returns JSON: {total_spend: float, invoice_count: int, supplier_count: int, category_count: int, currency_label: str, maverick_spend_pct: float, tail_spend_pct: float, data_freshness: str (max invoice_date)}. All values computed via SQLAlchemy SELECT on transactions table WHERE engagement_id=? AND COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0. maverick_spend_pct = SUM(base_amount) WHERE po_number IS NULL / total_spend.
+- GET /by-supplier — query params: limit=50, offset=0, sort_by=total_spend, order=desc, category_l1=, bu=, date_from=, date_to=, supplier_search= — SELECT from v_by_supplier WHERE engagement_id=? with applied filters; returns {data: list[SupplierRow], total_count: int}
+- GET /by-category — query params: l1=, date_from=, date_to= — SELECT from v_by_category WHERE engagement_id=? with optional l1 filter; returns flat list sorted by total_spend DESC
+- GET /by-month — SELECT from v_by_month WHERE engagement_id=? ORDER BY month ASC; computes rolling_3m_avg as 3-period rolling mean in Python (pandas rolling(3).mean()); returns list [{month: 'YYYY-MM', total_spend, transaction_count, rolling_3m_avg}]
+- GET /by-payment-terms — SELECT from v_by_payment_terms WHERE engagement_id=?; computes spend_pct per bucket; computes wc_opportunity_aud using config.recommendations.target_payment_days and config.recommendations.wacc; returns list [{bucket, transaction_count, total_spend, spend_pct, wc_opportunity_aud}]
+- GET /by-bu — SELECT from v_by_bu WHERE engagement_id=?; returns list [{business_unit, cost_centre, total_spend, transaction_count}]
+- GET /diagnostics — imports src.cube.diagnostics.DataQualityDiagnostics; instantiates with engine and engagement_id; calls .run(); returns DiagnosticsReport as JSON dict including all 9 check results with status GREEN/AMBER/RED, value_pct, and description
+- All query endpoints support date_from / date_to filtering as WHERE invoice_date >= date_from AND invoice_date <= date_to
+- Register cube router in backend/app/main.py
+- Verify: pytest backend/tests/test_cube_api.py -v — create this test file with at least: overview returns expected keys, by-month returns sorted list, by-supplier respects limit param
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Cube data query endpoints — all five dimensional views plus overview and diagnostics`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-03 13:51:16] [OK] Story US-006 completed!
+[2026-05-03 13:51:16] [OK] Marked US-006 as passed
+[2026-05-03 13:51:16] [INFO] Logged progress for US-006: PASSED
+[2026-05-03 13:51:16] [STEP] Committing changes...
