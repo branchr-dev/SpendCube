@@ -18,6 +18,7 @@ export interface SupplierRow {
   transaction_count?: number
   total_spend?: number
   avg_payment_days?: number
+  abc_segment?: string
 }
 
 export interface CategoryRow {

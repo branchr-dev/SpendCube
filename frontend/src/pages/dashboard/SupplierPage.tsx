@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -11,12 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendAreaChart from '@/components/charts/SpendAreaChart'
 import SpendPieChart from '@/components/charts/SpendPieChart'
 import { DrilldownBreadcrumb } from '@/components/DrilldownBreadcrumb'
 import { api } from '@/lib/api'
-import { formatCurrency, formatNumber } from '@/lib/formatters'
+import { formatCurrency, formatNumber, formatPct } from '@/lib/formatters'
 import type { SupplierRow, MonthRow, CategoryRow } from '@/types'
 import type { DrilldownLevel, DrilldownState } from '@/hooks/useDrilldown'
 
@@ -26,6 +33,19 @@ type SortDir = 'asc' | 'desc'
 function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
   if (!active) return <span className="ml-1 opacity-30">↕</span>
   return <span className="ml-1">{dir === 'asc' ? '↑' : '↓'}</span>
+}
+
+const isSortKey = (key: string): key is SortKey =>
+  ['canonical_supplier_name', 'total_spend', 'transaction_count', 'avg_payment_days'].includes(key)
+
+function AbcBadge({ segment }: { segment?: string }) {
+  if (!segment) return null
+  const classMap: Record<string, string> = {
+    A: 'bg-emerald-100 text-emerald-800 border-0 text-xs',
+    B: 'bg-blue-100 text-blue-800 border-0 text-xs',
+    C: 'bg-slate-100 text-slate-600 border-0 text-xs',
+  }
+  return <Badge className={classMap[segment] ?? 'text-xs'}>{segment}</Badge>
 }
 
 export default function SupplierPage() {
@@ -43,16 +63,24 @@ export default function SupplierPage() {
   })
 
   const { data: monthData = [] } = useQuery<MonthRow[]>({
-    queryKey: ['by-month-detail', engagementId],
+    queryKey: ['by-month-detail', engagementId, selectedSupplierId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-month`).then(r => r.data),
+      api
+        .get(`/api/engagements/${engagementId}/cube/by-month`, {
+          params: { supplier_id: selectedSupplierId },
+        })
+        .then(r => r.data),
     enabled: !!engagementId && !!selectedSupplierId,
   })
 
   const { data: categoryData = [] } = useQuery<CategoryRow[]>({
-    queryKey: ['by-category-detail', engagementId],
+    queryKey: ['by-category-detail', engagementId, selectedSupplierId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-category`).then(r => r.data),
+      api
+        .get(`/api/engagements/${engagementId}/cube/by-category`, {
+          params: { supplier_id: selectedSupplierId },
+        })
+        .then(r => r.data),
     enabled: !!engagementId && !!selectedSupplierId,
   })
 
@@ -94,6 +122,8 @@ export default function SupplierPage() {
     ? (supplierData.find(s => s.canonical_supplier_id === selectedSupplierId) ?? null)
     : null
 
+  const totalSupplierSpend = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0)
+
   const categoryPieData = useMemo(() => {
     const l1Map = new Map<string, number>()
     categoryData.forEach(c => {
@@ -106,9 +136,11 @@ export default function SupplierPage() {
       .slice(0, 8)
   }, [categoryData])
 
-  const columns: { key: SortKey; label: string; align?: 'right' }[] = [
+  const columns: { key: string; label: string; align?: 'right' }[] = [
     { key: 'canonical_supplier_name', label: 'Supplier Name' },
+    { key: 'abc', label: 'ABC' },
     { key: 'total_spend', label: 'Total Spend', align: 'right' },
+    { key: 'share', label: 'Share', align: 'right' },
     { key: 'transaction_count', label: 'Invoice Count', align: 'right' },
     { key: 'avg_payment_days', label: 'Avg Payment Days', align: 'right' },
   ]
@@ -158,13 +190,17 @@ export default function SupplierPage() {
                     key={col.key}
                     className={col.align === 'right' ? 'text-right' : ''}
                   >
-                    <button
-                      className="font-semibold hover:text-foreground/80 transition-colors"
-                      onClick={() => handleSort(col.key)}
-                    >
-                      {col.label}
-                      <SortIndicator active={sortKey === col.key} dir={sortDir} />
-                    </button>
+                    {isSortKey(col.key) ? (
+                      <button
+                        className="font-semibold hover:text-foreground/80 transition-colors"
+                        onClick={() => handleSort(col.key as SortKey)}
+                      >
+                        {col.label}
+                        <SortIndicator active={sortKey === col.key} dir={sortDir} />
+                      </button>
+                    ) : (
+                      <span className="font-semibold">{col.label}</span>
+                    )}
                   </TableHead>
                 ))}
                 <TableHead>Parent Company</TableHead>
@@ -187,8 +223,16 @@ export default function SupplierPage() {
                     <TableCell className="font-bold">
                       {row.canonical_supplier_name ?? '—'}
                     </TableCell>
+                    <TableCell>
+                      <AbcBadge segment={row.abc_segment} />
+                    </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(row.total_spend ?? 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {totalSupplierSpend > 0
+                        ? formatPct(((row.total_spend ?? 0) / totalSupplierSpend) * 100)
+                        : '—'}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatNumber(row.transaction_count ?? 0)}
@@ -203,7 +247,7 @@ export default function SupplierPage() {
               {sorted.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={7}
                     className="text-center text-muted-foreground py-8"
                   >
                     No suppliers match your search.
@@ -215,29 +259,36 @@ export default function SupplierPage() {
         )}
       </div>
 
-      {selectedSupplier && (
-        <div className="space-y-4 border-t pt-4">
-          <h2 className="text-base font-semibold">{selectedSupplier.canonical_supplier_name}</h2>
+      <Sheet
+        open={!!selectedSupplierId}
+        onOpenChange={open => {
+          if (!open) setSelectedSupplierId(null)
+        }}
+      >
+        <SheetContent side="right" className="w-[500px] sm:w-[560px] overflow-y-auto p-6">
+          <SheetHeader>
+            <SheetTitle>{selectedSupplier?.canonical_supplier_name ?? ''}</SheetTitle>
+          </SheetHeader>
 
-          <div className="grid grid-cols-3 gap-4">
-            <KpiCard
-              label="Total Spend"
-              value={selectedSupplier.total_spend ?? 0}
-              valueType="currency"
-            />
-            <KpiCard
-              label="Invoice Count"
-              value={selectedSupplier.transaction_count ?? 0}
-              valueType="number"
-            />
-            <KpiCard
-              label="Avg Payment Days"
-              value={selectedSupplier.avg_payment_days ?? 0}
-              valueType="number"
-            />
-          </div>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <KpiCard
+                label="Total Spend"
+                value={selectedSupplier?.total_spend ?? 0}
+                valueType="currency"
+              />
+              <KpiCard
+                label="Invoice Count"
+                value={selectedSupplier?.transaction_count ?? 0}
+                valueType="number"
+              />
+              <KpiCard
+                label="Avg Payment Days"
+                value={selectedSupplier?.avg_payment_days ?? 0}
+                valueType="number"
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="border rounded-lg p-4">
               <SpendAreaChart data={monthData} title="Monthly Spend Trend" />
             </div>
@@ -249,8 +300,8 @@ export default function SupplierPage() {
               />
             </div>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
