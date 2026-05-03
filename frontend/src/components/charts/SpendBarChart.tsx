@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts'
 import { CHART_COLORS } from './constants'
 
@@ -22,6 +23,8 @@ interface SpendBarChartProps {
   valueFormatter?: (v: number) => string
   maxItems?: number
   onBarClick?: (label: string) => void
+  showLabel?: boolean
+  clickHint?: boolean
 }
 
 export default function SpendBarChart({
@@ -32,16 +35,37 @@ export default function SpendBarChart({
   valueFormatter,
   maxItems,
   onBarClick,
+  showLabel = false,
+  clickHint = false,
 }: SpendBarChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div>
+        {title && <h3 className="text-sm font-medium mb-3">{title}</h3>}
+        <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+          No data available
+        </div>
+      </div>
+    )
+  }
+
   const displayData = maxItems ? data.slice(0, maxItems) : data
   const chartData = displayData.map(d => ({ name: d.label, value: d.value }))
 
   const fmt = (v: unknown) =>
     valueFormatter && typeof v === 'number' ? valueFormatter(v) : String(v)
 
+  const labelFormatter = (v: unknown) =>
+    valueFormatter && typeof v === 'number' ? valueFormatter(v) : String(v)
+
   return (
     <div>
-      {title && <h3 className="text-sm font-medium mb-3">{title}</h3>}
+      <div className="flex justify-between items-center mb-3">
+        {title && <h3 className="text-sm font-medium">{title}</h3>}
+        {clickHint && onBarClick && (
+          <span className="text-xs text-muted-foreground italic">Click a bar to explore</span>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={300}>
         {horizontal ? (
           <BarChart data={chartData} layout="vertical">
@@ -59,7 +83,16 @@ export default function SpendBarChart({
               fill={color}
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
-            />
+            >
+              {showLabel && (
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  formatter={labelFormatter}
+                  style={{ fontSize: 11, fill: '#64748b' }}
+                />
+              )}
+            </Bar>
           </BarChart>
         ) : (
           <BarChart data={chartData}>
@@ -72,7 +105,16 @@ export default function SpendBarChart({
               fill={color}
               onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
               style={onBarClick ? { cursor: 'pointer' } : undefined}
-            />
+            >
+              {showLabel && (
+                <LabelList
+                  dataKey="value"
+                  position="top"
+                  formatter={labelFormatter}
+                  style={{ fontSize: 11, fill: '#64748b' }}
+                />
+              )}
+            </Bar>
           </BarChart>
         )}
       </ResponsiveContainer>
