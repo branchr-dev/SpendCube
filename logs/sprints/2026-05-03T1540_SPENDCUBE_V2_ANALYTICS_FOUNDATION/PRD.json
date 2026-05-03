@@ -158,7 +158,8 @@
         "Verify: pytest tests/ -v --tb=short — all tests pass (new fields are nullable/have defaults, so existing test fixtures are unaffected). Report exact pass/fail count.",
         "Edit file: CLAUDE.md — append a new section '## Analytics Foundation' documenting: the 12 new transaction fields and their purpose; the three new reference tables (categories, legal_entities, payment_term_mappings); the five new cube endpoints; the FilterContext architecture; the aggregations.ts utility functions; the DrilldownState pattern; and the ABC segmentation convention (A=top 80%, B=next 15%, C=bottom 5%)."
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T14:57:56Z"
     }
   ],
   "verification": {

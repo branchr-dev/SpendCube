@@ -353,3 +353,65 @@ STORY_COMPLETE: US-005
 [2026-05-03 15:52:52] [OK] Marked US-005 as passed
 [2026-05-03 15:52:52] [INFO] Logged progress for US-005: PASSED
 [2026-05-03 15:52:52] [STEP] Committing changes...
+[2026-05-03 15:52:54] [INFO] Starting iteration 6
+[2026-05-03 15:52:54] [INFO] Processing story: US-006
+[2026-05-03 15:52:54] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Python pipeline — new fields on CanonicalTransaction, categorisation_status population, and CLAUDE.md update
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add the 12 new analytics fields to the Python-side schema (CanonicalTransaction Pydantic model and SQLAlchemy transactions_table). Populate categorisation_status automatically in the categorisation pipeline (CATEGORISED / UNCATEGORISED based on confidence >= 0.60). Populate abc_segment in the cube pipeline. All new fields are Optional with None defaults so existing tests are unaffected. Update CLAUDE.md with the analytics foundation documentation.
+
+## Acceptance Criteria
+- Edit file: src/models/schema.py — add to CanonicalTransaction (all Optional with default None unless noted): legal_entity: Optional[str] = None; vendor_country: Optional[str] = None; plant_country: Optional[str] = None; categorisation_status: Optional[str] = 'uncategorised'; manual_override_flag: Optional[int] = 0; ai_classification_flag: Optional[int] = 0; harmonised_payment_term: Optional[str] = None; discount_percent: Optional[float] = 0.0; discount_days: Optional[int] = 0; has_early_payment_discount: Optional[int] = 0; payment_term_confidence: Optional[float] = None; abc_segment: Optional[str] = None
+- Edit file: src/models/database.py — add 12 new columns to transactions_table at the END of the column list (after the existing raw_data column): Column('legal_entity', Text, nullable=True), Column('vendor_country', Text, nullable=True), Column('plant_country', Text, nullable=True), Column('categorisation_status', Text, nullable=True), Column('manual_override_flag', Integer, nullable=True), Column('ai_classification_flag', Integer, nullable=True), Column('harmonised_payment_term', Text, nullable=True), Column('discount_percent', Float, nullable=True), Column('discount_days', Integer, nullable=True), Column('has_early_payment_discount', Integer, nullable=True), Column('payment_term_confidence', Float, nullable=True), Column('abc_segment', Text, nullable=True)
+- Edit file: src/categorisation/categoriser.py — after the 6-pass pipeline completes for each transaction, set categorisation_status = 'categorised' if category_confidence >= 0.60 else 'uncategorised'. Also set ai_classification_flag = 1 if category_method == 'LLM' else 0; manual_override_flag = 1 if category_method == 'MANUAL' else 0. This update should happen in the existing result-writing logic.
+- Edit file: src/cube/pipeline.py — add an ABC segment computation step after the supplier aggregation step. Compute abc_segment per supplier per engagement using the Pareto convention (A: top 80% of spend, B: next 15%, C: bottom 5%) based on cumulative SUM(base_amount). Write abc_segment back to the transactions table for each transaction belonging to that supplier via UPDATE transactions SET abc_segment = ? WHERE canonical_supplier_id = ? AND engagement_id = ?.
+- Verify: pytest tests/ -v --tb=short — all tests pass (new fields are nullable/have defaults, so existing test fixtures are unaffected). Report exact pass/fail count.
+- Edit file: CLAUDE.md — append a new section '## Analytics Foundation' documenting: the 12 new transaction fields and their purpose; the three new reference tables (categories, legal_entities, payment_term_mappings); the five new cube endpoints; the FilterContext architecture; the aggregations.ts utility functions; the DrilldownState pattern; and the ABC segmentation convention (A=top 80%, B=next 15%, C=bottom 5%).
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Python pipeline — new fields on CanonicalTransaction, categorisation_status population, and CLAUDE.md update`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-03 15:57:56] [OK] Story US-006 completed!
+[2026-05-03 15:57:56] [OK] Marked US-006 as passed
+[2026-05-03 15:57:56] [INFO] Logged progress for US-006: PASSED
+[2026-05-03 15:57:56] [STEP] Committing changes...

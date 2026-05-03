@@ -131,3 +131,39 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+## US-006 COMPLETE — 2026-05-03
+Added 12 analytics fields to Python schema and pipeline:
+
+src/models/schema.py:
+- Added 12 Optional fields to CanonicalTransaction: legal_entity, vendor_country, plant_country, categorisation_status (default 'uncategorised'), manual_override_flag (default 0), ai_classification_flag (default 0), harmonised_payment_term, discount_percent (default 0.0), discount_days (default 0), has_early_payment_discount (default 0), payment_term_confidence, abc_segment
+
+src/models/database.py:
+- Added 12 nullable columns to transactions_table after engagement_id (at end of column list)
+
+src/categorisation/categoriser.py:
+- Extended update_transactions_in_db() to also write categorisation_status, ai_classification_flag, manual_override_flag after each row's category fields are set
+- Logic: categorisation_status = 'categorised' if confidence >= 0.60 else 'uncategorised'; ai_classification_flag = 1 if method == 'LLM'; manual_override_flag = 1 if method == 'MANUAL'
+
+src/cube/pipeline.py:
+- Added _compute_abc_segments() function: groups addressable transactions by supplier (per engagement_id when present), sorts desc, computes cumulative_pct, assigns A/B/C at 80%/95% thresholds, writes abc_segment back to transactions table
+- Called as Step 1b in run_pipeline(), after cube is built
+
+CLAUDE.md:
+- Appended '## Analytics Foundation' section documenting all 12 new fields, 3 new reference tables, 5 new cube endpoints, FilterContext architecture, aggregations.ts functions, DrilldownState pattern, and ABC segmentation convention
+
+Tests: 160 passed, 3 pre-existing failures in test_ingestion.py (credit note, intercompany, USD conversion — unrelated to this story)
+
+
+---
+
+### [US-006] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
+
+---
+
+### [US-006] - 2026-05-03 15:57:56
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
