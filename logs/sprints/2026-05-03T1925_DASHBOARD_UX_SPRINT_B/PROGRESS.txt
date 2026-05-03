@@ -11,3 +11,20 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+
+## US-002 — Recommendations lever summary strip and savings composition chart
+- Removed Tabs/TabsList/TabsTrigger/TabsContent imports and structure
+- Added leverSummaries computed from recommendations (grouped by lever, sorted by totalImpact desc)
+- Added Savings by Lever horizontal SpendBarChart with SEMANTIC_COLORS.opportunity fill
+- Added lever summary cards strip with selectedLever toggle state
+- Added displayedRecs filtered list replacing tab content
+- Build: zero TypeScript errors
+- Committed: 90ae545
+
+
+---
+
+### [US-002] - 2026-05-03 19:30:02
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+

@@ -77,3 +77,68 @@ STORY_COMPLETE: US-001
 [2026-05-03 19:28:46] [OK] Marked US-001 as passed
 [2026-05-03 19:28:46] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 19:28:46] [STEP] Committing changes...
+[2026-05-03 19:28:48] [INFO] Starting iteration 2
+[2026-05-03 19:28:48] [INFO] Processing story: US-002
+[2026-05-03 19:28:48] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Recommendations — lever summary strip and savings composition chart
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add two new visualisation sections above the individual recommendation cards: (1) a savings composition horizontal bar chart showing estimated savings per lever, giving instant portfolio composition view; (2) a row of lever summary cards (one per lever) showing total savings and count, which filter the recommendation cards when clicked. The existing Tabs navigation is replaced by the lever summary cards.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx
+- Import SpendBarChart from @/components/charts. Import SEMANTIC_COLORS from '@/components/charts/constants'.
+- Below the portfolio KPI row and confidence filter buttons, add a 'Savings by Lever' section: compute leverSummaries — an array of { lever: string, totalImpact: number, count: number } grouped from recommendations, sorted by totalImpact desc. Render as SpendBarChart with data=leverSummaries.map(l => ({ label: l.lever.replace(/_/g,' '), value: l.totalImpact })), title='Savings by Lever', horizontal={true}, valueFormatter={v => formatCurrency(v)}, showLabel={false}. Wrap in the standard chart container div 'border rounded-xl p-5 bg-card shadow-sm'.
+- Below the savings bar chart, add a lever summary strip: a flex flex-wrap gap-3 row of cards, one per lever. Each card is a div with onClick handler, className that shows selected state: when selectedLever === lever use 'border-2 border-primary bg-primary/5 rounded-xl p-4 cursor-pointer', else 'border rounded-xl p-4 cursor-pointer hover:bg-muted/50'. Inside each card: lever name in text-sm font-semibold (humanized, replace _ with space), total impact in text-lg font-bold text-green-700, count in text-xs text-muted-foreground '{count} recommendations'.
+- Add state: const [selectedLever, setSelectedLever] = useState<string | null>(null). Clicking a lever card toggles it: setSelectedLever(prev => prev === lever ? null : lever).
+- Remove the existing Tabs / TabsList / TabsTrigger / TabsContent structure entirely. Replace it with a simple filtered list: const displayedRecs = (selectedLever ? filtered.filter(r => (r.lever ?? 'OTHER') === selectedLever) : filtered).sort((a,b) => (b.estimated_impact_aud ?? 0) - (a.estimated_impact_aud ?? 0)).
+- Render displayedRecs as RecommendationCard components in a space-y-3 div. If displayedRecs is empty, show a p tag text-muted-foreground 'No recommendations match the current filters.'
+- Remove Tabs imports since they are no longer needed.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Recommendations — lever summary strip and savings composition chart`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 19:30:02] [OK] Story US-002 completed!
+[2026-05-03 19:30:02] [OK] Marked US-002 as passed
+[2026-05-03 19:30:02] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 19:30:02] [STEP] Committing changes...
