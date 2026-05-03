@@ -115,7 +115,8 @@
         "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — when rendering DiagnosticsCheckCard, pass affectsRecommendations={['missing_category', 'low_confidence_category'].includes(c.check_name)}.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T18:32:23Z"
     },
     {
       "id": "US-005",

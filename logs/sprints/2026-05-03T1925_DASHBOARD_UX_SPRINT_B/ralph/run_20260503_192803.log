@@ -210,3 +210,67 @@ STORY_COMPLETE: US-003
 [2026-05-03 19:31:47] [OK] Marked US-003 as passed
 [2026-05-03 19:31:47] [INFO] Logged progress for US-003: PASSED
 [2026-05-03 19:31:47] [STEP] Committing changes...
+[2026-05-03 19:31:49] [INFO] Starting iteration 4
+[2026-05-03 19:31:49] [INFO] Processing story: US-004
+[2026-05-03 19:31:49] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Data Quality — severity sort, progress bars, and impact flags
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Three focused improvements to the Data Quality page: sort checks by severity (RED first, then AMBER, then GREEN) so the most critical issues appear first; add a visual Progress bar to each check card below the percentage; add an 'Affects recommendations' badge to the two checks that directly degrade recommendation quality.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — sort the checks array before rendering: const SEVERITY_ORDER: Record<string, number> = { RED: 0, AMBER: 1, GREEN: 2 }. Sort: checks.sort((a,b) => (SEVERITY_ORDER[a.status] ?? 2) - (SEVERITY_ORDER[b.status] ?? 2)).
+- Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx
+- Add import: import { Progress } from '@/components/ui/progress'
+- Add optional prop affectsRecommendations?: boolean
+- In the card body, after the description paragraph, add a Progress component: value={Math.min(value_pct, 100)}. Style the progress indicator colour by status: for GREEN use default, for AMBER add className='[&>div]:bg-amber-500', for RED add className='[&>div]:bg-red-500'. Wrap in a div className='mt-2'.
+- When affectsRecommendations is true, render a Badge below the description: className='text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1' with text '⚠ Affects recommendations'.
+- Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — when rendering DiagnosticsCheckCard, pass affectsRecommendations={['missing_category', 'low_confidence_category'].includes(c.check_name)}.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Data Quality — severity sort, progress bars, and impact flags`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-03 19:32:23] [OK] Story US-004 completed!
+[2026-05-03 19:32:23] [OK] Marked US-004 as passed
+[2026-05-03 19:32:23] [INFO] Logged progress for US-004: PASSED
+[2026-05-03 19:32:23] [STEP] Committing changes...
