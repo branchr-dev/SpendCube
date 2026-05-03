@@ -1,0 +1,15 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+# Created: Sun  3 May 2026 15:42:32 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-05-03
+Created supabase/migrations/002_analytics_extensions.sql:
+- 12 nullable columns added to transactions (legal_entity, vendor_country, plant_country, categorisation_status, manual_override_flag, ai_classification_flag, harmonised_payment_term, discount_percent, discount_days, has_early_payment_discount, payment_term_confidence, abc_segment)
+- 3 new reference tables: categories, legal_entities, payment_term_mappings (all with engagement_id FK + UNIQUE constraints)
+- 4 new views: v_by_legal_entity, v_by_currency, v_by_country, v_abc_analysis (CREATE OR REPLACE for idempotency)
+- 4 composite indexes on new transaction columns
+- RLS enabled + 4 policies (SELECT/INSERT/UPDATE/DELETE) per new table, matching 001 pattern
+- Note: views use CREATE OR REPLACE (not IF NOT EXISTS) — Postgres does not support IF NOT EXISTS for views
+
