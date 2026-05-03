@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { formatPct } from '@/lib/formatters'
 
 type Status = 'GREEN' | 'AMBER' | 'RED'
@@ -9,6 +10,7 @@ interface Props {
   status: Status
   value_pct: number
   description: string
+  affectsRecommendations?: boolean
 }
 
 const BORDER: Record<Status, string> = {
@@ -27,7 +29,13 @@ function humanize(s: string) {
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-export default function DiagnosticsCheckCard({ check_name, status, value_pct, description }: Props) {
+const PROGRESS_CLASS: Record<Status, string> = {
+  GREEN: '',
+  AMBER: '[&>div]:bg-amber-500',
+  RED: '[&>div]:bg-red-500',
+}
+
+export default function DiagnosticsCheckCard({ check_name, status, value_pct, description, affectsRecommendations }: Props) {
   return (
     <Card className={`border-l-4 ${BORDER[status]}`}>
       <CardContent className="pt-4 pb-4 space-y-1">
@@ -37,6 +45,12 @@ export default function DiagnosticsCheckCard({ check_name, status, value_pct, de
         </div>
         <div className="text-2xl font-bold">{formatPct(value_pct)}</div>
         <p className="text-xs text-muted-foreground">{description}</p>
+        {affectsRecommendations && (
+          <Badge className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1">⚠ Affects recommendations</Badge>
+        )}
+        <div className="mt-2">
+          <Progress value={Math.min(value_pct, 100)} className={PROGRESS_CLASS[status]} />
+        </div>
       </CardContent>
     </Card>
   )

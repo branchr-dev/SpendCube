@@ -45,13 +45,17 @@ export default function DataQualityPage() {
     enabled: !!engagementId,
   })
 
+  const SEVERITY_ORDER: Record<string, number> = { RED: 0, AMBER: 1, GREEN: 2 }
+
   const checks = data
-    ? Object.entries(data).map(([name, c]) => ({
-        check_name: name,
-        status: (STATUS_NORMALIZE[c.status ?? 'GREEN'] ?? 'GREEN') as Status,
-        value_pct: c.pct ?? 0,
-        description: c.description ?? '',
-      }))
+    ? Object.entries(data)
+        .map(([name, c]) => ({
+          check_name: name,
+          status: (STATUS_NORMALIZE[c.status ?? 'GREEN'] ?? 'GREEN') as Status,
+          value_pct: c.pct ?? 0,
+          description: c.description ?? '',
+        }))
+        .sort((a, b) => (SEVERITY_ORDER[a.status] ?? 2) - (SEVERITY_ORDER[b.status] ?? 2))
     : []
 
   const overall_score =
@@ -101,6 +105,7 @@ export default function DataQualityPage() {
                 status={c.status}
                 value_pct={c.value_pct}
                 description={c.description}
+                affectsRecommendations={['missing_category', 'low_confidence_category'].includes(c.check_name)}
               />
             ))}
       </div>
