@@ -221,3 +221,69 @@ STORY_COMPLETE: US-003
 [2026-05-03 15:46:54] [OK] Marked US-003 as passed
 [2026-05-03 15:46:54] [INFO] Logged progress for US-003: PASSED
 [2026-05-03 15:46:54] [STEP] Committing changes...
+[2026-05-03 15:46:56] [INFO] Starting iteration 4
+[2026-05-03 15:46:56] [INFO] Processing story: US-004
+[2026-05-03 15:46:56] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Global filter context, shared aggregation utilities, and drilldown hook
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Three pure-addition files that provide the architectural foundation for all future analytics pages: (1) FilterContext.tsx moves filter state to React Context so it persists across page navigation; (2) aggregations.ts provides reusable metric calculations (ABC, concentration, tail spend, top-N) that pages import instead of reinventing; (3) useDrilldown.ts manages the overview→category→supplier→transaction navigation pattern with a DrilldownBreadcrumb component. The existing useFilters hook is refactored to delegate to FilterContext so existing pages need no changes.
+
+## Acceptance Criteria
+- Create file: frontend/src/contexts/FilterContext.tsx — exports: FilterContextValue interface {filters: FilterState, updateFilter: (key: keyof FilterState, value: any) => void, clearFilters: () => void, toQueryParams: () => Record<string,string>}; FilterProvider component (wraps children, uses useReducer with FilterState); useFilterContext() hook that throws if used outside provider
+- FilterContext reducer handles actions: SET_FILTER (updates single key), CLEAR_ALL (resets to defaultFilters()). State is initialised from URL search params if present (reads ?date_from=&date_to=&legal_entities=& etc.) so filters survive page refresh.
+- Edit file: frontend/src/hooks/useFilters.ts — replace useState with useFilterContext(). The hook's return signature {filters, updateFilter, clearFilters, toQueryParams} must remain IDENTICAL so all existing pages (OverviewPage, CategoryPage, SupplierPage, etc.) continue to work without changes.
+- Edit file: frontend/src/main.tsx — wrap the App component in <FilterProvider> inside the existing QueryClientProvider wrapper
+- Create file: frontend/src/lib/aggregations.ts — pure TypeScript functions (no React imports): calculateABCSegments(rows: {id: string, name: string, spend: number}[]): (row & {abc_segment: ABCSegment, cumulative_pct: number})[]; calculateSpendConcentration(rows: {spend: number}[], topN: number): {top_n_spend: number, top_n_pct: number, total_spend: number}; getTopN<T extends {spend?: number, total_spend?: number}>(rows: T[], n: number): T[]; calculateTailSpendMetrics(rows: {id: string, spend: number}[]): {tail_supplier_count: number, tail_spend: number, tail_pct: number, core_supplier_count: number}; formatSpendSummary(totalSpend: number, currency: string): {formatted: string, millions: number, billions: number, scale: 'K'|'M'|'B'}
+- Create file: frontend/src/hooks/useDrilldown.ts — exports: type DrilldownLevel = 'overview' | 'category_l1' | 'category_l2' | 'supplier' | 'transaction'; interface DrilldownState {level: DrilldownLevel, category_l1?: string, category_l2?: string, supplier_id?: string, supplier_name?: string}; function useDrilldown(): {state: DrilldownState, drillTo: (level: DrilldownLevel, context: Partial<DrilldownState>) => void, drillUp: () => void, reset: () => void, isFiltered: boolean}. History stack allows drillUp() to navigate back.
+- Create file: frontend/src/components/DrilldownBreadcrumb.tsx — renders nothing when state.level === 'overview'; renders a breadcrumb trail with clickable segments (Overview > {category_l1} > {category_l2} > {supplier_name}) based on DrilldownState; each segment calls drillUp() to the appropriate level. Uses shadcn/ui styling.
+- Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors after all new files and edits
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Global filter context, shared aggregation utilities, and drilldown hook`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+Committed. All 6 deliverables are complete and the build passes with zero TypeScript errors.
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-03 15:50:16] [OK] Story US-004 completed!
+[2026-05-03 15:50:16] [OK] Marked US-004 as passed
+[2026-05-03 15:50:16] [INFO] Logged progress for US-004: PASSED
+[2026-05-03 15:50:16] [STEP] Committing changes...

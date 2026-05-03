@@ -124,7 +124,8 @@
         "Create file: frontend/src/components/DrilldownBreadcrumb.tsx — renders nothing when state.level === 'overview'; renders a breadcrumb trail with clickable segments (Overview > {category_l1} > {category_l2} > {supplier_name}) based on DrilldownState; each segment calls drillUp() to the appropriate level. Uses shadcn/ui styling.",
         "Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors after all new files and edits"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T14:50:16Z"
     },
     {
       "id": "US-005",
