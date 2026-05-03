@@ -88,3 +88,30 @@ Story completed successfully by Ralph loop iteration 2
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+---
+
+## US-004 — Pipeline database adapter — extend get_engine() for Postgres and add engagement_id injection
+**Status:** COMPLETE (2026-05-03)
+
+**What was changed:**
+- src/models/database.py — get_engine() now routes: postgresql:// and postgresql+psycopg2:// → create_engine with pool_pre_ping=True; sqlite:// → create_engine with check_same_thread=False; bare path → prepend sqlite:///
+- src/models/database.py — engagement_id (Text, nullable=True) added as last column to all 5 tables: transactions, supplier_master, supplier_match_log, category_overrides, audit_log
+- src/models/database.py — insert_transactions() accepts optional engagement_id parameter; injects into each row when provided
+- src/config.py — PathsConfig gains database_url: Optional[str] = None
+
+**Verified:**
+- python3 -c "from src.models.database import get_engine; e = get_engine(':memory:'); print('sqlite in-memory ok')" → exits 0
+- python3 -c "from src.models.database import get_engine; e = get_engine('sqlite:///test.db'); print('sqlite url ok')" → exits 0
+- pytest tests/ -v → 160 passed (3 pre-existing failures in test_ingestion.py unrelated to this story; confirmed by running against baseline)
+
+**Learnings:**
+- 3 tests in tests/test_ingestion.py (test_ingest_cn_row_is_credit_note, test_ingest_intercompany_row_flagged, test_ingest_usd_row_converted_to_aud) were already failing on main before this story. Not regressions.
+- sqlite:///:memory: is the correct in-memory URL — the :memory: bare path gets prepended to become sqlite:///:memory: which SQLite recognises correctly.
+
+
+---
+
+### [US-004] - 2026-05-03 13:36:46
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+

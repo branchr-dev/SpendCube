@@ -134,7 +134,8 @@
         "Verify: python -c \"from src.models.database import get_engine; e = get_engine(':memory:'); print('sqlite in-memory ok')\" — exits 0",
         "Verify: python -c \"from src.models.database import get_engine; e = get_engine('sqlite:///test.db'); print('sqlite url ok')\" — exits 0"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:36:46Z"
     },
     {
       "id": "US-005",

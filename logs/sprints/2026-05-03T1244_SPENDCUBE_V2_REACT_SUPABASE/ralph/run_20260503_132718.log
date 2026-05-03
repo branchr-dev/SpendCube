@@ -228,3 +228,67 @@ STORY_COMPLETE: US-003
 [2026-05-03 13:33:22] [OK] Marked US-003 as passed
 [2026-05-03 13:33:22] [INFO] Logged progress for US-003: PASSED
 [2026-05-03 13:33:22] [STEP] Committing changes...
+[2026-05-03 13:33:24] [INFO] Starting iteration 4
+[2026-05-03 13:33:24] [INFO] Processing story: US-004
+[2026-05-03 13:33:24] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Pipeline database adapter — extend get_engine() for Postgres and add engagement_id injection
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Modify src/models/database.py so that get_engine() accepts either a SQLite file path or a full SQLAlchemy database URL (for Postgres). Add engagement_id columns to all five table definitions and update insert functions to accept engagement_id. The change must be 100% backwards-compatible: all existing tests that create in-memory SQLite engines must continue to pass unchanged.
+
+## Acceptance Criteria
+- Edit file: src/models/database.py — change get_engine(db_path: str) -> Engine to get_engine(db_url: str) -> Engine. Logic: if db_url starts with 'postgresql://' or 'postgresql+psycopg2://' use create_engine(db_url, pool_pre_ping=True); if db_url starts with 'sqlite://' use create_engine(db_url, connect_args={'check_same_thread': False}); otherwise treat as file path and prepend 'sqlite:///' as before.
+- Edit file: src/models/database.py — add Column('engagement_id', Text, nullable=True) as the LAST column in: transactions_table, supplier_master_table, supplier_match_log_table, category_overrides_table, audit_log_table. nullable=True preserves backwards compatibility with existing SQLite data.
+- Edit file: src/models/database.py — update insert_transactions(engine, records, engagement_id=None) to inject engagement_id into each row dict when provided and not None.
+- Edit file: src/models/database.py — update insert() operations in any other insert helper functions (supplier_master, supplier_match_log, category_overrides, audit_log) to similarly accept optional engagement_id parameter.
+- Edit file: src/config.py — add field database_url: Optional[str] = None to PathsConfig class (use from typing import Optional). When this field is set, the value takes precedence over db_path for constructing the SQLAlchemy engine URL.
+- Verify: pytest tests/ -v — all 60+ existing tests pass with no regressions. This is the critical acceptance check.
+- Verify: python -c "from src.models.database import get_engine; e = get_engine(':memory:'); print('sqlite in-memory ok')" — exits 0
+- Verify: python -c "from src.models.database import get_engine; e = get_engine('sqlite:///test.db'); print('sqlite url ok')" — exits 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Pipeline database adapter — extend get_engine() for Postgres and add engagement_id injection`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-03 13:36:46] [OK] Story US-004 completed!
+[2026-05-03 13:36:46] [OK] Marked US-004 as passed
+[2026-05-03 13:36:46] [INFO] Logged progress for US-004: PASSED
+[2026-05-03 13:36:46] [STEP] Committing changes...
