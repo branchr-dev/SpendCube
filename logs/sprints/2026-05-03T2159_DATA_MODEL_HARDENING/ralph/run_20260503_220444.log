@@ -146,3 +146,75 @@ STORY_COMPLETE: US-002
 [2026-05-03 22:07:16] [OK] Marked US-002 as passed
 [2026-05-03 22:07:16] [INFO] Logged progress for US-002: PASSED
 [2026-05-03 22:07:16] [STEP] Committing changes...
+[2026-05-03 22:07:18] [INFO] Starting iteration 3
+[2026-05-03 22:07:18] [INFO] Processing story: US-003
+[2026-05-03 22:07:19] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Add Ingestor.ingest_to_raw() with full-row hash deduplication
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Edit src/ingestion/ingest.py to add a static method compute_source_row_hash() and a new instance method ingest_to_raw() that writes to transactions_raw instead of transactions. The hash is SHA256 of the full original CSV row dict (sorted keys, JSON-serialised). The existing ingest_to_db() method must remain unchanged so all existing tests continue to pass.
+
+## Acceptance Criteria
+- Edit file: src/ingestion/ingest.py
+- Add import: import hashlib
+- Add import at top of file: from src.models.database import create_batch, insert_raw_transactions, update_batch_status
+- Add static method Ingestor.compute_source_row_hash(raw_row_dict: dict) -> str: returns hashlib.sha256(json.dumps(raw_row_dict, sort_keys=True, default=str).encode()).hexdigest()
+- Add method Ingestor.ingest_to_raw(file_path: str, engine, engagement_id: str, source_system: str = None) -> dict: reads the file, creates a batch via create_batch(), computes source_row_hash for each row using the original raw CSV dict (before column mapping), builds records for transactions_raw with all required fields (id=str(uuid4()), batch_id, engagement_id, source_row_hash, invoice_number, invoice_date, raw_supplier_name, base_amount, raw_data=json.dumps(raw_row), pipeline_status='queued', created_at), calls insert_raw_transactions() in chunks, calls update_batch_status() with final counts, returns dict with keys: batch_id, new_rows, duplicate_rows, total_rows
+- The ingest_to_raw() method must extract invoice_number, invoice_date, raw_supplier_name, base_amount from the post-mapping DataFrame (after ingest_file() runs) for storage in transactions_raw alongside the raw_data
+- Existing method Ingestor.ingest_to_db() is not modified — signature and behaviour unchanged
+- Verify: python -c "from src.ingestion.ingest import Ingestor; h = Ingestor.compute_source_row_hash({'a': 1, 'b': 2}); assert len(h) == 64; print('hash OK')"
+- Verify: python -m pytest tests/test_ingest.py -v -- all existing tests pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Add Ingestor.ingest_to_raw() with full-row hash deduplication`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+Done. Here's what was added to `src/ingestion/ingest.py`:
+
+- `import hashlib` and `timezone` added to imports
+- `Ingestor.compute_source_row_hash(raw_row_dict)` — static method returning SHA256 hex digest of JSON-serialised dict with sorted keys
+- `Ingestor.ingest_to_raw(file_path, engine, engagement_id, source_system)` — reads the file twice (once for raw dicts to hash, once via `ingest_file()` for mapped canonical fields), creates an ingestion batch, builds records with `source_row_hash` + canonical fields + `raw_data`, inserts via `insert_raw_transactions()` with deduplication, updates batch status, and returns `{batch_id, new_rows, duplicate_rows, total_rows}`
+- `ingest_to_db()` is unchanged — all 32 previously-passing tests still pass
+
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-03 22:08:50] [OK] Story US-003 completed!
+[2026-05-03 22:08:50] [OK] Marked US-003 as passed
+[2026-05-03 22:08:50] [INFO] Logged progress for US-003: PASSED
+[2026-05-03 22:08:50] [STEP] Committing changes...

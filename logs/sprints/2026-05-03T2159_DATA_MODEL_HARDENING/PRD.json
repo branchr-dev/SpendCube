@@ -101,7 +101,8 @@
         "Verify: python -c \"from src.ingestion.ingest import Ingestor; h = Ingestor.compute_source_row_hash({'a': 1, 'b': 2}); assert len(h) == 64; print('hash OK')\"",
         "Verify: python -m pytest tests/test_ingest.py -v -- all existing tests pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:08:50Z"
     },
     {
       "id": "US-004",
