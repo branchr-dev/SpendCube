@@ -163,7 +163,7 @@ export default function CategoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-semibold">Category Deep Dive</h1>
+      <h1 className="text-2xl font-bold">Category Deep Dive</h1>
 
       <FilterBar filters={filters} onChange={handleFilterChange} options={filterOptions} />
 

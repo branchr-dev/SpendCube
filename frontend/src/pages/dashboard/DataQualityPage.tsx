@@ -75,7 +75,7 @@ export default function DataQualityPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-semibold">Data Quality</h1>
+      <h1 className="text-2xl font-bold">Data Quality</h1>
 
       {isLoading ? (
         <Skeleton className="h-28 max-w-xs" />

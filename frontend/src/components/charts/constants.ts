@@ -6,3 +6,10 @@ export const CHART_COLORS = [
   '#AED6F1',
   '#D6EAF8',
 ]
+
+export const SEMANTIC_COLORS = {
+  opportunity: '#10b981',
+  risk: '#f43f5e',
+  attention: '#f59e0b',
+  neutral: '#64748b',
+}

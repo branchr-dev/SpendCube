@@ -131,7 +131,7 @@ export default function SupplierPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-semibold">Supplier Deep Dive</h1>
+      <h1 className="text-2xl font-bold">Supplier Deep Dive</h1>
 
       <DrilldownBreadcrumb
         state={drilldownState}
