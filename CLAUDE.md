@@ -783,3 +783,113 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 - **Expanded (`expanded=true`):** full filter UI (all selects/date inputs) with a "Close ↑" ghost button to collapse.
 - State: `const [expanded, setExpanded] = useState(false)` — starts collapsed on every page load.
 - Active pill sources: `date_from`, `date_to`, `business_units[]`, `category_l1s[]`, `supplier_search`, `legal_entities[]`, `currencies[]`, `countries[]`, `abc_segments[]`.
+
+## Dashboard UX Conventions (Sprint B)
+
+### SpendAreaChart — `showReferenceLine` Prop
+
+`frontend/src/components/charts/SpendAreaChart.tsx`
+
+- `showReferenceLine?: boolean` (default `false`) — when `true`, computes `avgSpend` as the arithmetic mean of all `data[n].total_spend` values and renders a Recharts `ReferenceLine` inside the `AreaChart`.
+- Line style: `y={avgSpend} stroke='#94a3b8' strokeDasharray='4 4' strokeWidth={1.5}` with label `{ value: 'Avg', position: 'insideTopRight', fontSize: 11, fill: '#94a3b8' }`.
+- Skips the line when `data` is empty.
+- Usage: `OverviewPage` passes `showReferenceLine={true}` on the monthly trend chart.
+
+### RecommendationCard — `portfolioTotal` and `leverIndex` Props
+
+`frontend/src/components/dashboard/RecommendationCard.tsx`
+
+- `portfolioTotal?: number` — total portfolio savings (from `portfolio.total_identified_savings`). When provided and `> 0`, renders a thin impact share bar below the action text:
+  - Label row: `'Share of portfolio savings'` + `formatPct((estimated_impact_aud / portfolioTotal) * 100)`
+  - Bar: `h-1.5 rounded-full bg-muted overflow-hidden` containing a `h-full rounded-full bg-green-500` inner div with `width: ${Math.min(share, 100)}%`
+- `leverIndex?: number` — 0-based index of this card's lever in the lever order. When provided, adds a 4 px left border accent via inline style using `CHART_COLORS[leverIndex % CHART_COLORS.length]`.
+- Caller (`RecommendationsPage`) computes `leverIndex` as the position of `rec.lever` in the `leverSummaries` array.
+
+### DiagnosticsCheckCard — Sprint B Props and `CHECK_GUIDANCE` Map
+
+`frontend/src/components/dashboard/DiagnosticsCheckCard.tsx`
+
+**New props:**
+- `affectsRecommendations?: boolean` — renders a `'⚠ Affects recommendations'` Badge (`bg-blue-50 text-blue-700 border-blue-200 text-xs`) below the description. Passed as `true` for `missing_category` and `low_confidence_category` from `DataQualityPage`.
+- `onClick?: () => void` — called when a RED or AMBER card is clicked; the card gets `cursor-pointer`. A `ChevronDown`/`ChevronUp` icon (h-3 w-3 text-muted-foreground) appears in the top-right corner.
+- `expanded?: boolean` — when `true`, renders an inline guidance section below the progress bar (`mt-3 pt-3 border-t space-y-2 text-xs`) with three rows: `'What it measures:'`, `'Impact:'`, `'How to fix:'` sourced from `CHECK_GUIDANCE[check_name]`.
+
+**`CHECK_GUIDANCE` constant** (module-level, outside component):
+```ts
+const CHECK_GUIDANCE: Record<string, { meaning: string; impacts: string; fix: string }> = {
+  missing_supplier:        { ... },
+  missing_category:        { ... },
+  missing_gl_account:      { ... },
+  missing_cost_centre:     { ... },
+  low_confidence_category: { ... },
+  low_confidence_supplier: { ... },
+  duplicate_transactions:  { ... },
+  maverick_spend:          { ... },
+  tail_spend_ratio:        { ... },
+}
+```
+
+All 9 check names are covered. GREEN cards are not expandable (`onClick` not passed).
+
+**Severity sort** (`DataQualityPage`): `const SEVERITY_ORDER = { RED: 0, AMBER: 1, GREEN: 2 }` — `checks.sort((a,b) => (SEVERITY_ORDER[a.status] ?? 2) - (SEVERITY_ORDER[b.status] ?? 2))` applied before rendering. Client-side only, no backend change.
+
+**Progress bar**: added to each card via `<Progress value={Math.min(value_pct, 100)} className={...} />` (`@/components/ui/progress`). Colour by status: AMBER → `[&>div]:bg-amber-500`, RED → `[&>div]:bg-red-500`, GREEN → default.
+
+**Expanded check state** (`DataQualityPage`): `const [expandedCheck, setExpandedCheck] = useState<string | null>(null)`. Toggle: `setExpandedCheck(prev => prev === c.check_name ? null : c.check_name)`. Pass `expanded={expandedCheck === c.check_name}`.
+
+### Priority Matrix — Confidence → Numeric Mapping
+
+`RecommendationsPage` renders a `PriorityMatrix` function component (inline, not exported):
+
+- **Confidence mapping**: `HIGH → 0.9`, `MEDIUM → 0.6`, `LOW → 0.3` (x-axis values)
+- **Y-axis**: `estimated_impact_aud`
+- **ZAxis**: `range=[40, 400]` — bubble pixel size proportional to `addressable_baseline / 1000` (min 100)
+- **Per-lever Scatter**: one `<Scatter>` per unique lever, coloured by `CHART_COLORS[leverIndex]`
+- **XAxis ticks**: `[0.3, 0.6, 0.9]` with `tickFormatter`: `0.3→'Low'`, `0.6→'Medium'`, `0.9→'High'`
+- **Chart size**: `ResponsiveContainer width='100%' height={280}`
+- Only rendered when `recommendations.length > 0`
+
+```tsx
+// Scatter point shape
+{ x: conf === 'HIGH' ? 0.9 : conf === 'MEDIUM' ? 0.6 : 0.3,
+  y: estimated_impact_aud ?? 0,
+  z: Math.max((addressable_baseline ?? 0) / 1000, 100),
+  lever, label: context ?? '', type, impact: estimated_impact_aud ?? 0 }
+```
+
+### Recommendations Page — Lever Summary Strip
+
+- `leverSummaries`: `{ lever, totalImpact, count }[]` grouped from `recommendations`, sorted by `totalImpact` desc.
+- `selectedLever` state (`useState<string | null>(null)`) — clicking a lever card toggles it (click again to deselect).
+- Selected card style: `border-2 border-primary bg-primary/5 rounded-xl p-4 cursor-pointer`; unselected: `border rounded-xl p-4 cursor-pointer hover:bg-muted/50`.
+- `displayedRecs = (selectedLever ? filtered.filter(r => r.lever === selectedLever) : filtered).sort(...)` — replaces the former `Tabs` navigation entirely.
+- Savings composition bar chart (`SpendBarChart`) rendered above the strip; priority matrix rendered above that.
+
+### Supplier Page — Parent Company Grouping
+
+`frontend/src/pages/dashboard/SupplierPage.tsx`
+
+- `groupByParent: boolean` state (`useState(false)`) — toggled by a `Building2`-icon `Button variant='outline' size='sm'` in the toolbar. Label: `'Group by Parent'` / `'Show All'`.
+- `expandedGroups: Set<string>` state (`useState(new Set())`). Toggle helper:
+  ```ts
+  const toggleGroup = (g: string) => setExpandedGroups(prev => {
+    const n = new Set(prev); n.has(g) ? n.delete(g) : n.add(g); return n;
+  })
+  ```
+- When `groupByParent` is `true`: group key = `row.parent_company_name ?? '__independent__'`. Groups sorted by `totalSpend` desc; `'__independent__'` always last.
+- Group header `TableRow`: `bg-muted/40 cursor-pointer hover:bg-muted/60`, shows `ChevronRight`/`ChevronDown` icon + parent name (or `'Independent Suppliers'`) + total spend + `'N suppliers'`.
+- Child rows rendered when `expandedGroups.has(groupKey)`, with `pl-8` on the first `TableCell` for indent.
+- All groups start collapsed. Search filter applied before grouping.
+
+### Category Fragmentation Scorecard — New Columns
+
+`frontend/src/pages/dashboard/CategoryPage.tsx`
+
+Two columns added after the `'Suppliers'` column in the Fragmentation Scorecard table:
+
+| Column header | Formula | Highlight rule |
+|---------------|---------|----------------|
+| `'Avg Invoice'` | `entry.total_spend / Math.max(entry.transaction_count, 1)` | `> 50000` → `text-right font-medium text-amber-600` |
+| `'Spend / Supplier'` | `entry.total_spend / Math.max(entry.supplier_count, 1)` | No special colouring |
+
+Both `TableHead` elements use `className='text-right'`. Values formatted with `formatCurrency()`.
