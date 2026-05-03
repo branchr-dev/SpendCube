@@ -1,0 +1,246 @@
+{
+  "project": {
+    "id": "DATA-MODEL-HARDENING-2026-05",
+    "name": "Data Model Hardening — Incremental Ingestion & pgvector",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING",
+    "track": "code"
+  },
+  "summary": "Add incremental ingestion with batch tracking and deduplication (transactions_raw staging table), pgvector-based embedding storage replacing pickle caches, and an IncrementalPromoter that processes only new rows through the supplier harmonisation and categorisation pipeline before writing to the enriched transactions table. The goal is to support 1M+ row client datasets uploaded periodically as CSV/Excel, without re-processing previously ingested rows and without any external LLM API calls in the hot path.",
+  "decisions": {
+    "two_table_approach": "transactions_raw is the landing zone for every CSV upload; transactions is the enriched fact table. The pipeline promotes rows from raw to enriched. This separates ingestion concerns from analytical concerns and enables incremental processing.",
+    "source_row_hash": "SHA256(json.dumps(raw_row_dict, sort_keys=True, default=str)) where raw_row_dict is the original CSV row dict before any transformation. Full-row hash is the most collision-resistant approach and handles null invoice_number gracefully. A re-export with any changed field is treated as a new row — acceptable trade-off for correctness.",
+    "pgvector_as_cache_only": "pgvector is used as a persistent embedding cache (store + retrieve by text), not for ANN similarity search. Cosine similarity is still computed in Python using numpy. This keeps the logic simple and avoids pgvector-specific SQL while eliminating pickle files in production.",
+    "pickle_fallback": "When SUPABASE_DATABASE_URL is not set (local dev, SQLite tests), embedding stores fall back to the existing pickle cache behaviour. No test changes required.",
+    "incremental_harmonisation": "The promoter only runs supplier harmonisation on raw_supplier_name values NOT already present in supplier_master for the engagement. Known names get their canonical_supplier_id looked up directly. This avoids re-running fuzzy/embedding matching on the full supplier master on every batch.",
+    "incremental_categorisation": "Categorisation runs on all queued rows in the batch. Rows with category_confidence < 0.60 after all deterministic passes get pipeline_status = 'review_required' and surface in the Review Workstation. No LLM fallback.",
+    "backwards_compatibility": "Ingestor.ingest_to_db() is preserved unchanged for all existing tests. The new Ingestor.ingest_to_raw() method is additive. database.py adds ingestion_batches_table and transactions_raw_table to the SQLAlchemy metadata so they are created in SQLite for local dev too."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Post-pipeline enriched fact table. Will gain a source_raw_id UUID column pointing back to transactions_raw.",
+      "supplier_master": "Canonical supplier dimension. build_supplier_master() already checks for existing entries before inserting — idempotent.",
+      "pipeline_jobs": "Tracks FastAPI background job status. Will gain a batch_id column to link job to ingestion batch.",
+      "engagements": "Multi-tenant root table. All new tables reference engagement_id."
+    },
+    "key_files": [
+      "supabase/migrations/001_initial_schema.sql - existing schema baseline; new migration must not modify existing tables except adding source_raw_id to transactions",
+      "supabase/migrations/002_analytics_extensions.sql - analytics columns added additively; same pattern for migration 003",
+      "src/models/database.py - SQLAlchemy Core table definitions; add ingestion_batches_table, transactions_raw_table, helper functions",
+      "src/ingestion/ingest.py - Ingestor class; add ingest_to_raw() method; keep ingest_to_db() unchanged",
+      "src/suppliers/harmoniser.py - build_supplier_master() already idempotent; promoter will call it with only new names",
+      "src/suppliers/embeddings.py - EmbeddingMatcher uses pickle cache; add PgvectorEmbeddingStore class",
+      "src/categorisation/embedding_classifier.py - EmbeddingCategoriser uses pickle cache; add pgvector cache alongside",
+      "backend/app/routers/ingestion.py - _run_pipeline() re-processes all rows; update to use ingest_to_raw + IncrementalPromoter"
+    ],
+    "patterns_to_follow": [
+      "All new Supabase tables use the same RLS policy pattern as migration 001: engagement_id IN (SELECT id FROM engagements WHERE owner_email = auth.jwt() ->> 'email')",
+      "All new Supabase tables have IF NOT EXISTS guards on CREATE and indexes",
+      "SQLAlchemy Core style (Table + Column, no ORM) — match existing database.py",
+      "Helper functions in database.py follow insert_transactions() pattern: accept engine + records/params, use engine.begin() for writes",
+      "PgvectorEmbeddingStore.is_available() must return False gracefully when pgvector extension not present — check with a try/except on a vector type query",
+      "Batch insert chunking: insert_raw_transactions() must chunk at 5000 rows per INSERT to handle 1M+ row uploads without memory issues"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add migration 003 — ingestion_batches, transactions_raw, embedding tables, pgvector",
+      "description": "Create supabase/migrations/003_data_model_hardening.sql. This migration enables the pgvector extension, creates the ingestion_batches and transactions_raw staging tables, creates description_embeddings and supplier_embeddings tables with VECTOR(384) columns and IVFFlat indexes, adds a source_raw_id UUID column to the existing transactions table, and applies RLS policies to all new tables following the existing pattern from 001_initial_schema.sql.",
+      "acceptanceCriteria": [
+        "Create file: supabase/migrations/003_data_model_hardening.sql",
+        "File contains: CREATE EXTENSION IF NOT EXISTS vector",
+        "File creates table ingestion_batches with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, filename TEXT NOT NULL, row_count INTEGER, new_rows INTEGER, duplicate_rows INTEGER, status TEXT NOT NULL DEFAULT 'processing', uploaded_at TIMESTAMPTZ DEFAULT now(), completed_at TIMESTAMPTZ",
+        "File creates table transactions_raw with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, batch_id UUID NOT NULL REFERENCES ingestion_batches(id) ON DELETE CASCADE, source_row_hash TEXT NOT NULL, pipeline_status TEXT NOT NULL DEFAULT 'queued', invoice_number TEXT, invoice_date TEXT, raw_supplier_name TEXT, base_amount DOUBLE PRECISION, raw_data JSONB, created_at TIMESTAMPTZ DEFAULT now()",
+        "File creates: CREATE UNIQUE INDEX ON transactions_raw(engagement_id, source_row_hash)",
+        "File creates table description_embeddings with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), normalised_text TEXT NOT NULL UNIQUE, embedding VECTOR(384) NOT NULL, model_name TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2', created_at TIMESTAMPTZ DEFAULT now()",
+        "File creates table supplier_embeddings with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, normalised_name TEXT NOT NULL, embedding VECTOR(384) NOT NULL, model_name TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2', created_at TIMESTAMPTZ DEFAULT now(), UNIQUE(engagement_id, normalised_name)",
+        "File creates IVFFlat indexes: CREATE INDEX ON description_embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50) and same pattern for supplier_embeddings",
+        "File adds: ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_raw_id UUID REFERENCES transactions_raw(id)",
+        "File adds: ALTER TABLE pipeline_jobs ADD COLUMN IF NOT EXISTS batch_id UUID REFERENCES ingestion_batches(id)",
+        "File enables RLS on ingestion_batches, transactions_raw, supplier_embeddings with SELECT/INSERT/UPDATE/DELETE policies matching the pattern in 001_initial_schema.sql",
+        "Verify: grep -c 'CREATE TABLE' supabase/migrations/003_data_model_hardening.sql returns 4"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-03T21:05:38Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Add ingestion_batches and transactions_raw table definitions to database.py",
+      "description": "Edit src/models/database.py to add SQLAlchemy Core table definitions for ingestion_batches and transactions_raw, add source_raw_id to transactions_table, and add four helper functions: create_batch(), insert_raw_transactions() with deduplication, get_queued_raw_rows(), and mark_raw_rows_processed(). All new tables are added to the shared metadata object so they are created in SQLite for local dev and tests.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/database.py",
+        "Add to metadata: ingestion_batches_table with columns id (Text PK), engagement_id (Text), filename (Text), row_count (Integer), new_rows (Integer), duplicate_rows (Integer), status (Text), uploaded_at (Text), completed_at (Text)",
+        "Add to metadata: transactions_raw_table with columns id (Text PK), engagement_id (Text), batch_id (Text), source_row_hash (Text), pipeline_status (Text), invoice_number (Text), invoice_date (Text), raw_supplier_name (Text), base_amount (Float), raw_data (Text), created_at (Text)",
+        "Add column source_raw_id (Text, nullable=True) to the existing transactions_table definition",
+        "Add function create_batch(engine, engagement_id, filename, row_count) -> str: inserts a row into ingestion_batches with status='processing' and returns the batch id (UUID string)",
+        "Add function insert_raw_transactions(engine, records: list[dict], batch_id: str, engagement_id: str) -> tuple[int, int]: inserts records in chunks of 5000 using INSERT OR IGNORE (SQLite) / INSERT ... ON CONFLICT DO NOTHING (Postgres) on source_row_hash; returns (new_rows_count, duplicate_rows_count)",
+        "Add function get_queued_raw_rows(engine, engagement_id: str, batch_id: str) -> pd.DataFrame: returns all transactions_raw rows with pipeline_status='queued' for the given engagement_id and batch_id",
+        "Add function mark_raw_rows_processed(engine, row_ids: list[str], status: str) -> None: updates pipeline_status for the given ids in transactions_raw",
+        "Add function update_batch_status(engine, batch_id: str, status: str, new_rows: int, duplicate_rows: int) -> None: updates ingestion_batches row with final counts and completed_at timestamp",
+        "Detect Postgres vs SQLite in insert_raw_transactions: check if 'postgresql' in str(engine.url) to choose ON CONFLICT DO NOTHING vs OR IGNORE syntax",
+        "Verify: python -c \"from src.models.database import ingestion_batches_table, transactions_raw_table, create_batch, insert_raw_transactions, get_queued_raw_rows, mark_raw_rows_processed, update_batch_status; print('OK')\" succeeds"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Add Ingestor.ingest_to_raw() with full-row hash deduplication",
+      "description": "Edit src/ingestion/ingest.py to add a static method compute_source_row_hash() and a new instance method ingest_to_raw() that writes to transactions_raw instead of transactions. The hash is SHA256 of the full original CSV row dict (sorted keys, JSON-serialised). The existing ingest_to_db() method must remain unchanged so all existing tests continue to pass.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/ingest.py",
+        "Add import: import hashlib",
+        "Add import at top of file: from src.models.database import create_batch, insert_raw_transactions, update_batch_status",
+        "Add static method Ingestor.compute_source_row_hash(raw_row_dict: dict) -> str: returns hashlib.sha256(json.dumps(raw_row_dict, sort_keys=True, default=str).encode()).hexdigest()",
+        "Add method Ingestor.ingest_to_raw(file_path: str, engine, engagement_id: str, source_system: str = None) -> dict: reads the file, creates a batch via create_batch(), computes source_row_hash for each row using the original raw CSV dict (before column mapping), builds records for transactions_raw with all required fields (id=str(uuid4()), batch_id, engagement_id, source_row_hash, invoice_number, invoice_date, raw_supplier_name, base_amount, raw_data=json.dumps(raw_row), pipeline_status='queued', created_at), calls insert_raw_transactions() in chunks, calls update_batch_status() with final counts, returns dict with keys: batch_id, new_rows, duplicate_rows, total_rows",
+        "The ingest_to_raw() method must extract invoice_number, invoice_date, raw_supplier_name, base_amount from the post-mapping DataFrame (after ingest_file() runs) for storage in transactions_raw alongside the raw_data",
+        "Existing method Ingestor.ingest_to_db() is not modified — signature and behaviour unchanged",
+        "Verify: python -c \"from src.ingestion.ingest import Ingestor; h = Ingestor.compute_source_row_hash({'a': 1, 'b': 2}); assert len(h) == 64; print('hash OK')\"",
+        "Verify: python -m pytest tests/test_ingest.py -v -- all existing tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Create src/ingestion/promoter.py — IncrementalPromoter class",
+      "description": "Create src/ingestion/promoter.py containing the IncrementalPromoter class. This class reads queued rows from transactions_raw for a specific batch, runs supplier harmonisation only on raw_supplier_name values not already present in supplier_master for the engagement, runs categorisation on all queued rows, writes enriched rows to the transactions table, and marks raw rows as processed or review_required. LLM categorisation is never called — rows below 0.60 confidence go to review_required status.",
+      "acceptanceCriteria": [
+        "Create file: src/ingestion/promoter.py",
+        "Class IncrementalPromoter with __init__(self, engine, config) storing both as instance attributes",
+        "Method promote(self, engagement_id: str, batch_id: str) -> dict returns dict with keys: promoted_count, review_required_count, failed_count",
+        "promote() step 1: call get_queued_raw_rows(engine, engagement_id, batch_id) from src.models.database — if empty DataFrame returned, return early with all counts = 0",
+        "promote() step 2: extract unique raw_supplier_names from queued rows; query supplier_master table to find which normalised names are already known for this engagement; run SupplierHarmoniser only for the unknown raw_supplier_names (import from src.suppliers.harmoniser); for known names look up canonical_supplier_id directly from supplier_master",
+        "promote() step 3: enrich the queued rows DataFrame with canonical_supplier_id, canonical_supplier_name, canonical_supplier_confidence from step 2 results",
+        "promote() step 4: run SpendCategoriser (import from src.categorisation.categoriser) on the enriched queued rows DataFrame; the categoriser must be instantiated with dry_run forced to True (config.llm.dry_run = True) so no LLM calls are made regardless of config",
+        "promote() step 5: split result into promoted rows (category_confidence >= 0.60 or categorised by MANUAL/DETERMINISTIC methods) and review_required rows (category_confidence < 0.60 or None)",
+        "promote() step 6: call insert_transactions(engine, promoted_records, engagement_id) from src.models.database to write promoted rows to the transactions table; set source_raw_id on each record to the transactions_raw row id",
+        "promote() step 7: call mark_raw_rows_processed(engine, promoted_ids, 'processed') for successfully promoted rows and mark_raw_rows_processed(engine, review_ids, 'review_required') for review queue rows",
+        "promote() step 8: return counts",
+        "Verify: Create file exists — ls src/ingestion/promoter.py",
+        "Verify: python -c \"from src.ingestion.promoter import IncrementalPromoter; print('import OK')\""
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add PgvectorEmbeddingStore to supplier embeddings — replace pickle in production",
+      "description": "Edit src/suppliers/embeddings.py to add a PgvectorEmbeddingStore class that uses the supplier_embeddings Postgres table as a persistent embedding cache. Modify EmbeddingMatcher.encode() to use the pgvector store when a Postgres engine is available, falling back to the existing pickle cache when running against SQLite. The external interface of EmbeddingMatcher is unchanged.",
+      "acceptanceCriteria": [
+        "Edit file: src/suppliers/embeddings.py",
+        "Add class PgvectorEmbeddingStore at the top of the file (before EmbeddingMatcher) with: __init__(self, engine, engagement_id: str), is_available(self) -> bool (returns True only if engine is Postgres and pgvector extension is present — check with try/except SELECT 1::vector), get(self, names: list[str]) -> dict[str, np.ndarray] (queries supplier_embeddings WHERE normalised_name IN (...) AND engagement_id = ..., returns dict of name -> numpy array), store(self, name_vector_pairs: list[tuple[str, np.ndarray]]) -> None (upserts to supplier_embeddings using INSERT ... ON CONFLICT (engagement_id, normalised_name) DO NOTHING; inserts in chunks of 500)",
+        "Add optional parameter pgvector_store: PgvectorEmbeddingStore = None to EmbeddingMatcher.__init__()",
+        "Modify EmbeddingMatcher.encode() to: if self._pgvector_store is not None and self._pgvector_store.is_available(), check pgvector store first for cached names; encode only uncached names in batch; store new name-vector pairs to pgvector store; still update the in-memory dict cache as before",
+        "When pgvector_store is None (default), behaviour is identical to the current implementation — pickle cache only",
+        "Verify: python -m pytest tests/ -v -k supplier -- all existing supplier tests pass",
+        "Verify: python -c \"from src.suppliers.embeddings import PgvectorEmbeddingStore, EmbeddingMatcher; print('import OK')\""
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Add pgvector cache to category embedding classifier",
+      "description": "Edit src/categorisation/embedding_classifier.py to add a PgvectorCategoryStore class that uses the description_embeddings Postgres table as a persistent cache for category description embeddings. Modify EmbeddingCategoriser._load_or_compute_embeddings() to check the pgvector store first when a Postgres engine is available, computing and storing only missing embeddings. Category embeddings are engagement-independent (global UNSPSC reference), so no engagement_id scoping on the description_embeddings table.",
+      "acceptanceCriteria": [
+        "Edit file: src/categorisation/embedding_classifier.py",
+        "Add class PgvectorCategoryStore with: __init__(self, engine), is_available(self) -> bool (same pgvector extension check as US-005), get(self, texts: list[str]) -> dict[str, np.ndarray] (queries description_embeddings WHERE normalised_text IN (...)), store(self, text_vector_pairs: list[tuple[str, np.ndarray]]) -> None (upserts to description_embeddings using INSERT ... ON CONFLICT (normalised_text) DO NOTHING; chunks of 500)",
+        "Add optional parameter engine=None to EmbeddingCategoriser.__init__() — when provided and Postgres, instantiate PgvectorCategoryStore",
+        "Modify EmbeddingCategoriser._load_or_compute_embeddings() to: if PgvectorCategoryStore.is_available(), fetch cached embeddings for known descriptions; compute only missing ones; store new ones to pgvector; if not available, fall back to existing pickle logic unchanged",
+        "Verify: python -m pytest tests/ -v -k categ -- all existing categorisation tests pass",
+        "Verify: python -c \"from src.categorisation.embedding_classifier import PgvectorCategoryStore, EmbeddingCategoriser; print('import OK')\""
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Wire two-stage incremental pipeline in backend ingestion router",
+      "description": "Edit backend/app/routers/ingestion.py to replace the monolithic _run_pipeline() function with the two-stage incremental flow: stage 1 writes to transactions_raw via Ingestor.ingest_to_raw(), stage 2 promotes queued rows via IncrementalPromoter.promote(). Remove the full-engagement re-harmonisation and re-categorisation. Add batch_id to the pipeline_jobs table link and return it in the /run response.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/ingestion.py",
+        "Add imports: from src.ingestion.promoter import IncrementalPromoter",
+        "Modify _run_pipeline() function: stage 'ingesting' now calls ingestor.ingest_to_raw(file_path, src_engine, engagement_id, source_system=None) and captures returned dict with batch_id, new_rows, duplicate_rows",
+        "After ingest_to_raw(), update the pipeline_jobs row to store the batch_id: UPDATE pipeline_jobs SET batch_id = :batch_id WHERE id = :job_id",
+        "Remove the block that calls harmoniser.harmonise(txn_df) on ALL engagement transactions",
+        "Remove the block that calls categoriser.categorise(txn_df) on ALL engagement transactions",
+        "Add stage 'promoting' between 'ingesting' and 'building_cube': call IncrementalPromoter(src_engine, config).promote(engagement_id, batch_id) and log the returned counts",
+        "Stage 'building_cube' remains unchanged — calls run_cube_pipeline() as before",
+        "The /run endpoint response body gains a batch_id field: return {\"job_id\": body.job_id, \"status\": \"queued\", \"batch_id\": batch_id} — but since batch_id is assigned during the background task, the /run response should return {\"job_id\": ..., \"status\": \"queued\"} unchanged and the batch_id is retrievable via /status/{job_id} once the job is running",
+        "Verify: python -c \"from app.routers.ingestion import router; print('import OK')\" run from the backend/ directory",
+        "Verify: the string 'harmoniser.harmonise' does not appear in backend/app/routers/ingestion.py after the edit"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Add tests for incremental ingestion — dedup, batch tracking, queued rows",
+      "description": "Create tests/test_incremental_ingestion.py with five tests covering the new incremental ingestion path. Use in-memory SQLite (same pattern as tests/test_ingest.py) and a minimal synthetic CSV fixture. All tests must pass without any external API calls or network access.",
+      "acceptanceCriteria": [
+        "Create file: tests/test_incremental_ingestion.py",
+        "Import and use the same pattern as tests/test_ingest.py: pytest fixtures, in-memory SQLite engine, load_config from tests/fixtures or config.yaml",
+        "Test test_source_row_hash_stability: Ingestor.compute_source_row_hash({'a': 1, 'b': 'x'}) called twice returns the same 64-char hex string both times",
+        "Test test_source_row_hash_uniqueness: two different dicts produce different hashes",
+        "Test test_ingest_to_raw_new_rows: ingest a 5-row synthetic CSV; result['new_rows'] == 5 and result['duplicate_rows'] == 0; transactions_raw table contains 5 rows with pipeline_status='queued'",
+        "Test test_ingest_to_raw_dedup: ingest the same 5-row CSV a second time; result['new_rows'] == 0 and result['duplicate_rows'] == 5; transactions_raw still contains exactly 5 rows",
+        "Test test_batch_tracking: after ingest_to_raw(), ingestion_batches table contains one row with status='complete', new_rows=5, duplicate_rows=0",
+        "All 5 tests must pass: python -m pytest tests/test_incremental_ingestion.py -v"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Update CLAUDE.md with data model hardening conventions",
+      "description": "Add a 'Data Model Hardening' section to the SpendCube v2 Architecture section in CLAUDE.md documenting the two-table ingestion pattern, batch tracking, source_row_hash formula, IncrementalPromoter behaviour, pgvector embedding store pattern, and backwards compatibility guarantees for local dev and tests.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md",
+        "Add section '## Data Model Hardening — Incremental Ingestion' under the SpendCube v2 Architecture section",
+        "Section documents: ingestion_batches table purpose and key columns (status states: processing | complete | failed)",
+        "Section documents: transactions_raw table as the pre-pipeline staging layer; pipeline_status states (queued | processing | processed | review_required | failed)",
+        "Section documents: source_row_hash formula — SHA256(json.dumps(raw_row_dict, sort_keys=True, default=str)); full-row hash for maximum dedup correctness",
+        "Section documents: IncrementalPromoter class location (src/ingestion/promoter.py) and promote() method behaviour — only harmonises new supplier names, always sets dry_run=True so no LLM calls",
+        "Section documents: PgvectorEmbeddingStore (supplier_embeddings table) and PgvectorCategoryStore (description_embeddings table) — pgvector cache pattern; pickle fallback when SQLite or pgvector extension absent",
+        "Section documents: backwards compatibility — Ingestor.ingest_to_db() preserved; all existing tests use SQLite in-memory; new tables are added to SQLAlchemy metadata and created in SQLite too",
+        "Verify: grep 'Data Model Hardening' CLAUDE.md returns a match"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "check_migration_tables": "grep -c 'CREATE TABLE' supabase/migrations/003_data_model_hardening.sql — expect 4",
+      "check_pgvector_extension": "grep 'CREATE EXTENSION' supabase/migrations/003_data_model_hardening.sql — expect vector",
+      "check_dedup_index": "grep 'source_row_hash' supabase/migrations/003_data_model_hardening.sql — expect UNIQUE INDEX",
+      "check_no_llm_in_promoter": "grep -i 'llm\\|anthropic\\|dry_run.*false' src/ingestion/promoter.py — expect no matches for live LLM calls",
+      "check_no_full_harmonise_in_backend": "grep 'harmoniser.harmonise' backend/app/routers/ingestion.py — expect no matches after US-007"
+    },
+    "expected_counts": {
+      "new_migration_tables": 4,
+      "new_database_py_functions": 5,
+      "test_cases_in_new_test_file": 5
+    },
+    "checks": [
+      "python -m pytest tests/ -v — all tests pass (163 existing + 5 new = 168 passing)",
+      "python -m pytest tests/test_incremental_ingestion.py -v — all 5 new tests pass",
+      "python -c \"from src.ingestion.promoter import IncrementalPromoter\" — no import error",
+      "python -c \"from src.suppliers.embeddings import PgvectorEmbeddingStore\" — no import error",
+      "python -c \"from src.categorisation.embedding_classifier import PgvectorCategoryStore\" — no import error",
+      "python -c \"from src.models.database import ingestion_batches_table, transactions_raw_table, create_batch, insert_raw_transactions\" — no import error"
+    ]
+  },
+  "risks": [
+    "SQLite vs Postgres INSERT OR IGNORE / ON CONFLICT DO NOTHING syntax: insert_raw_transactions() must detect engine type. Mitigation: check 'postgresql' in str(engine.url) and build appropriate INSERT statement.",
+    "pgvector extension may not be installed in local test environment: PgvectorEmbeddingStore.is_available() must catch any exception from the vector type probe and return False gracefully.",
+    "IncrementalPromoter imports SpendCategoriser and SupplierHarmoniser which have complex init chains (config, engine, model loading). If sentence-transformers is not installed, EmbeddingMatcher degrades gracefully — this must still hold via the promoter.",
+    "Chunked inserts at 5000 rows: test with exactly 5000 and 5001 rows to verify chunk boundary is handled correctly. Covered by test_ingest_to_raw_new_rows with a smaller fixture but Ralph should be aware.",
+    "transactions_raw.raw_data is JSONB in Postgres but TEXT in SQLite. database.py must store it as json.dumps(dict) string so it works in both."
+  ],
+  "outOfScope": [
+    "Converting regular views (v_by_supplier etc.) to Postgres MATERIALIZED VIEWs — the FastAPI cube endpoints already do inline SQL aggregation and don't use these views",
+    "pgvector ANN similarity search (using <=> operator in SQL) — pgvector is cache-only this sprint; cosine similarity stays in Python/numpy",
+    "Batch rollback / delete batch endpoint — can be added as a follow-on sprint",
+    "Frontend batch status display showing new_rows / duplicate_rows counts",
+    "PO data ingestion (different schema from AP invoices) — separate sprint",
+    "LLM removal from codebase — already disabled via dry_run=true default; no active API calls in the hot path",
+    "Multi-engagement data isolation testing"
+  ]
+}

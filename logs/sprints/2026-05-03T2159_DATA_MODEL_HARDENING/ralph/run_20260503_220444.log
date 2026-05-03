@@ -1,0 +1,81 @@
+[2026-05-03 22:04:44] [INFO] Ralph loop starting
+[2026-05-03 22:04:44] [INFO] Created progress file: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Sun  3 May 2026 22:04:44 BST
+PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-03 22:04:44] [INFO] Starting iteration 1
+[2026-05-03 22:04:44] [INFO] Processing story: US-001
+[2026-05-03 22:04:44] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Add migration 003 — ingestion_batches, transactions_raw, embedding tables, pgvector
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create supabase/migrations/003_data_model_hardening.sql. This migration enables the pgvector extension, creates the ingestion_batches and transactions_raw staging tables, creates description_embeddings and supplier_embeddings tables with VECTOR(384) columns and IVFFlat indexes, adds a source_raw_id UUID column to the existing transactions table, and applies RLS policies to all new tables following the existing pattern from 001_initial_schema.sql.
+
+## Acceptance Criteria
+- Create file: supabase/migrations/003_data_model_hardening.sql
+- File contains: CREATE EXTENSION IF NOT EXISTS vector
+- File creates table ingestion_batches with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, filename TEXT NOT NULL, row_count INTEGER, new_rows INTEGER, duplicate_rows INTEGER, status TEXT NOT NULL DEFAULT 'processing', uploaded_at TIMESTAMPTZ DEFAULT now(), completed_at TIMESTAMPTZ
+- File creates table transactions_raw with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, batch_id UUID NOT NULL REFERENCES ingestion_batches(id) ON DELETE CASCADE, source_row_hash TEXT NOT NULL, pipeline_status TEXT NOT NULL DEFAULT 'queued', invoice_number TEXT, invoice_date TEXT, raw_supplier_name TEXT, base_amount DOUBLE PRECISION, raw_data JSONB, created_at TIMESTAMPTZ DEFAULT now()
+- File creates: CREATE UNIQUE INDEX ON transactions_raw(engagement_id, source_row_hash)
+- File creates table description_embeddings with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), normalised_text TEXT NOT NULL UNIQUE, embedding VECTOR(384) NOT NULL, model_name TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2', created_at TIMESTAMPTZ DEFAULT now()
+- File creates table supplier_embeddings with columns: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, normalised_name TEXT NOT NULL, embedding VECTOR(384) NOT NULL, model_name TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2', created_at TIMESTAMPTZ DEFAULT now(), UNIQUE(engagement_id, normalised_name)
+- File creates IVFFlat indexes: CREATE INDEX ON description_embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50) and same pattern for supplier_embeddings
+- File adds: ALTER TABLE transactions ADD COLUMN IF NOT EXISTS source_raw_id UUID REFERENCES transactions_raw(id)
+- File adds: ALTER TABLE pipeline_jobs ADD COLUMN IF NOT EXISTS batch_id UUID REFERENCES ingestion_batches(id)
+- File enables RLS on ingestion_batches, transactions_raw, supplier_embeddings with SELECT/INSERT/UPDATE/DELETE policies matching the pattern in 001_initial_schema.sql
+- Verify: grep -c 'CREATE TABLE' supabase/migrations/003_data_model_hardening.sql returns 4
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Add migration 003 — ingestion_batches, transactions_raw, embedding tables, pgvector`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+Migration 003 is complete. The file creates 4 tables (ingestion_batches, transactions_raw, description_embeddings, supplier_embeddings), enables pgvector, adds IVFFlat indexes, a dedup unique index on `transactions_raw(engagement_id, source_row_hash)`, additive columns on existing tables, and RLS policies matching the 001 pattern.
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-03 22:05:38] [OK] Story US-001 completed!
+[2026-05-03 22:05:38] [OK] Marked US-001 as passed
+[2026-05-03 22:05:38] [INFO] Logged progress for US-001: PASSED
+[2026-05-03 22:05:38] [STEP] Committing changes...

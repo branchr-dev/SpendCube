@@ -1,0 +1,23 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+# Created: Sun  3 May 2026 22:04:44 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-05-03
+Created supabase/migrations/003_data_model_hardening.sql.
+- 4 new tables: ingestion_batches, transactions_raw, description_embeddings, supplier_embeddings
+- pgvector extension enabled; VECTOR(384) columns with IVFFlat indexes (lists=50) on both embedding tables
+- UNIQUE INDEX on transactions_raw(engagement_id, source_row_hash) for dedup
+- source_raw_id added to transactions; batch_id added to pipeline_jobs
+- RLS policies on ingestion_batches, transactions_raw, supplier_embeddings (engagement_id scoped via engagements.owner_email)
+- description_embeddings has no RLS (global UNSPSC reference, not per-engagement)
+- grep -c 'CREATE TABLE' returns 4 ✓
+
+
+---
+
+### [US-001] - 2026-05-03 22:05:38
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
