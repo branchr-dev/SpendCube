@@ -1,16 +1,22 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { DollarSign, Lightbulb, AlertTriangle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import FilterBar from '@/components/dashboard/FilterBar'
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendAreaChart from '@/components/charts/SpendAreaChart'
 import SpendBarChart from '@/components/charts/SpendBarChart'
-import SpendPieChart from '@/components/charts/SpendPieChart'
+import SpendTreemap from '@/components/charts/SpendTreemap'
+import { CHART_COLORS } from '@/components/charts/constants'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
 import { formatCurrency } from '@/lib/formatters'
-import type { OverviewData, MonthRow, SupplierRow, CategoryRow } from '@/types'
+import type { OverviewData, MonthRow, SupplierRow, CategoryRow, PaymentTermsRow, DiagnosticsCheck } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
+
+interface RecommendationsResponse {
+  recommendations?: unknown[]
+}
 
 export default function OverviewPage() {
   const { id: engagementId } = useParams<{ id: string }>()
@@ -49,6 +55,34 @@ export default function OverviewPage() {
     enabled: !!engagementId,
   })
 
+  const { data: ptData = [] } = useQuery<PaymentTermsRow[]>({
+    queryKey: ['pt-overview', engagementId],
+    queryFn: () =>
+      api.get(`/api/engagements/${engagementId}/cube/by-payment-terms`).then(r => r.data),
+    enabled: !!engagementId,
+  })
+
+  const { data: recData } = useQuery<RecommendationsResponse | null>({
+    queryKey: ['rec-overview', engagementId],
+    queryFn: () =>
+      api
+        .get(`/api/engagements/${engagementId}/recommendations`)
+        .then(r => r.data)
+        .catch((err: { response?: { status?: number } }) => {
+          if (err?.response?.status === 404) return null
+          throw err
+        }),
+    retry: false,
+    enabled: !!engagementId,
+  })
+
+  const { data: diagData = [] } = useQuery<DiagnosticsCheck[]>({
+    queryKey: ['diag-overview', engagementId],
+    queryFn: () =>
+      api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data),
+    enabled: !!engagementId,
+  })
+
   function handleFilterChange(newFilters: FilterState) {
     updateFilter('date_from', newFilters.date_from)
     updateFilter('date_to', newFilters.date_to)
@@ -80,7 +114,18 @@ export default function OverviewPage() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
 
+  const treemapData = categoryPieData.map((d, i) => ({
+    ...d,
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  }))
+
+  const totalWcOpportunity = ptData.reduce((s, r) => s + (r.wc_opportunity_aud ?? 0), 0)
+  const recCount = recData?.recommendations?.length ?? 0
+  const redCount = diagData.filter(c => c.status === 'RED' || c.status === 'ALERT').length
+
   const currency = overview?.currency_label ?? 'AUD'
+  const maverickPct = overview?.maverick_spend_pct ?? 0
+  const maverickAccent = maverickPct > 25 ? 'risk' : maverickPct > 10 ? 'amber' : 'green'
 
   return (
     <div className="p-6 space-y-6">
@@ -98,6 +143,7 @@ export default function OverviewPage() {
               value={overview?.total_spend ?? 0}
               valueType="currency"
               currency={currency}
+              accentColor="neutral"
             />
             <KpiCard
               label="Supplier Count"
@@ -111,11 +157,45 @@ export default function OverviewPage() {
             />
             <KpiCard
               label="Maverick Spend"
-              value={overview?.maverick_spend_pct ?? 0}
+              value={maverickPct}
               valueType="pct"
+              accentColor={maverickAccent}
             />
           </>
         )}
+      </div>
+
+      <div className="flex gap-3">
+        <Link
+          to="payment-terms"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+          <DollarSign className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div>
+            <div className="text-xs text-muted-foreground">WC Opportunity</div>
+            <div className="font-semibold text-sm">{formatCurrency(totalWcOpportunity, currency)}</div>
+          </div>
+        </Link>
+        <Link
+          to="recommendations"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+          <Lightbulb className="h-5 w-5 text-blue-600 shrink-0" />
+          <div>
+            <div className="text-xs text-muted-foreground">Recommendations</div>
+            <div className="font-semibold text-sm">{recCount || '—'}</div>
+          </div>
+        </Link>
+        <Link
+          to="quality"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+          <AlertTriangle className={`h-5 w-5 shrink-0 ${redCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
+          <div>
+            <div className="text-xs text-muted-foreground">Data Issues</div>
+            <div className="font-semibold text-sm">{redCount}</div>
+          </div>
+        </Link>
       </div>
 
       <div className="border rounded-lg p-4">
@@ -143,8 +223,8 @@ export default function OverviewPage() {
           {loadingCategories ? (
             <Skeleton className="h-80" />
           ) : (
-            <SpendPieChart
-              data={categoryPieData}
+            <SpendTreemap
+              data={treemapData}
               title="Spend by Category"
               valueFormatter={v => formatCurrency(v, currency)}
             />
