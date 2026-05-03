@@ -849,3 +849,74 @@ STORY_COMPLETE: US-012
 [2026-05-03 14:21:10] [OK] Marked US-012 as passed
 [2026-05-03 14:21:10] [INFO] Logged progress for US-012: PASSED
 [2026-05-03 14:21:10] [STEP] Committing changes...
+[2026-05-03 14:21:12] [INFO] Starting iteration 13
+[2026-05-03 14:21:12] [INFO] Processing story: US-013
+[2026-05-03 14:21:12] [STEP] Spawning Claude with prompt for US-013
+--- PROMPT FOR US-013 ---
+You are working on story US-013: Data Quality scorecard and Recommendations pages
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the Data Quality page (9-check scorecard with GREEN/AMBER/RED diagnostics) and the Recommendations page (savings opportunities with expandable calculation basis and Excel export). Both pages are central to the consulting delivery — the quality page proves data integrity and the recommendations page is the client deliverable.
+
+## Acceptance Criteria
+- Create file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — shadcn Card: props {check_name: string, status: 'GREEN'|'AMBER'|'RED', value_pct: number, description: string}. Renders: colored left border (green/amber/red using Tailwind border-l-4 + conditional color class); status Badge (variant green/yellow/red); check_name as card title; value_pct formatted as percentage; description in muted text. No expandable section needed — keep it compact.
+- Create file: frontend/src/pages/dashboard/DataQualityPage.tsx — fetches /cube/diagnostics. Computes overall_score as weighted average: GREEN=100, AMBER=50, RED=0, averaged across all 9 checks. Renders: 1 large KpiCard showing overall_score as percentage with color (>=80 green, >=50 amber, <50 red); 3x3 grid of DiagnosticsCheckCard. Shows Skeleton while loading.
+- Create file: frontend/src/components/dashboard/RecommendationCard.tsx — shadcn Card with: header showing rec type as Badge + confidence Badge (HIGH=green, MEDIUM=yellow, LOW=red); large estimated_impact_aud formatted as currency; context text (e.g. 'IT Equipment — 8 suppliers'); action text in body. Collapsible section (shadcn Collapsible) labeled 'Calculation Basis' showing: table with rows: Baseline Spend (formatCurrency(baseline_spend)), Addressability (formatPct(addressability_pct)), Addressable Baseline (formatCurrency(addressable_baseline)), Saving Rate (saving_pct !== null ? formatPct(saving_pct) : 'WACC formula'), Estimated Saving (formatCurrency(estimated_impact_aud)); narrative text in italic below the table if narrative is non-empty.
+- Create file: frontend/src/pages/dashboard/RecommendationsPage.tsx — fetches GET /recommendations. If 404 shows empty state with 'Run Recommendations Engine' button (calls POST /recommendations/run via useMutation, then invalidates query).
+- RecommendationsPage renders: PortfolioSummary row — KpiCards: Total Identified Savings, Savings as % of Spend, Recommendation Count, and a 'Sanity Check' badge (green 'Passed' or red 'Warning — review results'); shadcn Tabs with one tab per lever type (only show tabs that have ≥1 recommendation); within each tab a list of RecommendationCard components sorted by estimated_impact_aud DESC; Confidence filter using shadcn ToggleGroup (All / HIGH / MEDIUM / LOW); 'Export to Excel' button.
+- Excel export: import xlsx; on click, creates a workbook with one sheet 'Recommendations' with columns: Type, Context, Estimated Impact AUD, Confidence, Lever, Action, Baseline Spend, Addressability %, Addressable Baseline, Saving %, Narrative. Downloads as spendcube_recommendations_{client_name}_{date}.xlsx.
+- Verify: npm run build succeeds; both pages have no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-013
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-013: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-013 - Data Quality scorecard and Recommendations pages`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-013 ---
+Build passes, commit made. Here's what was delivered:
+
+- **DiagnosticsCheckCard.tsx** — compact Card with colored `border-l-4`, status Badge, humanized check name, formatted percentage, muted description
+- **DataQualityPage.tsx** — fetches `/cube/diagnostics` (dict keyed by check name), normalizes INFO/WARN/ALERT → GREEN/AMBER/RED, computes weighted overall score, renders a color-coded score card + 3×3 grid
+- **RecommendationCard.tsx** — type/confidence Badges, large impact figure, action text, shadcn Collapsible "Calculation Basis" table with audit trail fields + italic narrative
+- **RecommendationsPage.tsx** — handles 404 empty state with "Run Recommendations Engine" mutation, portfolio summary KPIs + sanity check Badge, confidence toggle filter, lever Tabs, sorted recommendation cards, Excel export via `xlsx`
+- **App.tsx** — routes wired to the new pages replacing placeholders
+
+STORY_COMPLETE: US-013
+--- END OUTPUT ---
+[2026-05-03 14:28:15] [OK] Story US-013 completed!
+[2026-05-03 14:28:15] [OK] Marked US-013 as passed
+[2026-05-03 14:28:15] [INFO] Logged progress for US-013: PASSED
+[2026-05-03 14:28:15] [STEP] Committing changes...

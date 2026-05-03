@@ -308,7 +308,8 @@
         "Excel export: import xlsx; on click, creates a workbook with one sheet 'Recommendations' with columns: Type, Context, Estimated Impact AUD, Confidence, Lever, Action, Baseline Spend, Addressability %, Addressable Baseline, Saving %, Narrative. Downloads as spendcube_recommendations_{client_name}_{date}.xlsx.",
         "Verify: npm run build succeeds; both pages have no TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T13:28:15Z"
     },
     {
       "id": "US-014",
