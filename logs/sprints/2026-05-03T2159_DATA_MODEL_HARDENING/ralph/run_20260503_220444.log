@@ -414,3 +414,72 @@ STORY_COMPLETE: US-006
 [2026-05-03 22:19:48] [OK] Marked US-006 as passed
 [2026-05-03 22:19:48] [INFO] Logged progress for US-006: PASSED
 [2026-05-03 22:19:48] [STEP] Committing changes...
+[2026-05-03 22:19:50] [INFO] Starting iteration 7
+[2026-05-03 22:19:50] [INFO] Processing story: US-007
+[2026-05-03 22:19:50] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Wire two-stage incremental pipeline in backend ingestion router
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Edit backend/app/routers/ingestion.py to replace the monolithic _run_pipeline() function with the two-stage incremental flow: stage 1 writes to transactions_raw via Ingestor.ingest_to_raw(), stage 2 promotes queued rows via IncrementalPromoter.promote(). Remove the full-engagement re-harmonisation and re-categorisation. Add batch_id to the pipeline_jobs table link and return it in the /run response.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/ingestion.py
+- Add imports: from src.ingestion.promoter import IncrementalPromoter
+- Modify _run_pipeline() function: stage 'ingesting' now calls ingestor.ingest_to_raw(file_path, src_engine, engagement_id, source_system=None) and captures returned dict with batch_id, new_rows, duplicate_rows
+- After ingest_to_raw(), update the pipeline_jobs row to store the batch_id: UPDATE pipeline_jobs SET batch_id = :batch_id WHERE id = :job_id
+- Remove the block that calls harmoniser.harmonise(txn_df) on ALL engagement transactions
+- Remove the block that calls categoriser.categorise(txn_df) on ALL engagement transactions
+- Add stage 'promoting' between 'ingesting' and 'building_cube': call IncrementalPromoter(src_engine, config).promote(engagement_id, batch_id) and log the returned counts
+- Stage 'building_cube' remains unchanged — calls run_cube_pipeline() as before
+- The /run endpoint response body gains a batch_id field: return {"job_id": body.job_id, "status": "queued", "batch_id": batch_id} — but since batch_id is assigned during the background task, the /run response should return {"job_id": ..., "status": "queued"} unchanged and the batch_id is retrievable via /status/{job_id} once the job is running
+- Verify: python -c "from app.routers.ingestion import router; print('import OK')" run from the backend/ directory
+- Verify: the string 'harmoniser.harmonise' does not appear in backend/app/routers/ingestion.py after the edit
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Wire two-stage incremental pipeline in backend ingestion router`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+US-007 is complete. The ingestion router now uses the two-stage incremental flow: `ingest_to_raw()` writes to the staging table capturing a `batch_id`, which is stored on `pipeline_jobs`, and then `IncrementalPromoter.promote()` processes only the new queued rows through harmonisation and categorisation — no more full-engagement re-processing. The `/status` endpoint also returns `batch_id`.
+
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-03 22:21:18] [OK] Story US-007 completed!
+[2026-05-03 22:21:18] [OK] Marked US-007 as passed
+[2026-05-03 22:21:18] [INFO] Logged progress for US-007: PASSED
+[2026-05-03 22:21:18] [STEP] Committing changes...

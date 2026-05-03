@@ -104,3 +104,33 @@ Story completed successfully by Ralph loop iteration 6
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+---
+
+## US-007 COMPLETE — 2026-05-03
+Replaced monolithic _run_pipeline() in backend/app/routers/ingestion.py with two-stage incremental flow.
+
+Key changes:
+- Stage 'ingesting': replaced ingest_file()+insert_transactions() with ingest_to_raw() — returns {batch_id, new_rows, duplicate_rows}
+- After ingest_to_raw(), writes batch_id to pipeline_jobs via UPDATE so it is retrievable via /status/{job_id}
+- Removed the full-engagement harmoniser.harmonise() and categoriser.categorise() stages entirely
+- Stage 'promoting': calls IncrementalPromoter(src_engine, config).promote(engagement_id, batch_id) and logs {promoted_count, review_required_count, failed_count}
+- Stage 'building_cube' unchanged — still calls run_cube_pipeline()
+- /run response unchanged: {"job_id": ..., "status": "queued"}
+- /status response gains batch_id field (fetched from pipeline_jobs.batch_id column added in US-001)
+- Removed unused imports: SupplierHarmoniser, SpendCategoriser, get_transactions, insert_transactions
+- Verifications: python3 -c "from app.routers.ingestion import router; print('import OK')" ✓; 'harmoniser.harmonise' count = 0 ✓
+
+---
+
+### [US-007] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-007] - 2026-05-03 22:21:18
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+

@@ -174,7 +174,8 @@
         "Verify: python -c \"from app.routers.ingestion import router; print('import OK')\" run from the backend/ directory",
         "Verify: the string 'harmoniser.harmonise' does not appear in backend/app/routers/ingestion.py after the edit"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:21:18Z"
     },
     {
       "id": "US-008",
