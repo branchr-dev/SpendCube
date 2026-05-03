@@ -13,16 +13,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
-import { formatCurrency } from '@/lib/formatters'
+import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Engagement, OverviewData } from '@/types'
 
 const navItems = [
   { to: 'overview', label: 'Overview', icon: BarChart3 },
+  { to: 'recommendations', label: 'Recommendations', icon: Lightbulb },
   { to: 'category', label: 'Category', icon: Tag },
   { to: 'supplier', label: 'Supplier', icon: Building2 },
   { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard },
   { to: 'quality', label: 'Data Quality', icon: ShieldCheck },
-  { to: 'recommendations', label: 'Recommendations', icon: Lightbulb },
 ]
 
 export default function Layout() {
@@ -55,6 +55,7 @@ export default function Layout() {
             <>
               <p className="text-base font-bold text-foreground/80 mt-2">{formatCurrency(sidebarOverview.total_spend, sidebarOverview.currency_label ?? 'AUD')}</p>
               <p className="text-xs text-muted-foreground">Total Spend</p>
+              {sidebarOverview?.data_freshness && <p className='text-xs text-muted-foreground mt-0.5'>{formatDate(sidebarOverview.data_freshness)}</p>}
             </>
           )}
         </div>
