@@ -20,3 +20,21 @@ Created supabase/migrations/002_analytics_extensions.sql:
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+## US-002 COMPLETE — 2026-05-03
+Added 5 new GET endpoints to backend/app/routers/cube.py:
+- GET /by-legal-entity — groups by legal_entity, supports date_from/date_to
+- GET /by-currency — groups by original_currency, supports date_from/date_to
+- GET /by-country — groups by vendor_country, supports date_from/date_to
+- GET /abc-analysis — per-supplier spend with ABC segmentation computed in Python (A<=80%, B<=95%, C>95%)
+- GET /categorisation-quality — summary + by_method + by_confidence_band + top-50 low-confidence backlog
+- All 5 query transactions table directly (same logic as views) to support date filtering
+- Route count verified: python3 -c "from backend.app.routers.cube import router; print(len(router.routes))" → 12
+- Note: views don't expose invoice_date so date filtering requires querying transactions directly
+
+
+---
+
+### [US-002] - 2026-05-03 15:45:51
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+

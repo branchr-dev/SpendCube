@@ -86,3 +86,68 @@ STORY_COMPLETE: US-001
 [2026-05-03 15:43:18] [OK] Marked US-001 as passed
 [2026-05-03 15:43:18] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 15:43:18] [STEP] Committing changes...
+[2026-05-03 15:43:20] [INFO] Starting iteration 2
+[2026-05-03 15:43:20] [INFO] Processing story: US-002
+[2026-05-03 15:43:20] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Backend — five new analytical cube endpoints
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add five new GET endpoints to backend/app/routers/cube.py that query the new views and compute analytics not available in the existing endpoints. All endpoints follow the exact same pattern as existing cube endpoints (engagement ownership check, SQLAlchemy text query, typed response). No existing endpoints are modified.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/cube.py — add 5 new endpoint functions at the bottom of the file
+- GET /api/engagements/{engagement_id}/cube/by-legal-entity — SELECT from v_by_legal_entity WHERE engagement_id=? ORDER BY total_spend DESC; returns list of {legal_entity, transaction_count, total_spend, supplier_count, category_count}
+- GET /api/engagements/{engagement_id}/cube/by-currency — SELECT from v_by_currency WHERE engagement_id=? ORDER BY total_spend_base DESC; returns list of {currency, transaction_count, total_spend_base, total_spend_original, supplier_count}
+- GET /api/engagements/{engagement_id}/cube/by-country — SELECT from v_by_country WHERE engagement_id=? ORDER BY total_spend DESC; returns list of {country, country_type, transaction_count, total_spend, supplier_count}
+- GET /api/engagements/{engagement_id}/cube/abc-analysis — SELECT from v_abc_analysis WHERE engagement_id=? ORDER BY total_spend DESC; computes abc_segment in Python: A if cumulative_spend/grand_total <= 0.80 else B if <= 0.95 else C; returns list of {canonical_supplier_id, canonical_supplier_name, total_spend, transaction_count, cumulative_spend_pct, abc_segment}
+- GET /api/engagements/{engagement_id}/cube/categorisation-quality — queries transactions directly: returns {total_transactions, categorised_count, uncategorised_count, categorised_pct, by_method: [{method, count, spend, avg_confidence}], by_confidence_band: [{band, count, spend}], low_confidence_backlog: [{transaction_id, raw_supplier_name, base_amount, category_l1, category_confidence}] (top 50 by abs(base_amount))}
+- All 5 endpoints enforce engagement ownership via verify_engagement_ownership() imported from backend/app/dependencies.py
+- All 5 endpoints support the standard filter query params: date_from, date_to (passed as WHERE invoice_date BETWEEN filters)
+- Verify: python -c "from backend.app.routers.cube import router; print(len(router.routes))" shows 12 routes (7 existing + 5 new)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Backend — five new analytical cube endpoints`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 15:45:51] [OK] Story US-002 completed!
+[2026-05-03 15:45:51] [OK] Marked US-002 as passed
+[2026-05-03 15:45:51] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 15:45:51] [STEP] Committing changes...

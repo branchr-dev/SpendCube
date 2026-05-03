@@ -84,7 +84,8 @@
         "All 5 endpoints support the standard filter query params: date_from, date_to (passed as WHERE invoice_date BETWEEN filters)",
         "Verify: python -c \"from backend.app.routers.cube import router; print(len(router.routes))\" shows 12 routes (7 existing + 5 new)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T14:45:51Z"
     },
     {
       "id": "US-003",
