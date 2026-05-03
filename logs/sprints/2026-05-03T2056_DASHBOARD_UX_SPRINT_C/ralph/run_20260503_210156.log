@@ -601,3 +601,64 @@ STORY_COMPLETE: US-009
 [2026-05-03 21:13:12] [OK] Marked US-009 as passed
 [2026-05-03 21:13:12] [INFO] Logged progress for US-009: PASSED
 [2026-05-03 21:13:12] [STEP] Committing changes...
+[2026-05-03 21:13:14] [INFO] Starting iteration 10
+[2026-05-03 21:13:14] [INFO] Processing story: US-010
+[2026-05-03 21:13:14] [STEP] Spawning Claude with prompt for US-010
+--- PROMPT FOR US-010 ---
+You are working on story US-010: CLAUDE.md — Sprint C evaluation criteria and conventions
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Document the five evaluation dimensions established in Sprint C and the design decisions made.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — append a '## Dashboard UX Conventions (Sprint C)' section after the Sprint B section
+- Document the five evaluation dimensions: Speed to First Insight, Opportunity Completeness, Analytical Depth, Data Credibility, Client Presentation Readiness
+- Document: chart navigation pattern (onBarClick/onCellClick → useNavigate), concentration stat formula (top N / total), SpendBarChart selectedLabel prop, payment days colour convention (<30 rose, 30-44 amber, >=45 neutral), Data Quality summary strip pattern, nav order rationale (opportunity assessment workflow)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-010
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-010: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-010 - CLAUDE.md — Sprint C evaluation criteria and conventions`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-010 ---
+CLAUDE.md has been updated with the Sprint C conventions section covering all required topics. Commit `ef96c6e` captures the change.
+
+STORY_COMPLETE: US-010
+--- END OUTPUT ---
+[2026-05-03 21:14:18] [OK] Story US-010 completed!
+[2026-05-03 21:14:18] [OK] Marked US-010 as passed
+[2026-05-03 21:14:18] [INFO] Logged progress for US-010: PASSED
+[2026-05-03 21:14:18] [STEP] Committing changes...

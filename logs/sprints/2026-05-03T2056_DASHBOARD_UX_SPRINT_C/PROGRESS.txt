@@ -103,3 +103,18 @@ Story completed successfully by Ralph loop iteration 8
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 9
 
+US-010 COMPLETE 2026-05-03: Appended '## Dashboard UX Conventions (Sprint C)' section to CLAUDE.md covering: five evaluation dimensions table, chart navigation pattern (onBarClick/onCellClick → useNavigate), concentration stat formula, SpendBarChart selectedLabel prop, payment days colour convention (<30 rose, 30-44 amber, >=45 neutral), data quality summary strip pattern, and nav order rationale (opportunity assessment workflow). Commit: ef96c6e.
+
+---
+
+### [US-010] - 2026-05-03
+**Status:** PASSED
+Story completed successfully.
+
+
+---
+
+### [US-010] - 2026-05-03 21:14:18
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 10
+
