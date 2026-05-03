@@ -19,7 +19,7 @@ import { DrilldownBreadcrumb } from '@/components/DrilldownBreadcrumb'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
 import { formatCurrency, formatNumber } from '@/lib/formatters'
-import type { CategoryRow } from '@/types'
+import type { CategoryRow, SupplierRow } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
 import type { DrilldownLevel, DrilldownState } from '@/hooks/useDrilldown'
 
@@ -97,6 +97,17 @@ export default function CategoryPage() {
         .get(`/api/engagements/${engagementId}/cube/by-category`, { params: qp })
         .then(r => r.data),
     enabled: !!engagementId,
+  })
+
+  const { data: topCategorySuppliers = [] } = useQuery<SupplierRow[]>({
+    queryKey: ['suppliers-by-category', engagementId, selectedL1],
+    queryFn: () =>
+      api
+        .get(`/api/engagements/${engagementId}/cube/by-supplier`, {
+          params: { category_l1: selectedL1 },
+        })
+        .then(r => r.data),
+    enabled: !!engagementId && !!selectedL1,
   })
 
   function handleFilterChange(newFilters: FilterState) {
@@ -285,6 +296,7 @@ export default function CategoryPage() {
             valueFormatter={v => formatCurrency(v)}
             onBarClick={handleL1Click}
             clickHint
+            selectedLabel={selectedL1 ?? undefined}
           />
         )}
       </div>
@@ -313,6 +325,37 @@ export default function CategoryPage() {
             onBarClick={handleL2Click}
             showLabel
           />
+        </div>
+      )}
+
+      {selectedL1Entry && (
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <h3 className="section-header">Top Suppliers — {selectedL1}</h3>
+          {topCategorySuppliers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No supplier data available for this category.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Supplier Name</TableHead>
+                  <TableHead className="text-right">Total Spend</TableHead>
+                  <TableHead className="text-right">Invoice Count</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...topCategorySuppliers]
+                  .sort((a, b) => (b.total_spend ?? 0) - (a.total_spend ?? 0))
+                  .slice(0, 5)
+                  .map((row, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{row.canonical_supplier_name ?? '—'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(row.total_spend ?? 0)}</TableCell>
+                      <TableCell className="text-right">{formatNumber(row.transaction_count ?? 0)}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       )}
 
