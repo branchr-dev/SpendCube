@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -15,9 +17,6 @@ import { api } from '@/lib/api'
 import { formatCurrency, formatNumber } from '@/lib/formatters'
 import type { PaymentTermsRow, SupplierRow } from '@/types'
 
-const TARGET_DAYS = 45
-const WACC = 0.08
-
 function deriveBucket(avgDays: number): string {
   if (avgDays <= 30) return '0-30'
   if (avgDays <= 60) return '31-60'
@@ -25,15 +24,17 @@ function deriveBucket(avgDays: number): string {
   return '90+'
 }
 
-function computeSupplierWc(avgDays: number, totalSpend: number): number {
-  if (avgDays >= TARGET_DAYS) return 0
-  return ((TARGET_DAYS - avgDays) / 365) * totalSpend * WACC
-}
-
 const BUCKET_ORDER = ['0-30', '31-60', '61-90', '90+']
 
 export default function PaymentTermsPage() {
   const { id: engagementId } = useParams<{ id: string }>()
+  const [waccPct, setWaccPct] = useState(8)
+  const [targetDays, setTargetDays] = useState(45)
+
+  function computeSupplierWc(avgDays: number, totalSpend: number): number {
+    if (avgDays >= targetDays) return 0
+    return ((targetDays - avgDays) / 365) * totalSpend * (waccPct / 100)
+  }
 
   const { data: ptData = [], isLoading: loadingPt } = useQuery<PaymentTermsRow[]>({
     queryKey: ['by-payment-terms', engagementId],
@@ -63,7 +64,19 @@ export default function PaymentTermsPage() {
 
   const suppliersSorted = [...supplierData]
     .filter(s => s.avg_payment_days != null)
-    .sort((a, b) => (a.avg_payment_days ?? 0) - (b.avg_payment_days ?? 0))
+    .sort((a, b) =>
+      computeSupplierWc(b.avg_payment_days ?? 0, b.total_spend ?? 0) -
+      computeSupplierWc(a.avg_payment_days ?? 0, a.total_spend ?? 0)
+    )
+
+  const supplierWcData = suppliersSorted
+    .map(s => ({
+      label: (s.canonical_supplier_name ?? '').slice(0, 22),
+      value: computeSupplierWc(s.avg_payment_days ?? 0, s.total_spend ?? 0),
+    }))
+    .filter(d => d.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 15)
 
   return (
     <div className="p-6 space-y-6">
@@ -78,6 +91,7 @@ export default function PaymentTermsPage() {
               label="Total WC Opportunity"
               value={totalWcOpportunity}
               valueType="currency"
+              accentColor="opportunity"
             />
             <KpiCard
               label="Spend in 0–30 Day Bucket"
@@ -93,7 +107,50 @@ export default function PaymentTermsPage() {
         )}
       </div>
 
+      <div className="flex items-center gap-6 p-4 bg-muted/30 rounded-lg border mb-2">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Target Days</label>
+          <Input
+            type="number"
+            min={30}
+            max={120}
+            value={targetDays}
+            onChange={e => setTargetDays(Number(e.target.value))}
+            className="w-20"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">WACC %</label>
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            step={0.5}
+            value={waccPct}
+            onChange={e => setWaccPct(Number(e.target.value))}
+            className="w-20"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          WC opportunity = (target − current days) / 365 × spend × WACC
+        </p>
+      </div>
+
       <div className="border rounded-lg p-4">
+        {loadingSuppliers ? (
+          <Skeleton className="h-80" />
+        ) : (
+          <SpendBarChart
+            data={supplierWcData}
+            title="Top WC Opportunities by Supplier"
+            horizontal={true}
+            valueFormatter={v => formatCurrency(v)}
+            showLabel={false}
+          />
+        )}
+      </div>
+
+      <div className="mt-4 border rounded-lg p-4">
         {loadingPt ? (
           <Skeleton className="h-80" />
         ) : (
@@ -151,7 +208,7 @@ export default function PaymentTermsPage() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        WC opportunity uses target 45-day terms at 8% WACC
+        WC opportunity uses target {targetDays}-day terms at {waccPct}% WACC
       </p>
     </div>
   )
