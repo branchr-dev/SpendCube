@@ -476,3 +476,66 @@ STORY_COMPLETE: US-007
 [2026-05-03 21:10:48] [OK] Marked US-007 as passed
 [2026-05-03 21:10:48] [INFO] Logged progress for US-007: PASSED
 [2026-05-03 21:10:48] [STEP] Committing changes...
+[2026-05-03 21:10:50] [INFO] Starting iteration 8
+[2026-05-03 21:10:50] [INFO] Processing story: US-008
+[2026-05-03 21:10:50] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Payment Terms — 100% stacked distribution bar + payment days colouring in table
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Replace the 4-bucket vertical bar chart (which shows AUD totals) with a 100% stacked horizontal bar showing the percentage distribution across buckets. This makes the composition immediately readable. Also add the same payment days colour coding used on the Supplier page to this table.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx
+- Add these recharts imports at the top (add to existing recharts import): BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList — use the ones already available from recharts
+- Replace the 'Spend by Payment Terms Bucket' SpendBarChart div with an inline recharts chart. Compute: totalBucketSpend = ptData.reduce((s,r) => s+(r.total_spend??0), 0). Build stackedData = [{ '0-30': pct0_30, '31-60': pct31_60, '61-90': pct61_90, '90+': pct90plus }] where pct values are (row.total_spend/totalBucketSpend*100) for each bucket row. Also compute AUD labels per bucket.
+- Render inside a div className='border rounded-xl p-5 bg-card shadow-sm': h3 className='section-header' 'Payment Terms Distribution'. Below that, a ResponsiveContainer width='100%' height={80}: BarChart data={stackedData} layout='vertical'. One Bar per bucket in order ['0-30','31-60','61-90','90+'] with stackId='a'. Colors: '0-30'→'#f43f5e' (rose-500), '31-60'→'#f59e0b' (amber-500), '61-90'→'#10b981' (emerald-500), '90+'→'#3b82f6' (blue-500). Each Bar has a LabelList showing the percentage formatted as '{pct.toFixed(1)}%' only if pct >= 5. XAxis type='number' domain=[0,100] hide. YAxis type='category' hide. Tooltip showing bucket name and formatPct(value) and formatCurrency(aud).
+- Add a simple legend below the chart: a flex gap-4 row with 4 items each showing a colored square and the bucket label using the same 4 colors above.
+- Add payment days colour coding to the suppliersSorted table: in the Avg Days TableCell, apply dynamic className: avgDays < 30 ? 'text-right font-medium text-rose-700' : avgDays < 45 ? 'text-right font-medium text-amber-700' : 'text-right'
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Payment Terms — 100% stacked distribution bar + payment days colouring in table`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-03 21:12:37] [OK] Story US-008 completed!
+[2026-05-03 21:12:37] [OK] Marked US-008 as passed
+[2026-05-03 21:12:37] [INFO] Logged progress for US-008: PASSED
+[2026-05-03 21:12:37] [STEP] Committing changes...

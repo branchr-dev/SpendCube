@@ -80,3 +80,19 @@ Story completed successfully.
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+US-008 COMPLETE (2026-05-03)
+- Replaced SpendBarChart vertical bar with inline recharts 100% stacked horizontal BarChart
+- stackedData computed as [{bucket: pct, bucket_aud: spend}] for tooltip AUD lookup
+- LabelList shows percentage labels only when segment >= 5% (avoids cramped tiny labels)
+- Tooltip formatter uses 'any' cast to avoid Recharts ValueType union complexity
+- Legend row with colored squares below chart
+- Avg Days column in supplier table now coloured: <30d rose-700, <45d amber-700, else plain
+- Build: zero TS errors
+
+---
+
+### [US-008] - 2026-05-03 21:12:37
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+

@@ -172,7 +172,8 @@
         "Add payment days colour coding to the suppliersSorted table: in the Avg Days TableCell, apply dynamic className: avgDays < 30 ? 'text-right font-medium text-rose-700' : avgDays < 45 ? 'text-right font-medium text-amber-700' : 'text-right'",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:12:37Z"
     },
     {
       "id": "US-009",
