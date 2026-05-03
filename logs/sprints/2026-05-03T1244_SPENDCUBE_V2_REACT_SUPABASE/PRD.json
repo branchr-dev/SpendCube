@@ -1,0 +1,395 @@
+{
+  "project": {
+    "id": "SPENDCUBE-V2-2026-05",
+    "name": "SpendCube v2 — React + Supabase",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE",
+    "track": "code"
+  },
+  "summary": "Migrate SpendCube from a Streamlit+SQLite prototype to a production-grade React+FastAPI+Supabase web application. All six phases of the Python analytics pipeline (ingestion, supplier harmonisation, categorisation, cube building, recommendations, review workstation) are preserved in their entirety — a FastAPI backend wraps the existing src/ modules as a thin HTTP adapter. The frontend is rebuilt in React+TypeScript with shadcn/ui and Recharts for a professional client-facing dashboard. Multi-tenancy is achieved via an engagement_id column on all database tables scoped per client. The result is a stable, deployable application that can be handed to a client with a URL, login credentials, and their CSV data.",
+
+  "decisions": {
+    "monorepo_structure": "frontend/ and backend/ directories are added alongside the existing src/ directory. All pipeline logic in src/ is preserved untouched and imported by the FastAPI backend via sys.path. Tests in tests/ continue to run against the original code.",
+    "parquet_eliminated": "Parquet files are not used in v2. All cube data is served live from Postgres views/aggregations. This removes filesystem state from the deployment and makes the architecture cloud-native.",
+    "database_adapter": "src/models/database.py get_engine() is extended to accept a full SQLAlchemy URL (not just a SQLite file path). When SUPABASE_DATABASE_URL env var is set, the backend uses Postgres; when absent it falls back to SQLite. This is backwards-compatible — all existing tests continue to pass.",
+    "multi_tenancy": "engagement_id UUID column is added to all five existing tables (transactions, supplier_master, supplier_match_log, category_overrides, audit_log) plus a new engagements table. All queries in the backend are scoped to the authenticated engagement_id. Supabase RLS enforces this at the DB layer.",
+    "background_jobs": "FastAPI BackgroundTasks handles pipeline execution asynchronously. A new pipeline_jobs table stores job status (queued/running/done/failed). The frontend polls GET /ingest/status for progress. This avoids Celery/Redis complexity for the initial deployment.",
+    "charts_library": "shadcn/ui for UI primitives (cards, buttons, tables, forms, badges, dialogs) and Recharts for all charts (BarChart, AreaChart, PieChart, ComposedChart). Both are TypeScript-native and Tailwind-compatible.",
+    "frontend_state": "TanStack Query v5 (React Query) for all server state. Provides caching, background refetch, and optimistic updates without a custom state management layer.",
+    "auth_strategy": "Supabase Auth (email+password). JWT is included in all API requests via Authorization header. The FastAPI middleware validates the JWT using the Supabase JWT secret and extracts the user email. engagement_id is stored in the engagements table scoped to the user email.",
+    "deployment_targets": "Vercel for the React frontend (zero-config, SPA routing via vercel.json). Railway for the FastAPI backend (Dockerfile-based deploy). Supabase cloud for Postgres + Auth. All secrets via environment variables — no hardcoded values anywhere.",
+    "savings_rates_yaml": "The savings_rates.yaml and keyword_rules.yaml reference files remain in data/reference/ and are read by the Python pipeline at runtime. The backend mounts the data/ directory as a read-only volume in production."
+  },
+
+  "context": {
+    "existing_tables": {
+      "transactions": "45-column table storing all canonical transactions post-ingestion. All Text types for IDs and dates (Postgres-compatible). Needs engagement_id column added.",
+      "supplier_master": "Canonical supplier records keyed on canonical_supplier_id (SHA256 hash). Needs engagement_id column added.",
+      "supplier_match_log": "Audit trail of supplier matching decisions with review_status field. Needs engagement_id column added.",
+      "category_overrides": "Human-reviewed category correction rules keyed on canonical_supplier_id or gl_account. Needs engagement_id column added.",
+      "audit_log": "Change history for all DB mutations. Needs engagement_id column added.",
+      "engagements": "NEW table: id UUID PK, name TEXT, client_name TEXT, currency_label TEXT, engagement_title TEXT, owner_email TEXT, is_admin BOOLEAN, llm_dry_run BOOLEAN, created_at TIMESTAMPTZ.",
+      "pipeline_jobs": "NEW table: id UUID PK, engagement_id UUID FK, status TEXT (queued/running/done/failed), stage TEXT, started_at TIMESTAMPTZ, completed_at TIMESTAMPTZ, error_message TEXT."
+    },
+    "key_files": [
+      "src/models/database.py — SQLAlchemy Core schema for all 5 tables; get_engine() must be extended to accept full DB URL",
+      "src/models/schema.py — Pydantic v2 CanonicalTransaction model; source of truth for all field names",
+      "src/config.py — Config loader; Config.paths.db_path is the SQLite path; backend overrides via SUPABASE_DATABASE_URL env var",
+      "src/ingestion/ingest.py — Ingestor class; entry point for Phase 1 pipeline; accepts engine parameter",
+      "src/suppliers/harmoniser.py — Orchestrates 5-stage supplier harmonisation; accepts engine parameter",
+      "src/categorisation/categoriser.py — SpendCategoriser; 6-pass pipeline; accepts engine parameter",
+      "src/cube/pipeline.py — SpendCubePipeline; builds all 6 dimensional views; accepts engine + output_dir parameters",
+      "src/recommendations/engine.py — RecommendationEngine; runs rules, deduplicates, optionally enriches narratives",
+      "data/reference/savings_rates.yaml — Per-lever savings rates; read by SavingsRates class at runtime",
+      "data/reference/keyword_rules.yaml — Keyword→category regex rules; read by DeterministicCategoriser at runtime",
+      "config.yaml — Central config; paths, LLM, thresholds; backend reads this via load_config()",
+      "tests/ — 7 pytest files; must all continue to pass after database.py changes"
+    ],
+    "patterns_to_follow": [
+      "All existing pipeline classes accept an engine: Engine parameter — follow this pattern in the backend adapter rather than creating global state",
+      "Confidence bands (HIGH>=0.85, MEDIUM>=0.60, LOW<0.60) are defined in src/models/schema.py ConfidenceBand — reuse these thresholds in API response payloads",
+      "All DB IDs are Text (not UUID objects) in SQLAlchemy schema — keep as Text in Postgres migration for compatibility; only the new engagements and pipeline_jobs tables use UUID natively",
+      "dry_run: true is the default for LLM calls — the backend must expose this as a per-engagement setting and never call the Anthropic API unless explicitly enabled",
+      "Use SHA256 canonical_supplier_id generation pattern from supplier harmoniser — do not introduce random UUIDs for supplier records",
+      "The existing tests use in-memory SQLite engines (conftest.py fixtures) — do not break these by changing the database.py interface signature"
+    ]
+  },
+
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Monorepo structure — scaffold backend/ and frontend/ directories",
+      "description": "Create the project skeleton that will house the FastAPI backend and React frontend alongside the existing Python pipeline. The existing src/, tests/, data/, and dashboard/ directories must not be modified. The goal is to establish the directory layout, dependency manifests, environment variable templates, and a root-level docker-compose.yml for local development so that subsequent stories have a clear home for their files.",
+      "acceptanceCriteria": [
+        "Create directory: backend/ with subdirectories backend/app/, backend/app/routers/, backend/app/middleware/, backend/tests/",
+        "Create file: backend/pyproject.toml — Python 3.11+, project name spendcube-backend, dependencies: fastapi>=0.111, uvicorn[standard]>=0.29, supabase>=2.3, python-jose[cryptography]>=3.3, python-multipart>=0.0.9, openpyxl>=3.1, pandas>=2.0, pydantic>=2.0, pyyaml>=6.0, httpx>=0.27 (for async supabase)",
+        "Create file: backend/.env.example — SUPABASE_URL=https://your-project.supabase.co, SUPABASE_ANON_KEY=your-anon-key, SUPABASE_JWT_SECRET=your-jwt-secret, SUPABASE_DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres, ANTHROPIC_API_KEY=sk-ant-..., SPENDCUBE_CONFIG_PATH=config.yaml, DRY_RUN=true, ALLOWED_ORIGINS=http://localhost:5173",
+        "Create file: frontend/.env.example — VITE_SUPABASE_URL=https://your-project.supabase.co, VITE_SUPABASE_ANON_KEY=your-anon-key, VITE_API_BASE_URL=http://localhost:8000",
+        "Create directory: supabase/migrations/",
+        "Create file: docker-compose.yml at repo root — services: backend (build context ./backend, ports 8000:8000, env_file backend/.env, volumes: ./src:/app/src:ro, ./data:/app/data:ro, ./config.yaml:/app/config.yaml:ro), frontend (build context ./frontend, ports 5173:80)",
+        "Create file: backend/app/__init__.py (empty)",
+        "Create file: backend/app/main.py — FastAPI app with title='SpendCube API', version='2.0.0'; adds CORSMiddleware with origins from ALLOWED_ORIGINS env var (default '*'); GET /health returns {status: 'ok', version: '2.0.0'}",
+        "Verify: cd backend && pip install -e . && python -m pytest --collect-only exits without import errors",
+        "Verify: curl http://localhost:8000/health returns {\"status\": \"ok\", \"version\": \"2.0.0\"} after starting with uvicorn app.main:app --port 8000"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Supabase SQL schema migration — all tables with engagement_id and Postgres views",
+      "description": "Write the SQL migration that creates the full SpendCube v2 schema in Supabase (Postgres). This is the authoritative database definition for the v2 application. The schema adds engagement_id to all five existing tables, creates two new tables (engagements, pipeline_jobs), and defines five Postgres views that replace the Parquet cube files from v1. Row Level Security policies are added to enforce engagement isolation.",
+      "acceptanceCriteria": [
+        "Create file: supabase/migrations/001_initial_schema.sql",
+        "Migration creates table engagements: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, client_name TEXT NOT NULL, currency_label TEXT NOT NULL DEFAULT 'AUD', engagement_title TEXT NOT NULL DEFAULT 'Procurement Spend Diagnostic', owner_email TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT false, llm_dry_run BOOLEAN NOT NULL DEFAULT true, recommendations_json TEXT, created_at TIMESTAMPTZ DEFAULT now()",
+        "Migration creates table pipeline_jobs: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, status TEXT NOT NULL DEFAULT 'queued', stage TEXT, started_at TIMESTAMPTZ DEFAULT now(), completed_at TIMESTAMPTZ, error_message TEXT",
+        "Migration creates table transactions with all 45 columns from src/models/database.py (transaction_id TEXT PRIMARY KEY, source_system TEXT, source_row_number INTEGER, ingested_at TEXT, last_modified_at TEXT, invoice_number TEXT, document_type TEXT, invoice_date TEXT, raw_supplier_name TEXT, raw_supplier_id TEXT, raw_line_description TEXT, original_amount DOUBLE PRECISION, original_currency TEXT, base_amount DOUBLE PRECISION, base_currency TEXT, fx_rate DOUBLE PRECISION, gl_account TEXT, cost_centre TEXT, raw_payment_terms TEXT, payment_terms_days INTEGER, po_number TEXT, business_unit TEXT, plant_site TEXT, canonical_supplier_id TEXT, canonical_supplier_name TEXT, canonical_supplier_confidence DOUBLE PRECISION, parent_company_id TEXT, parent_company_name TEXT, category_l1 TEXT, category_l2 TEXT, category_l3 TEXT, unspsc_code TEXT, category_confidence DOUBLE PRECISION, category_method TEXT, spend_type TEXT, addressability TEXT, managed_status TEXT, is_credit_note INTEGER, is_intercompany INTEGER, is_tax_line INTEGER, is_duplicate INTEGER, review_status TEXT, reviewer TEXT, review_notes TEXT, review_date TEXT, raw_data TEXT) PLUS engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE",
+        "Migration creates table supplier_master: canonical_supplier_id TEXT NOT NULL, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, canonical_name TEXT, parent_company_id TEXT, parent_name TEXT, country TEXT, identifiers TEXT, created_at TEXT, updated_at TEXT, PRIMARY KEY (canonical_supplier_id, engagement_id)",
+        "Migration creates table supplier_match_log: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, raw_supplier_name TEXT, raw_supplier_id TEXT, canonical_supplier_id TEXT, match_method TEXT, confidence DOUBLE PRECISION, evidence TEXT, review_status TEXT, created_at TEXT",
+        "Migration creates table category_overrides: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, canonical_supplier_id TEXT, gl_account TEXT, override_l1 TEXT, override_l2 TEXT, override_l3 TEXT, unspsc_code TEXT, reviewer TEXT, reason TEXT, created_at TEXT",
+        "Migration creates table audit_log: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, table_name TEXT, record_id TEXT, field_name TEXT, old_value TEXT, new_value TEXT, changed_by TEXT, changed_at TEXT",
+        "Migration creates indexes: CREATE INDEX ON transactions(engagement_id); CREATE INDEX ON transactions(engagement_id, invoice_date); CREATE INDEX ON transactions(engagement_id, canonical_supplier_id); CREATE INDEX ON transactions(engagement_id, category_l1); CREATE INDEX ON supplier_match_log(engagement_id, review_status); CREATE INDEX ON pipeline_jobs(engagement_id, status)",
+        "Migration creates view v_by_supplier: SELECT engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, AVG(payment_terms_days) AS avg_payment_days FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name",
+        "Migration creates view v_by_category: SELECT engagement_id, category_l1, category_l2, category_l3, unspsc_code, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, category_l1, category_l2, category_l3, unspsc_code",
+        "Migration creates view v_by_month: SELECT engagement_id, DATE_TRUNC('month', invoice_date::date) AS month, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, DATE_TRUNC('month', invoice_date::date)",
+        "Migration creates view v_by_bu: SELECT engagement_id, business_unit, cost_centre, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 GROUP BY engagement_id, business_unit, cost_centre",
+        "Migration creates view v_by_payment_terms: SELECT engagement_id, CASE WHEN payment_terms_days <= 30 THEN '0-30' WHEN payment_terms_days <= 60 THEN '31-60' WHEN payment_terms_days <= 90 THEN '61-90' ELSE '90+' END AS bucket, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend FROM transactions WHERE payment_terms_days IS NOT NULL AND COALESCE(is_intercompany,0)=0 GROUP BY engagement_id, bucket",
+        "Migration enables RLS: ALTER TABLE engagements ENABLE ROW LEVEL SECURITY; (repeat for all 7 tables)",
+        "Migration creates RLS SELECT policy on transactions: CREATE POLICY select_own_engagement ON transactions FOR SELECT USING (engagement_id IN (SELECT id FROM engagements WHERE owner_email = auth.jwt()->>'email')). Repeat equivalent policies for INSERT/UPDATE/DELETE on all 7 tables.",
+        "Create file: supabase/README.md — documents: npx supabase login; npx supabase link --project-ref <ref>; npx supabase db push to apply migration"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "FastAPI auth middleware + engagements CRUD endpoints",
+      "description": "Implement the authentication layer and engagement management endpoints. The middleware validates the Supabase JWT on every protected route and injects the user's email into the request state. The engagements router handles creating and listing engagements for the authenticated user. This is the foundation that all other routers depend on for ownership checks.",
+      "acceptanceCriteria": [
+        "Create file: backend/app/middleware/auth.py — class SupabaseAuthMiddleware(BaseHTTPMiddleware): validates Authorization: Bearer <jwt> header using python-jose jwt.decode() with SUPABASE_JWT_SECRET and algorithms=['HS256']; extracts email from payload['email']; injects request.state.user_email; returns JSONResponse(status_code=401) for missing or invalid tokens; skips validation for path '/health'",
+        "Create file: backend/app/database.py — function get_engine() -> Engine: reads SUPABASE_DATABASE_URL env var; if set returns create_engine(url, pool_pre_ping=True); raises RuntimeError if not set. Function get_db_url() -> str: returns the env var value. Note: imports sys and adds repo root to sys.path so that 'from src.models.database import ...' works.",
+        "Create file: backend/app/dependencies.py — async function get_current_user_email(request: Request) -> str: returns request.state.user_email. Async function verify_engagement_ownership(engagement_id: str, user_email: str, engine: Engine) -> dict: queries engagements table, returns engagement dict, raises HTTPException(403) if not found or owner_email != user_email.",
+        "Create file: backend/app/routers/engagements.py — APIRouter with prefix='/api/engagements', tags=['engagements']:",
+        "  GET /api/engagements — SELECT * FROM engagements WHERE owner_email = user_email ORDER BY created_at DESC; returns list",
+        "  POST /api/engagements — body: {name, client_name, currency_label='AUD', engagement_title='Procurement Spend Diagnostic', llm_dry_run=true}; INSERT into engagements; returns created row including id",
+        "  GET /api/engagements/{engagement_id} — returns single engagement; 403 if not owned by user",
+        "  PATCH /api/engagements/{engagement_id} — updates any of: name, client_name, currency_label, engagement_title, llm_dry_run; 403 if not owned",
+        "Register SupabaseAuthMiddleware and engagements router in backend/app/main.py",
+        "Create file: backend/tests/test_engagements.py — uses pytest-mock or monkeypatch to mock JWT validation and DB calls: (1) POST creates engagement and returns id, (2) GET lists only engagements matching user_email, (3) GET unknown engagement_id returns 403, (4) unauthenticated request to /api/engagements returns 401",
+        "Verify: pytest backend/tests/test_engagements.py -v — all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Pipeline database adapter — extend get_engine() for Postgres and add engagement_id injection",
+      "description": "Modify src/models/database.py so that get_engine() accepts either a SQLite file path or a full SQLAlchemy database URL (for Postgres). Add engagement_id columns to all five table definitions and update insert functions to accept engagement_id. The change must be 100% backwards-compatible: all existing tests that create in-memory SQLite engines must continue to pass unchanged.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/database.py — change get_engine(db_path: str) -> Engine to get_engine(db_url: str) -> Engine. Logic: if db_url starts with 'postgresql://' or 'postgresql+psycopg2://' use create_engine(db_url, pool_pre_ping=True); if db_url starts with 'sqlite://' use create_engine(db_url, connect_args={'check_same_thread': False}); otherwise treat as file path and prepend 'sqlite:///' as before.",
+        "Edit file: src/models/database.py — add Column('engagement_id', Text, nullable=True) as the LAST column in: transactions_table, supplier_master_table, supplier_match_log_table, category_overrides_table, audit_log_table. nullable=True preserves backwards compatibility with existing SQLite data.",
+        "Edit file: src/models/database.py — update insert_transactions(engine, records, engagement_id=None) to inject engagement_id into each row dict when provided and not None.",
+        "Edit file: src/models/database.py — update insert() operations in any other insert helper functions (supplier_master, supplier_match_log, category_overrides, audit_log) to similarly accept optional engagement_id parameter.",
+        "Edit file: src/config.py — add field database_url: Optional[str] = None to PathsConfig class (use from typing import Optional). When this field is set, the value takes precedence over db_path for constructing the SQLAlchemy engine URL.",
+        "Verify: pytest tests/ -v — all 60+ existing tests pass with no regressions. This is the critical acceptance check.",
+        "Verify: python -c \"from src.models.database import get_engine; e = get_engine(':memory:'); print('sqlite in-memory ok')\" — exits 0",
+        "Verify: python -c \"from src.models.database import get_engine; e = get_engine('sqlite:///test.db'); print('sqlite url ok')\" — exits 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Ingestion API endpoints — file upload, column mapping, and async pipeline execution",
+      "description": "Implement the three ingestion endpoints that power the upload wizard. The first endpoint parses headers from a CSV/Excel file without running the pipeline. The second endpoint kicks off the full pipeline as a FastAPI background task with engagement_id scoping. The third returns job status. The _run_pipeline function chains the existing src/ pipeline modules (Ingestor, harmoniser, SpendCategoriser, SpendCubePipeline) using the Postgres engine and engagement_id.",
+      "acceptanceCriteria": [
+        "Create file: backend/app/routers/ingestion.py — APIRouter with prefix='/api/engagements/{engagement_id}/ingest', tags=['ingestion']",
+        "Add sys.path manipulation at top of ingestion.py: import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..')) to make src/ importable",
+        "POST /upload — UploadFile via Form; validates extension is .csv or .xlsx (else 400); saves to /tmp/spendcube_{uuid}.{ext}; reads first 2 rows to detect headers (pandas read_csv nrows=1 or read_excel nrows=1); returns {job_id: str(uuid4()), file_path: str, columns: list[str], row_count_estimate: int}",
+        "POST /run — body: {job_id: str, file_path: str, column_mapping: dict[str,str]}; validates engagement ownership; INSERTs row into pipeline_jobs with status='queued', engagement_id=engagement_id; calls background_tasks.add_task(_run_pipeline, engagement_id, job_id, file_path, column_mapping); returns {job_id, status: 'queued'}",
+        "GET /status/{job_id} — SELECTs pipeline_jobs row WHERE id=job_id AND engagement_id=engagement_id; returns {job_id, status, stage, started_at, completed_at, error_message}; 404 if not found",
+        "Create function _run_pipeline(engagement_id: str, job_id: str, file_path: str, column_mapping: dict, config_path: str = 'config.yaml'): (1) UPDATE pipeline_jobs SET status='running', stage='ingesting' WHERE id=job_id; (2) load config via load_config(config_path); (3) get engine via get_engine(os.environ['SUPABASE_DATABASE_URL']); (4) call init_db(engine) to ensure tables exist; (5) run Ingestor with engagement_id injection; (6) UPDATE stage='harmonising'; (7) run harmoniser; (8) UPDATE stage='categorising'; (9) run SpendCategoriser; (10) UPDATE stage='building_cube'; (11) run SpendCubePipeline (output_dir=None to skip Parquet); (12) UPDATE status='done', completed_at=now(); wrap in try/except: on exception UPDATE status='failed', error_message=str(e)",
+        "Add startup event in backend/app/main.py: on startup, UPDATE pipeline_jobs SET status='failed', error_message='Server restarted' WHERE status='running' — prevents stuck jobs after restart",
+        "Register ingestion router in backend/app/main.py",
+        "Create file: backend/tests/test_ingestion_api.py — tests: (1) POST /upload with valid CSV returns columns list, (2) POST /run creates pipeline_jobs row with status=queued, (3) GET /status/{known_id} returns job row, (4) GET /status/{unknown_id} returns 404",
+        "Verify: pytest backend/tests/test_ingestion_api.py -v — all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Cube data query endpoints — all five dimensional views plus overview and diagnostics",
+      "description": "Implement the read endpoints that all dashboard pages consume. All data comes from direct Postgres queries against the views defined in US-002 or aggregations on the transactions table. No Parquet files. All endpoints are scoped to engagement_id and support standard filter query parameters. The diagnostics endpoint runs the existing DataQualityDiagnostics class from src/cube/diagnostics.py.",
+      "acceptanceCriteria": [
+        "Create file: backend/app/routers/cube.py — APIRouter with prefix='/api/engagements/{engagement_id}/cube', tags=['cube']",
+        "All endpoints verify engagement ownership via verify_engagement_ownership() from backend/app/dependencies.py",
+        "GET /overview — returns JSON: {total_spend: float, invoice_count: int, supplier_count: int, category_count: int, currency_label: str, maverick_spend_pct: float, tail_spend_pct: float, data_freshness: str (max invoice_date)}. All values computed via SQLAlchemy SELECT on transactions table WHERE engagement_id=? AND COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0. maverick_spend_pct = SUM(base_amount) WHERE po_number IS NULL / total_spend.",
+        "GET /by-supplier — query params: limit=50, offset=0, sort_by=total_spend, order=desc, category_l1=, bu=, date_from=, date_to=, supplier_search= — SELECT from v_by_supplier WHERE engagement_id=? with applied filters; returns {data: list[SupplierRow], total_count: int}",
+        "GET /by-category — query params: l1=, date_from=, date_to= — SELECT from v_by_category WHERE engagement_id=? with optional l1 filter; returns flat list sorted by total_spend DESC",
+        "GET /by-month — SELECT from v_by_month WHERE engagement_id=? ORDER BY month ASC; computes rolling_3m_avg as 3-period rolling mean in Python (pandas rolling(3).mean()); returns list [{month: 'YYYY-MM', total_spend, transaction_count, rolling_3m_avg}]",
+        "GET /by-payment-terms — SELECT from v_by_payment_terms WHERE engagement_id=?; computes spend_pct per bucket; computes wc_opportunity_aud using config.recommendations.target_payment_days and config.recommendations.wacc; returns list [{bucket, transaction_count, total_spend, spend_pct, wc_opportunity_aud}]",
+        "GET /by-bu — SELECT from v_by_bu WHERE engagement_id=?; returns list [{business_unit, cost_centre, total_spend, transaction_count}]",
+        "GET /diagnostics — imports src.cube.diagnostics.DataQualityDiagnostics; instantiates with engine and engagement_id; calls .run(); returns DiagnosticsReport as JSON dict including all 9 check results with status GREEN/AMBER/RED, value_pct, and description",
+        "All query endpoints support date_from / date_to filtering as WHERE invoice_date >= date_from AND invoice_date <= date_to",
+        "Register cube router in backend/app/main.py",
+        "Verify: pytest backend/tests/test_cube_api.py -v — create this test file with at least: overview returns expected keys, by-month returns sorted list, by-supplier respects limit param"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Recommendations and review workstation API endpoints",
+      "description": "Implement the recommendations engine endpoint and the full review workstation API. The recommendations endpoint wraps the existing RecommendationEngine from src/recommendations/engine.py and persists the output JSON to the engagements table. The review endpoints expose the supplier match queue, category overrides, and audit log for the internal review workstation page.",
+      "acceptanceCriteria": [
+        "Create file: backend/app/routers/recommendations.py — APIRouter with prefix='/api/engagements/{engagement_id}/recommendations', tags=['recommendations']",
+        "POST /run — verifies ownership; imports src.recommendations.engine.RecommendationEngine; runs engine with Postgres engine and engagement_id; stores wrapped JSON in engagements.recommendations_json via UPDATE; returns the parsed JSON {recommendations: [...], portfolio_summary: {...}}. If LLM dry_run is false for this engagement and ANTHROPIC_API_KEY is set, passes dry_run=False to engine.",
+        "GET / (root) — SELECT recommendations_json FROM engagements WHERE id=engagement_id AND owner_email=user_email; parses and returns JSON; returns 404 with message 'Recommendations not yet generated — call POST /run first' if recommendations_json IS NULL",
+        "Create file: backend/app/routers/review.py — APIRouter with prefix='/api/engagements/{engagement_id}/review', tags=['review']",
+        "GET /supplier-queue — SELECT from supplier_match_log WHERE engagement_id=? AND review_status='PENDING' ORDER BY confidence ASC; parses evidence JSON field; returns list",
+        "POST /supplier/{match_id}/approve — UPDATE supplier_match_log SET review_status='APPROVED' WHERE id=match_id AND engagement_id=?; INSERT audit_log row (table_name='supplier_match_log', field_name='review_status', old_value='PENDING', new_value='APPROVED', changed_by=user_email); returns {status: 'approved'}",
+        "POST /supplier/{match_id}/reject — same pattern as approve but new_value='REJECTED'",
+        "POST /supplier/{match_id}/override — body: {canonical_supplier_id: str, canonical_name: str}; UPDATE supplier_match_log SET canonical_supplier_id=?, review_status='OVERRIDDEN'; UPDATE transactions SET canonical_supplier_id=?, canonical_supplier_name=? WHERE engagement_id=? AND raw_supplier_name=(SELECT raw_supplier_name FROM supplier_match_log WHERE id=match_id); INSERT audit_log row",
+        "GET /category-queue — SELECT transaction_id, raw_supplier_name, raw_line_description, base_amount, category_l1, category_l2, category_l3, category_confidence FROM transactions WHERE engagement_id=? AND category_confidence < 0.60 ORDER BY ABS(base_amount) DESC LIMIT 100; returns list",
+        "POST /category-override — body: {canonical_supplier_id?, gl_account?, override_l1, override_l2, override_l3, unspsc_code?, reason}; INSERT into category_overrides; INSERT audit_log row; returns created override with id",
+        "GET /category-overrides — SELECT all from category_overrides WHERE engagement_id=?; returns list",
+        "DELETE /category-override/{override_id} — DELETE from category_overrides WHERE id=? AND engagement_id=?; INSERT audit_log row; 404 if not found",
+        "GET /audit-log — SELECT last 100 from audit_log WHERE engagement_id=? ORDER BY changed_at DESC; returns list",
+        "Register both routers in backend/app/main.py",
+        "Verify: pytest backend/tests/test_review_api.py -v — create test file covering: supplier-queue returns list, approve updates review_status, category-override POST inserts row and audit entry"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "React frontend scaffold — Vite, TypeScript, Tailwind, shadcn/ui, routing, API client",
+      "description": "Bootstrap the React frontend application with all required dependencies, configuration, type definitions, and shared infrastructure. This story does not implement any pages — it creates the foundation: Vite project, Tailwind configuration, shadcn/ui component library, React Router routing shell, Supabase auth client, Axios API client with auth headers injected from the Supabase session, TanStack Query provider, and TypeScript type definitions mirroring all backend response shapes.",
+      "acceptanceCriteria": [
+        "Run in frontend/: npm create vite@latest . -- --template react-ts; npm install",
+        "Install and configure Tailwind: npm install -D tailwindcss @tailwindcss/vite; configure vite.config.ts to use @tailwindcss/vite plugin; create src/index.css with @import 'tailwindcss'",
+        "Install shadcn/ui: npx shadcn@latest init — use New York style, slate base, CSS variables. Install components: npx shadcn@latest add card button badge table input select dialog sheet tabs progress skeleton sonner collapsible",
+        "Install runtime deps: npm install recharts react-router-dom @tanstack/react-query @supabase/supabase-js axios react-dropzone xlsx lucide-react date-fns",
+        "Create file: frontend/src/lib/supabase.ts — export supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)",
+        "Create file: frontend/src/lib/api.ts — export api = axios.create({baseURL: import.meta.env.VITE_API_BASE_URL}); request interceptor: const session = await supabase.auth.getSession(); if session.data.session add Authorization: Bearer <access_token> header; response interceptor: on 401, call supabase.auth.signOut() then navigate to /login",
+        "Create file: frontend/src/types/index.ts — TypeScript interfaces (all fields optional unless obviously required): Engagement {id, name, client_name, currency_label, engagement_title, is_admin, llm_dry_run, recommendations_json, created_at}; SupplierRow {engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name, transaction_count, total_spend, avg_payment_days}; CategoryRow {engagement_id, category_l1, category_l2, category_l3, unspsc_code, transaction_count, total_spend, supplier_count}; MonthRow {month, total_spend, transaction_count, rolling_3m_avg}; PaymentTermsRow {bucket, transaction_count, total_spend, spend_pct, wc_opportunity_aud}; OverviewData {total_spend, invoice_count, supplier_count, category_count, currency_label, maverick_spend_pct, tail_spend_pct, data_freshness}; Recommendation {type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative, baseline_spend, addressability_pct, saving_pct, addressable_baseline}; PortfolioSummary {total_spend, total_identified_savings, savings_as_pct_of_spend, sanity_check_passed, recommendation_count}; DiagnosticsCheck {check_name, status, value_pct, threshold_amber, threshold_red, row_count, description}; PipelineJob {id, engagement_id, status, stage, started_at, completed_at, error_message}; SupplierMatchLog {id, raw_supplier_name, canonical_supplier_id, match_method, confidence, evidence, review_status}; CategoryOverride {id, canonical_supplier_id, gl_account, override_l1, override_l2, override_l3, reviewer, reason, created_at}; AuditLogEntry {id, table_name, record_id, field_name, old_value, new_value, changed_by, changed_at}",
+        "Create file: frontend/src/hooks/useAuth.ts — exports useAuth() returning {user: User|null, session: Session|null, loading: boolean, signIn(email,password): Promise<void>, signOut(): Promise<void>}. Uses supabase.auth.onAuthStateChange() in useEffect to keep state current.",
+        "Create file: frontend/src/components/ProtectedRoute.tsx — if loading return LoadingSpinner; if no session return <Navigate to='/login' replace/>; else return <Outlet/>",
+        "Create file: frontend/src/components/Layout.tsx — renders a sidebar nav with links: Overview, Category, Supplier, Payment Terms, Data Quality, Recommendations, and (conditionally if engagement.is_admin) Review Workstation. Top bar shows engagement.client_name, user email, Logout button. Uses <Outlet/> for page content.",
+        "Create file: frontend/src/App.tsx — React Router v6 routes: /login → LoginPage; / → redirect to /engagements; /engagements → ProtectedRoute wrapping EngagementListPage; /engagements/new → ProtectedRoute wrapping NewEngagementPage; /engagements/:id/* → ProtectedRoute wrapping Layout with nested routes: overview, category, supplier, payment-terms, quality, recommendations, upload, admin/review",
+        "Create file: frontend/src/main.tsx — wraps App in <BrowserRouter>, <QueryClientProvider client={queryClient}> with staleTime: 5*60*1000, and <Toaster/> from sonner",
+        "Create file: frontend/vite.config.ts — @tailwindcss/vite plugin + path alias @/ -> ./src/",
+        "Verify: npm run build — exits 0 with zero TypeScript errors and zero Vite build errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Auth pages, engagement selector, and upload entry point",
+      "description": "Implement the user-facing auth flow and the upload wizard. Login page uses Supabase Auth. The engagement list and new-engagement form are the landing pages after login. The upload wizard is a 3-step component: drop file → map columns → watch pipeline progress with polling. This is the client's first end-to-end interaction with the application.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/pages/auth/LoginPage.tsx — email + password inputs (shadcn Input), Sign In button (shadcn Button), calls useAuth().signIn(), shows spinner during loading, shows error toast (sonner toast.error) on failure, redirects to /engagements on success",
+        "Create file: frontend/src/pages/engagements/EngagementListPage.tsx — uses useQuery(['engagements'], () => api.get('/api/engagements').then(r=>r.data)); renders each engagement as a shadcn Card grid showing client_name, engagement_title, formatted created_at; 'Open' button navigates to /engagements/:id/overview; 'New Engagement' button navigates to /engagements/new; skeleton cards while loading; empty state message if array empty",
+        "Create file: frontend/src/pages/engagements/NewEngagementPage.tsx — form with: Client Name (required text input), Engagement Title (required text input, default 'Procurement Spend Diagnostic'), Currency Label (text input, default 'AUD'), LLM Dry Run toggle (shadcn Switch, default on, with helper text 'Disable only when Anthropic API key is configured on the server'). Submit calls POST /api/engagements, navigates to /engagements/:id/upload on 201 response, shows error toast on failure.",
+        "Create file: frontend/src/hooks/useIngestion.ts — manages state: {step: 1|2|3, jobId, columns, fileInfo, columnMapping, jobStatus}. Functions: uploadFile(file: File) -> calls POST .../upload, updates state with job_id and columns; runPipeline(mapping) -> calls POST .../run; startPolling(jobId) -> polls GET .../status/{jobId} every 3 seconds using setInterval; stopPolling() -> clears interval. Returns all state + functions.",
+        "Create file: frontend/src/pages/ingest/UploadPage.tsx — 3-step wizard:",
+        "  Step 1: react-dropzone accepting .csv .xlsx; shows file name + estimated row count after drop; progress bar during upload API call; 'Continue' button (disabled until file uploaded successfully)",
+        "  Step 2: Table showing 8 canonical fields (Supplier Name, Supplier ID, Invoice Number, Invoice Date, Amount, Currency, GL Code, Cost Centre) each with a Select dropdown populated by detected columns from step 1; auto-selects if column name contains the canonical field keyword (case-insensitive); 'Start Processing' button calls useIngestion.runPipeline() with the mapping",
+        "  Step 3: 4-step progress list (Ingesting Data, Harmonising Suppliers, Categorising Spend, Building Analytics Cube) with status icons: grey circle (pending), spinning (active stage), green checkmark (done), red X (failed). Polls via useIngestion.startPolling(). On status=done: shows green success banner 'Data processed successfully' + 'View Dashboard' button linking to /engagements/:id/overview. On status=failed: shows red error banner with error_message + 'Try Again' button.",
+        "Verify: npm run build succeeds with zero TypeScript errors after adding these files"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "Shared dashboard components — KPI tiles, filter bar, chart wrappers, and formatters",
+      "description": "Build the shared component library used across all five dashboard pages. These primitives — the filter sidebar, KPI metric tiles, and Recharts wrapper components — must be built correctly before the dashboard pages, as every page depends on them. Getting the design system consistent here means each dashboard page story can focus on layout and data.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/lib/formatters.ts — formatCurrency(value: number, currency='AUD'): string (e.g. '$1,234,567' or 'AUD 1,234,567'); formatPct(value: number): string (e.g. '12.3%'); formatNumber(value: number): string (comma-separated integer); formatDate(isoStr: string): string (DD MMM YYYY); formatMonth(isoStr: string): string (MMM YYYY)",
+        "Create file: frontend/src/types/filters.ts — FilterState {date_from?: string, date_to?: string, business_units: string[], category_l1s: string[], supplier_search: string}; FilterOptions {business_units: string[], category_l1s: string[]}; defaultFilters(): FilterState returning empty state",
+        "Create file: frontend/src/hooks/useFilters.ts — exports useFilters(): {filters: FilterState, updateFilter: (key, value) => void, clearFilters: () => void, toQueryParams: () => Record<string,string>}. Uses React useState. toQueryParams() omits empty/undefined values.",
+        "Create file: frontend/src/components/dashboard/KpiCard.tsx — shadcn Card with: large bold value text (formatCurrency or formatNumber or formatPct depending on valueType prop), label in muted text below, optional delta row showing trend arrow icon (TrendingUp/TrendingDown from lucide-react) in green/red, optional subtext in xs muted. Props: {label, value: string|number, valueType?: 'currency'|'number'|'pct'|'text', delta?: number, deltaLabel?: string, currency?: string}",
+        "Create file: frontend/src/components/dashboard/FilterBar.tsx — horizontal bar component. Props: {filters: FilterState, onChange: (f:FilterState)=>void, options: FilterOptions}. Renders: date-from input (type=date), date-to input, business-unit multi-select (shadcn Select with multiple prop or custom multi-select), category-l1 multi-select, supplier text search. 'Clear' button calls onChange(defaultFilters()). Only renders non-empty option arrays.",
+        "Create file: frontend/src/components/charts/constants.ts — export CHART_COLORS = ['#1B4F72','#2E86C1','#5DADE2','#85C1E9','#AED6F1','#D6EAF8'] (SpendCube brand palette)",
+        "Create file: frontend/src/components/charts/SpendBarChart.tsx — wraps Recharts: props {data: {label:string, value:number}[], title:string, horizontal?:boolean, color?:string, valueFormatter?:(v:number)=>string, maxItems?:number}. When horizontal=true renders BarChart with layout='vertical', YAxis type='category', XAxis type='number'. Includes ResponsiveContainer height=300, Tooltip with valueFormatter, no Legend.",
+        "Create file: frontend/src/components/charts/SpendAreaChart.tsx — wraps Recharts AreaChart: props {data: MonthRow[], title:string, currency?:string}. Renders two Areas if rolling_3m_avg present (solid primary + dashed secondary). XAxis uses formatMonth formatter. Tooltip shows both series formatted as currency.",
+        "Create file: frontend/src/components/charts/SpendPieChart.tsx — wraps Recharts PieChart + Pie: props {data: {name:string, value:number}[], title:string, valueFormatter?:(v:number)=>string}. Uses CHART_COLORS. Renders Legend below. Tooltip shows value formatted.",
+        "Create file: frontend/src/components/charts/index.ts — re-exports all chart components",
+        "Verify: npm run build succeeds with zero TypeScript errors after creating all these files"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "Spend Overview and Category Deep Dive pages",
+      "description": "Implement the first two dashboard pages using the shared components from US-010. Spend Overview is the landing page and must show an immediate picture of total spend, trend, top suppliers, and category split. Category Deep Dive enables L1→L2→L3 drill-down with fragmentation analysis. Both pages use the hooks pattern from US-010 and query the /cube/ endpoints.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/pages/dashboard/OverviewPage.tsx",
+        "OverviewPage uses useQuery to fetch from: /cube/overview (key: ['overview', engagementId, filters]), /cube/by-month (key: ['by-month', engagementId, filters]), /cube/by-supplier?limit=10 (key: ['top-suppliers', engagementId, filters]), /cube/by-category (key: ['by-category-overview', engagementId, filters]). All useQuery calls pass filters from useFilters() as query params.",
+        "OverviewPage renders: FilterBar at page top; row of 4 KpiCards: Total Spend (formatCurrency), Supplier Count (formatNumber), Invoice Count (formatNumber), Maverick Spend % (formatPct); SpendAreaChart below KPIs spanning full width; side-by-side row: SpendBarChart horizontal top-10 suppliers (left, 60% width) and SpendPieChart category split (right, 40%); Skeleton placeholders while loading.",
+        "Create file: frontend/src/pages/dashboard/CategoryPage.tsx",
+        "CategoryPage uses useQuery for /cube/by-category (full data, no l1 filter initially). Groups data client-side into L1 → L2 → L3 structure using reduce. useState for selected_l1: string|null and selected_l2: string|null.",
+        "CategoryPage renders: FilterBar; row of KpiCards: when l1 selected show (selected category spend, supplier count, avg confidence); L1 horizontal bar chart — clicking a bar sets selected_l1; when l1 selected: L2 bar chart filtered to that l1 (clicking sets selected_l2); when l2 selected: shadcn Table of L3 categories with columns spend + transaction_count + supplier_count; Fragmentation badge (red if supplier_count > 5, amber if 3-5, green if <3) next to the selected L1 name.",
+        "Verify: npm run build succeeds; both pages have no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-012",
+      "title": "Supplier Deep Dive and Payment Terms pages",
+      "description": "Implement the Supplier Deep Dive page (searchable supplier table with per-supplier detail panel) and the Payment Terms page (working capital opportunity analysis with bucket distribution and supplier-level table). Both pages use the existing shared components and query the /cube/by-supplier and /cube/by-payment-terms endpoints.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/pages/dashboard/SupplierPage.tsx",
+        "SupplierPage fetches /cube/by-supplier (no limit — full dataset) with useQuery. Implements client-side search via useState(searchTerm) filtering on canonical_supplier_name (case-insensitive includes). useState for selected_supplier_id: string|null.",
+        "SupplierPage renders: search Input above table; shadcn Table with columns: Supplier Name (clickable, bold), Total Spend (formatCurrency), Invoice Count, Avg Payment Days, Parent Company (or '—'). Sorting: click column header toggles asc/desc. Selected row is highlighted.",
+        "When supplier selected: detail panel below table (or side panel on wide screen) showing: KpiCards for that supplier's total_spend, transaction_count, avg_payment_days; SpendAreaChart of monthly spend — fetched from /cube/by-month filtered by supplier (add ?supplier_id= param to endpoint if supported, else filter client-side from full month data); SpendPieChart of category mix filtered to that supplier from the by-category data.",
+        "Create file: frontend/src/pages/dashboard/PaymentTermsPage.tsx",
+        "PaymentTermsPage fetches /cube/by-payment-terms with useQuery.",
+        "PaymentTermsPage renders: 3 KpiCards: Total WC Opportunity AUD (sum of wc_opportunity_aud), % Spend in 0-30 bucket (spend_pct for bucket '0-30'), % Spend in 90+ bucket; Recharts BarChart showing all 4 buckets side by side (x=bucket, y=total_spend formatted as currency); shadcn Table of suppliers from /cube/by-supplier sorted by avg_payment_days ASC showing columns: Supplier, Avg Days, Total Spend, Bucket (derived from avg_payment_days), Individual WC Opportunity (computed client-side); Footer note: 'WC opportunity uses target 45-day terms at 8% WACC'.",
+        "Verify: npm run build succeeds; both pages have no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-013",
+      "title": "Data Quality scorecard and Recommendations pages",
+      "description": "Implement the Data Quality page (9-check scorecard with GREEN/AMBER/RED diagnostics) and the Recommendations page (savings opportunities with expandable calculation basis and Excel export). Both pages are central to the consulting delivery — the quality page proves data integrity and the recommendations page is the client deliverable.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — shadcn Card: props {check_name: string, status: 'GREEN'|'AMBER'|'RED', value_pct: number, description: string}. Renders: colored left border (green/amber/red using Tailwind border-l-4 + conditional color class); status Badge (variant green/yellow/red); check_name as card title; value_pct formatted as percentage; description in muted text. No expandable section needed — keep it compact.",
+        "Create file: frontend/src/pages/dashboard/DataQualityPage.tsx — fetches /cube/diagnostics. Computes overall_score as weighted average: GREEN=100, AMBER=50, RED=0, averaged across all 9 checks. Renders: 1 large KpiCard showing overall_score as percentage with color (>=80 green, >=50 amber, <50 red); 3x3 grid of DiagnosticsCheckCard. Shows Skeleton while loading.",
+        "Create file: frontend/src/components/dashboard/RecommendationCard.tsx — shadcn Card with: header showing rec type as Badge + confidence Badge (HIGH=green, MEDIUM=yellow, LOW=red); large estimated_impact_aud formatted as currency; context text (e.g. 'IT Equipment — 8 suppliers'); action text in body. Collapsible section (shadcn Collapsible) labeled 'Calculation Basis' showing: table with rows: Baseline Spend (formatCurrency(baseline_spend)), Addressability (formatPct(addressability_pct)), Addressable Baseline (formatCurrency(addressable_baseline)), Saving Rate (saving_pct !== null ? formatPct(saving_pct) : 'WACC formula'), Estimated Saving (formatCurrency(estimated_impact_aud)); narrative text in italic below the table if narrative is non-empty.",
+        "Create file: frontend/src/pages/dashboard/RecommendationsPage.tsx — fetches GET /recommendations. If 404 shows empty state with 'Run Recommendations Engine' button (calls POST /recommendations/run via useMutation, then invalidates query).",
+        "RecommendationsPage renders: PortfolioSummary row — KpiCards: Total Identified Savings, Savings as % of Spend, Recommendation Count, and a 'Sanity Check' badge (green 'Passed' or red 'Warning — review results'); shadcn Tabs with one tab per lever type (only show tabs that have ≥1 recommendation); within each tab a list of RecommendationCard components sorted by estimated_impact_aud DESC; Confidence filter using shadcn ToggleGroup (All / HIGH / MEDIUM / LOW); 'Export to Excel' button.",
+        "Excel export: import xlsx; on click, creates a workbook with one sheet 'Recommendations' with columns: Type, Context, Estimated Impact AUD, Confidence, Lever, Action, Baseline Spend, Addressability %, Addressable Baseline, Saving %, Narrative. Downloads as spendcube_recommendations_{client_name}_{date}.xlsx.",
+        "Verify: npm run build succeeds; both pages have no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-014",
+      "title": "Admin Review Workstation page (admin-gated)",
+      "description": "Implement the internal analyst review workstation as an admin-only page. Only accessible when engagement.is_admin is true (checked in Layout.tsx nav guard). Provides the supplier match review queue, category override management, and full audit trail — equivalent to dashboard/pages/99_admin_review_workstation.py from v1.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/Layout.tsx — wrap the 'Review Workstation' nav link in a conditional: only render if engagement?.is_admin === true. The engagement data should be fetched with useQuery(['engagement', id], () => api.get('/api/engagements/'+id).then(r=>r.data)) and stored in Layout context.",
+        "Create file: frontend/src/pages/admin/ReviewWorkstationPage.tsx — add route guard: if !engagement?.is_admin return <Navigate to='../overview' replace/>.",
+        "ReviewWorkstationPage renders shadcn Tabs with 4 tabs: 'Supplier Queue', 'Category Queue', 'Override Rules', 'Audit Log'.",
+        "Supplier Queue tab: useQuery for GET /review/supplier-queue. shadcn Table: columns Raw Supplier, Matched To, Method, Confidence (badge colored by value: >=0.88 green, >=0.70 amber, else red). Action buttons per row: Approve (calls POST .../approve via useMutation, invalidates queue), Reject (calls POST .../reject), Override (opens shadcn Dialog with two inputs: New Canonical ID and New Name, confirm calls POST .../override). Show '0 items pending' empty state.",
+        "Category Queue tab: useQuery for GET /review/category-queue. shadcn Table: columns Supplier, Amount (formatCurrency), Current L1/L2/L3, Confidence (badge). 'Override' button per row opens Dialog with: L1 Select (options from distinct category_l1 values in transactions), L2 Select (filtered to selected L1, populated client-side), L3 Select (filtered to selected L2), Reason textarea. Submit calls POST /review/category-override.",
+        "Override Rules tab: useQuery for GET /review/category-overrides. shadcn Table with columns: Matches (supplier_id or gl_account), L1/L2/L3, Reason, Created. Delete button per row calls DELETE /review/category-override/{id} via useMutation. 'Add Rule' button at top of tab opens same Dialog as Category Queue Override.",
+        "Audit Log tab: useQuery for GET /review/audit-log. shadcn Table columns: Timestamp (formatDate), Table, Field, Old Value, New Value, Changed By. No actions — read-only.",
+        "All mutations use useMutation with onSuccess: () => queryClient.invalidateQueries() for the relevant query key, plus toast.success() notification.",
+        "Verify: npm run build succeeds; page has no TypeScript errors; route guard redirects non-admin users"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-015",
+      "title": "Deployment configuration, CI/CD, and CLAUDE.md documentation",
+      "description": "Add all deployment artifacts needed to ship SpendCube v2 to production: Dockerfiles for backend and frontend, Vercel and Railway configs, a GitHub Actions CI pipeline that runs all tests on every push, and a full update to CLAUDE.md documenting the v2 architecture. After this story the application is deployable with a single push to main.",
+      "acceptanceCriteria": [
+        "Create file: backend/Dockerfile — FROM python:3.11-slim; WORKDIR /app; COPY pyproject.toml pyproject.toml; RUN pip install -e .; COPY app/ app/; ENV PYTHONPATH=/app; EXPOSE 8000; RUN python -c \"from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')\" to pre-download model; CMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]. Note: src/ and data/ are mounted as volumes at runtime via docker-compose; not COPY'd into the image.",
+        "Create file: frontend/Dockerfile — multi-stage: FROM node:20-alpine AS build; WORKDIR /app; COPY package*.json .; RUN npm ci; COPY . .; ARG VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_API_BASE_URL; RUN npm run build; FROM nginx:alpine; COPY --from=build /app/dist /usr/share/nginx/html; COPY nginx.conf /etc/nginx/conf.d/default.conf; EXPOSE 80",
+        "Create file: frontend/nginx.conf — server { listen 80; location / { root /usr/share/nginx/html; index index.html; try_files $uri $uri/ /index.html; } }",
+        "Create file: frontend/vercel.json — {\"rewrites\": [{\"source\": \"/((?!api/).*)\", \"destination\": \"/index.html\"}], \"buildCommand\": \"npm run build\", \"outputDirectory\": \"dist\"}",
+        "Create file: backend/railway.toml — [build] builder = 'DOCKERFILE'; [deploy] startCommand = 'uvicorn app.main:app --host 0.0.0.0 --port $PORT'; healthcheckPath = '/health'; healthcheckTimeout = 30",
+        "Create file: .github/workflows/ci.yml — on: push (branches: main), pull_request. Jobs: (1) python-tests: runs-on ubuntu-latest, steps: checkout, setup-python 3.11, pip install -r requirements.txt, pip install -e backend/, pytest tests/ -v --tb=short, pytest backend/tests/ -v --tb=short; (2) frontend-build: runs-on ubuntu-latest, steps: checkout, setup-node 20, cd frontend && npm ci && npm run build",
+        "Create file: DEPLOYMENT.md — step-by-step guide: Prerequisites (Supabase account, Railway account, Vercel account, GitHub repo). Step 1: Create Supabase project, copy project URL + anon key + JWT secret + DB connection string. Apply migration: npx supabase db push. Step 2: Deploy backend to Railway — connect GitHub repo, set root dir to backend/, add all env vars from backend/.env.example. Step 3: Deploy frontend to Vercel — connect GitHub repo, set root dir to frontend/, add VITE_* env vars. Step 4: Set VITE_API_BASE_URL to the Railway backend URL. Step 5: Sign up at <your-vercel-url>, create an engagement, upload test data. All required env vars listed in a table.",
+        "Edit file: CLAUDE.md — append section '## SpendCube v2 Architecture (React + Supabase)' covering: directory layout diagram, tech stack table (React/Vite/Tailwind/shadcn/Recharts for frontend; FastAPI/Python 3.11/SQLAlchemy for backend; Supabase Postgres + Auth for data), multi-tenancy via engagement_id, pipeline adapter pattern (SUPABASE_DATABASE_URL env var), deployment targets, full env var table for backend and frontend, local dev commands (docker compose up, or uvicorn + npm run dev separately), test commands (pytest tests/ backend/tests/ and npm run build)",
+        "Verify: docker compose build completes for both services without errors",
+        "Verify: pytest tests/ -v — all original tests still pass (no regressions from US-004 database.py changes)"
+      ],
+      "passes": false
+    }
+  ],
+
+  "verification": {
+    "queries": {
+      "backend_health": "curl http://localhost:8000/health → {\"status\": \"ok\", \"version\": \"2.0.0\"}",
+      "schema_tables": "SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name — expected: audit_log, category_overrides, engagements, pipeline_jobs, supplier_master, supplier_match_log, transactions",
+      "schema_views": "SELECT table_name FROM information_schema.views WHERE table_schema='public' ORDER BY table_name — expected: v_by_bu, v_by_category, v_by_month, v_by_payment_terms, v_by_supplier",
+      "rls_enforced": "As Supabase anon user with no JWT: SELECT * FROM transactions LIMIT 1 — should return 0 rows or permission denied",
+      "engagement_scoping": "SELECT COUNT(*) FROM transactions WHERE engagement_id != '<test-engagement-id>' via API — should return 0 (RLS prevents cross-engagement reads)",
+      "existing_tests_pass": "pytest tests/ -v — exits 0, all 60+ tests pass",
+      "new_backend_tests_pass": "pytest backend/tests/ -v — exits 0",
+      "frontend_builds": "cd frontend && npm run build — exits 0, zero TypeScript errors"
+    },
+    "expected_counts": {
+      "database_tables": 7,
+      "database_views": 5,
+      "dashboard_pages": 7,
+      "api_routers": 5,
+      "recommendation_types": 6,
+      "user_stories": 15
+    },
+    "checks": [
+      "All existing pytest tests/ pass with no regressions after US-004 database.py changes",
+      "npm run build in frontend/ produces zero TypeScript errors",
+      "docker compose build completes for both backend and frontend services",
+      "Uploading test_1k.csv via the upload wizard results in all 4 pipeline stages completing with status=done",
+      "Spend Overview page shows correct total spend matching the Postgres aggregate",
+      "Recommendations page shows ≥5 recommendation cards after running the engine on 1000-row data",
+      "Review Workstation nav link is hidden for engagements where is_admin=false",
+      "Request to /api/engagements/{id}/cube/overview with another user's JWT returns 403",
+      "DEPLOYMENT.md provides a complete walkthrough from zero to live deployment"
+    ]
+  },
+
+  "risks": [
+    "Pipeline Postgres compatibility (US-004/US-005): The existing src/ modules were written and tested against SQLite. Postgres has stricter type handling for date casting (invoice_date is stored as TEXT — the v_by_month view casts it as ::date which will fail if any rows have non-ISO date strings). Mitigation: run the full integration test (python src/utils/generate_test_data.py --rows 1000 && full pipeline) against a local Postgres instance before declaring US-005 done.",
+    "sentence-transformers model size (US-005 Dockerfile): The all-MiniLM-L6-v2 model is ~90MB and is downloaded during docker build. This makes the backend image large (~1.2GB). Mitigation: pre-download in Dockerfile RUN step as specified in US-015, so the model is cached in the image layer and not re-downloaded at container startup.",
+    "RLS policy correctness (US-002): Supabase RLS policies using auth.jwt()->>'email' require the anon/service key to match the JWT issuer. A misconfigured policy will silently return empty results (not 403). Mitigation: test RLS using Supabase Studio SQL editor with a test JWT before going live.",
+    "FastAPI BackgroundTasks reliability (US-005): In-process tasks do not survive a worker restart. If Railway restarts the backend mid-pipeline, the job will be stuck in 'running'. Mitigation: the startup event in US-005 resets stuck jobs to 'failed' on boot. Acceptable for v1.",
+    "SpendCubePipeline Parquet output (US-005): src/cube/pipeline.py likely writes Parquet to output_dir. In v2 we want DB-only output. Review pipeline.py to check if output_dir=None is a valid no-op or if it raises an error. If Parquet output is mandatory, pass output_dir='/tmp/spendcube_parquet_{job_id}' and discard the files.",
+    "CORS in production (US-001): Initial CORS allows all origins. Before any client-facing deployment, set ALLOWED_ORIGINS to the Vercel deployment URL only."
+  ],
+
+  "outOfScope": [
+    "Real-time collaboration — multiple analysts editing the same engagement simultaneously",
+    "Email notifications — notifying analysts when a pipeline job completes",
+    "Celery/Redis job queue — FastAPI BackgroundTasks is sufficient for expected volumes",
+    "Multi-file ingestion — merging multiple CSV files into one engagement",
+    "PDF report export — Excel export of recommendations is sufficient for v1",
+    "White-label theming — custom logos and colour schemes per client",
+    "SSO / enterprise auth — SAML, Google SSO, LDAP. Email+password is sufficient for v1",
+    "Mobile-responsive layout — targets desktop/laptop screens (1280px+) only",
+    "Dark mode",
+    "Streamlit dashboard preservation — dashboard/ is superseded by this sprint and does not need to be maintained",
+    "Real-time dashboard updates — data refreshes on page load or manual refresh button; no WebSocket streaming"
+  ]
+}

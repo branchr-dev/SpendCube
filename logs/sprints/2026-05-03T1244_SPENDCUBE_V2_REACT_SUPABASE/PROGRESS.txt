@@ -1,0 +1,27 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+# Created: Sun  3 May 2026 13:27:19 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 — Monorepo structure — scaffold backend/ and frontend/ directories
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- backend/ with app/, app/routers/, app/middleware/, tests/ subdirectories
+- backend/pyproject.toml — spendcube-backend, Python 3.11+, all required deps
+- backend/app/__init__.py, app/routers/__init__.py, app/middleware/__init__.py, tests/__init__.py
+- backend/app/main.py — FastAPI app with CORSMiddleware + GET /health
+- backend/.env.example
+- frontend/.env.example
+- supabase/migrations/ directory
+- docker-compose.yml at repo root
+
+**Verified:**
+- `pip install -e . && python -m pytest --collect-only` → 0 collected, no import errors
+- `curl http://localhost:8000/health` → {"status":"ok","version":"2.0.0"}
+
+**Learnings:**
+- venv is Python 3.14; pyproject.toml build-backend must be "setuptools.build_meta" (not "setuptools.backends.legacy:build" which is a newer setuptools format unavailable in the venv's setuptools version)
+- pytest exits with code 5 (no tests collected) which is correct for an empty test suite — not an error
+
