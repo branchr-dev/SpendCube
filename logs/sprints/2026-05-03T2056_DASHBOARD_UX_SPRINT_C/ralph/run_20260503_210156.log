@@ -539,3 +539,65 @@ STORY_COMPLETE: US-008
 [2026-05-03 21:12:37] [OK] Marked US-008 as passed
 [2026-05-03 21:12:37] [INFO] Logged progress for US-008: PASSED
 [2026-05-03 21:12:37] [STEP] Committing changes...
+[2026-05-03 21:12:39] [INFO] Starting iteration 9
+[2026-05-03 21:12:39] [INFO] Processing story: US-009
+[2026-05-03 21:12:39] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Layout — nav reorder and engagement date range in sidebar
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Reorder the sidebar navigation to match the opportunity assessment workflow (Overview → Recommendations → Category → Supplier → Payment Terms → Quality). Add an engagement date range line below the total spend KPI in the sidebar so users always know what period they are analysing on every page.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/Layout.tsx
+- Reorder the navItems array: [{ to: 'overview', label: 'Overview', icon: BarChart3 }, { to: 'recommendations', label: 'Recommendations', icon: Lightbulb }, { to: 'category', label: 'Category', icon: Tag }, { to: 'supplier', label: 'Supplier', icon: Building2 }, { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard }, { to: 'quality', label: 'Data Quality', icon: ShieldCheck }]
+- Extend the sidebarOverview useQuery to also capture data_freshness: already done since sidebarOverview is typed as OverviewData which has data_freshness?: string.
+- Below the 'Total Spend' p tag and 'Total Spend' label in the sidebar header, add: {sidebarOverview?.data_freshness && <p className='text-xs text-muted-foreground mt-0.5'>{formatDate(sidebarOverview.data_freshness)}</p>}
+- Verify imports: Lightbulb should already be imported in Layout.tsx (check — if not, add it to the lucide-react import). formatDate should already be imported. If not, add import { formatDate } from '@/lib/formatters'.
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Layout — nav reorder and engagement date range in sidebar`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-05-03 21:13:12] [OK] Story US-009 completed!
+[2026-05-03 21:13:12] [OK] Marked US-009 as passed
+[2026-05-03 21:13:12] [INFO] Logged progress for US-009: PASSED
+[2026-05-03 21:13:12] [STEP] Committing changes...
