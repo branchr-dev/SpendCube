@@ -920,3 +920,68 @@ STORY_COMPLETE: US-013
 [2026-05-03 14:28:15] [OK] Marked US-013 as passed
 [2026-05-03 14:28:15] [INFO] Logged progress for US-013: PASSED
 [2026-05-03 14:28:15] [STEP] Committing changes...
+[2026-05-03 14:28:17] [INFO] Starting iteration 14
+[2026-05-03 14:28:17] [INFO] Processing story: US-014
+[2026-05-03 14:28:17] [STEP] Spawning Claude with prompt for US-014
+--- PROMPT FOR US-014 ---
+You are working on story US-014: Admin Review Workstation page (admin-gated)
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the internal analyst review workstation as an admin-only page. Only accessible when engagement.is_admin is true (checked in Layout.tsx nav guard). Provides the supplier match review queue, category override management, and full audit trail — equivalent to dashboard/pages/99_admin_review_workstation.py from v1.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/Layout.tsx — wrap the 'Review Workstation' nav link in a conditional: only render if engagement?.is_admin === true. The engagement data should be fetched with useQuery(['engagement', id], () => api.get('/api/engagements/'+id).then(r=>r.data)) and stored in Layout context.
+- Create file: frontend/src/pages/admin/ReviewWorkstationPage.tsx — add route guard: if !engagement?.is_admin return <Navigate to='../overview' replace/>.
+- ReviewWorkstationPage renders shadcn Tabs with 4 tabs: 'Supplier Queue', 'Category Queue', 'Override Rules', 'Audit Log'.
+- Supplier Queue tab: useQuery for GET /review/supplier-queue. shadcn Table: columns Raw Supplier, Matched To, Method, Confidence (badge colored by value: >=0.88 green, >=0.70 amber, else red). Action buttons per row: Approve (calls POST .../approve via useMutation, invalidates queue), Reject (calls POST .../reject), Override (opens shadcn Dialog with two inputs: New Canonical ID and New Name, confirm calls POST .../override). Show '0 items pending' empty state.
+- Category Queue tab: useQuery for GET /review/category-queue. shadcn Table: columns Supplier, Amount (formatCurrency), Current L1/L2/L3, Confidence (badge). 'Override' button per row opens Dialog with: L1 Select (options from distinct category_l1 values in transactions), L2 Select (filtered to selected L1, populated client-side), L3 Select (filtered to selected L2), Reason textarea. Submit calls POST /review/category-override.
+- Override Rules tab: useQuery for GET /review/category-overrides. shadcn Table with columns: Matches (supplier_id or gl_account), L1/L2/L3, Reason, Created. Delete button per row calls DELETE /review/category-override/{id} via useMutation. 'Add Rule' button at top of tab opens same Dialog as Category Queue Override.
+- Audit Log tab: useQuery for GET /review/audit-log. shadcn Table columns: Timestamp (formatDate), Table, Field, Old Value, New Value, Changed By. No actions — read-only.
+- All mutations use useMutation with onSuccess: () => queryClient.invalidateQueries() for the relevant query key, plus toast.success() notification.
+- Verify: npm run build succeeds; page has no TypeScript errors; route guard redirects non-admin users
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-014
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-014: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-014 - Admin Review Workstation page (admin-gated)`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-014 ---
+STORY_COMPLETE: US-014
+--- END OUTPUT ---
+[2026-05-03 14:33:58] [OK] Story US-014 completed!
+[2026-05-03 14:33:58] [OK] Marked US-014 as passed
+[2026-05-03 14:33:58] [INFO] Logged progress for US-014: PASSED
+[2026-05-03 14:33:58] [STEP] Committing changes...

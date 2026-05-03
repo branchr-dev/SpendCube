@@ -394,3 +394,44 @@ Story completed successfully by Ralph loop iteration 12
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 13
 
+
+---
+
+## US-014 — Admin Review Workstation page (admin-gated)
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- `frontend/src/pages/admin/ReviewWorkstationPage.tsx` — full 4-tab admin review workstation
+  - Route guard: redirects to ../overview if engagement.is_admin is false/undefined
+  - Tab 1 (Supplier Queue): GET /review/supplier-queue → table with Approve/Reject/Override actions; Override opens Dialog with Canonical ID + Name inputs
+  - Tab 2 (Category Queue): GET /review/category-queue → table with Override button; Override opens CatOverrideDialog with L1/L2/L3 selects (filtered client-side) and reason textarea
+  - Tab 3 (Override Rules): GET /review/category-overrides → table with Delete button; Add Rule button opens same CatOverrideDialog
+  - Tab 4 (Audit Log): GET /review/audit-log → read-only table
+  - All mutations use useMutation + toast.success/error + queryClient.invalidateQueries
+
+**What was modified:**
+- `frontend/src/components/Layout.tsx` — removed engagement prop; now fetches engagement internally via useQuery(['engagement', id]) so admin nav link can be shown/hidden based on live data
+- `frontend/src/App.tsx` — replaced PlaceholderPage for admin/review route with ReviewWorkstationPage; removed PlaceholderPage helper
+- `backend/app/routers/review.py` — added canonical_supplier_id to category-queue SELECT so frontend can pre-fill it in the category override dialog
+
+**Verified:**
+- `npm run build` → exits 0, zero TypeScript errors, 1,491 kB bundle (no breaking chunk size)
+
+**Learnings:**
+- CatOverrideDialog dialog-reset pattern: track a `lastOpen` boolean alongside `open` prop to detect the open→close transition and reset form state, avoiding `useEffect` with deep dependencies
+- canonical_supplier_id was missing from the category-queue SQL query in the backend — needed for the override dialog to pre-fill the supplier ID; added to the SELECT
+- L2/L3 selects are populated from useMemo filters on the cube/categories query; NONE sentinel ('__none__') prevents empty string from triggering Radix Select default-open behaviour
+
+---
+
+### [US-014] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-014] - 2026-05-03 14:33:58
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 14
+
