@@ -412,3 +412,148 @@ All reference data is in `data/reference/` and is bundled with the project:
 | `category_seed_mappings.csv` | 200+ seed mappings from supplier name / GL code / keyword → UNSPSC category |
 
 These files are deliberately curated subsets — not full licensed datasets. They are sufficient for Phase 1 validation and will be extended in later phases.
+
+## SpendCube v2 Architecture (React + Supabase)
+
+SpendCube v2 migrates the Streamlit+SQLite prototype to a production-grade web application. The existing `src/` Python pipeline is preserved intact; a FastAPI backend wraps it as an HTTP adapter. The frontend is rebuilt in React+TypeScript.
+
+### Directory Layout
+
+```
+SpendCube/
+├── src/                        # Original Python pipeline (all 6 phases) — unchanged
+├── tests/                      # Original pytest suite — still runs against src/
+├── data/                       # Reference data, input files, SQLite DB (local dev)
+├── config.yaml                 # Shared pipeline config
+├── backend/                    # FastAPI backend (v2)
+│   ├── app/
+│   │   ├── main.py             # FastAPI app entry point + CORS + startup hook
+│   │   ├── database.py         # get_engine() — routes SQLite or Postgres by URL
+│   │   ├── dependencies.py     # get_current_user_email(), verify_engagement_ownership()
+│   │   ├── middleware/
+│   │   │   └── auth.py         # SupabaseAuthMiddleware — JWT validation, injects user_email
+│   │   └── routers/
+│   │       ├── engagements.py  # CRUD: GET/POST/PATCH engagements
+│   │       ├── ingestion.py    # POST /upload, POST /run, GET /status/{job_id}
+│   │       ├── cube.py         # GET /overview, /by-supplier, /by-category, /by-month, etc.
+│   │       ├── recommendations.py  # POST /run, GET /
+│   │       └── review.py       # Supplier queue, category queue, overrides, audit log
+│   ├── tests/                  # Backend pytest suite (30+ tests)
+│   ├── pyproject.toml
+│   ├── .env.example
+│   ├── Dockerfile
+│   └── railway.toml
+├── frontend/                   # React frontend (v2)
+│   ├── src/
+│   │   ├── pages/              # Page components (auth, engagements, ingest, dashboard, admin)
+│   │   ├── components/         # Shared UI (KpiCard, FilterBar, charts, shadcn/ui primitives)
+│   │   ├── hooks/              # useAuth, useFilters, useIngestion
+│   │   ├── lib/                # supabase.ts, api.ts (Axios), utils.ts, formatters.ts
+│   │   └── types/              # TypeScript interfaces
+│   ├── Dockerfile              # Multi-stage: node:20-alpine build → nginx:alpine serve
+│   ├── nginx.conf              # SPA routing (try_files → /index.html)
+│   └── vercel.json             # Vercel SPA rewrites + build config
+├── supabase/
+│   └── migrations/
+│       └── 001_initial_schema.sql  # Full Postgres schema with RLS policies
+├── docker-compose.yml          # Local dev: backend (8000) + frontend (5173)
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions: python-tests + frontend-build
+└── DEPLOYMENT.md               # Step-by-step deploy guide (Supabase + Railway + Vercel)
+```
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend framework | React 18 + TypeScript + Vite |
+| UI components | shadcn/ui (New York style, Tailwind v4) |
+| Charts | Recharts (BarChart, AreaChart, PieChart, ComposedChart) |
+| Frontend state | TanStack Query v5 (React Query) |
+| Auth (frontend) | Supabase Auth — email+password, JWT |
+| Backend framework | FastAPI 0.111+ (Python 3.11) |
+| Backend ORM | SQLAlchemy Core (not ORM) — same as v1 |
+| Database | Supabase Postgres (cloud) or SQLite (local dev/tests) |
+| Auth (backend) | python-jose JWT validation, user_email injected via middleware |
+| Pipeline | All 6 phases from src/ — called directly by FastAPI BackgroundTasks |
+| Deployment (frontend) | Vercel (zero-config, SPA routing via vercel.json) |
+| Deployment (backend) | Railway (Dockerfile-based, `railway.toml`) |
+| Deployment (DB + Auth) | Supabase cloud |
+
+### Multi-Tenancy
+
+Every data table has an `engagement_id UUID` column referencing the `engagements` table. All backend queries are scoped to the authenticated user's engagement. Supabase Row Level Security (RLS) enforces this at the database layer — a misconfigured API cannot leak another tenant's data.
+
+`engagements` table maps `owner_email` (from Supabase JWT) → `engagement_id`. A user can own multiple engagements (one per client).
+
+### Pipeline Adapter Pattern
+
+`src/models/database.py get_engine()` accepts either:
+- A bare SQLite file path → `sqlite:///path` (backwards compatible, used by all original tests)
+- A full SQLAlchemy URL (`sqlite:///:memory:`, `postgresql://...`) → passed through directly
+
+When `SUPABASE_DATABASE_URL` env var is set, the backend uses Postgres. When absent, it falls back to `config.yaml` SQLite path. This is fully backwards-compatible — all original tests continue to use in-memory SQLite.
+
+### Background Jobs
+
+FastAPI `BackgroundTasks` runs the pipeline asynchronously. A `pipeline_jobs` table tracks job state (`queued` → `running` → `done`/`failed`). The frontend polls `GET /ingest/status/{job_id}` every 3 seconds for progress.
+
+### Deployment Targets
+
+| Service | Provider | Config file |
+|---------|----------|-------------|
+| Frontend | Vercel | `frontend/vercel.json` |
+| Backend | Railway | `backend/railway.toml`, `backend/Dockerfile` |
+| Database + Auth | Supabase cloud | `supabase/migrations/001_initial_schema.sql` |
+
+### Environment Variables
+
+**Backend (`backend/.env` / Railway)**
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_JWT_SECRET` | JWT secret for token validation |
+| `SUPABASE_DATABASE_URL` | Postgres connection string |
+| `ANTHROPIC_API_KEY` | Anthropic API key (only if `DRY_RUN=false`) |
+| `SPENDCUBE_CONFIG_PATH` | Path to `config.yaml` (default: `config.yaml`) |
+| `DRY_RUN` | `true` disables LLM calls (default: `true`) |
+| `ALLOWED_ORIGINS` | CORS origins — set to Vercel frontend URL in production |
+
+**Frontend (`frontend/.env` / Vercel)**
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `VITE_API_BASE_URL` | Backend URL (Railway URL in production; `http://localhost:8000` locally) |
+
+### Local Development Commands
+
+```bash
+# Full stack via Docker Compose
+cp backend/.env.example backend/.env   # fill in Supabase credentials
+docker compose up                       # backend :8000, frontend :5173
+
+# Or run services separately:
+# Backend
+cd backend && uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd frontend && npm run dev              # Vite dev server at :5173
+```
+
+### Test Commands
+
+```bash
+# Original pipeline tests (src/)
+pytest tests/ -v
+
+# Backend API tests
+pytest backend/tests/ -v
+
+# Frontend TypeScript check + build
+cd frontend && npm run build
+```
