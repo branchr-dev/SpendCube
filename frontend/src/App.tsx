@@ -5,6 +5,8 @@ import LoginPage from '@/pages/auth/LoginPage'
 import EngagementListPage from '@/pages/engagements/EngagementListPage'
 import NewEngagementPage from '@/pages/engagements/NewEngagementPage'
 import UploadPage from '@/pages/ingest/UploadPage'
+import OverviewPage from '@/pages/dashboard/OverviewPage'
+import CategoryPage from '@/pages/dashboard/CategoryPage'
 
 function PlaceholderPage({ title }: { title: string }) {
   return <div className="p-6 text-muted-foreground">{title}</div>
@@ -21,8 +23,8 @@ export default function App() {
         <Route path="/engagements/new" element={<NewEngagementPage />} />
         <Route path="/engagements/:id" element={<Layout />}>
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<PlaceholderPage title="Spend Overview" />} />
-          <Route path="category" element={<PlaceholderPage title="Category Deep Dive" />} />
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="category" element={<CategoryPage />} />
           <Route path="supplier" element={<PlaceholderPage title="Supplier Deep Dive" />} />
           <Route path="payment-terms" element={<PlaceholderPage title="Payment Terms" />} />
           <Route path="quality" element={<PlaceholderPage title="Data Quality" />} />

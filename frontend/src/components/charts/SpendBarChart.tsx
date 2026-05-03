@@ -21,6 +21,7 @@ interface SpendBarChartProps {
   color?: string
   valueFormatter?: (v: number) => string
   maxItems?: number
+  onBarClick?: (label: string) => void
 }
 
 export default function SpendBarChart({
@@ -30,6 +31,7 @@ export default function SpendBarChart({
   color = CHART_COLORS[0],
   valueFormatter,
   maxItems,
+  onBarClick,
 }: SpendBarChartProps) {
   const displayData = maxItems ? data.slice(0, maxItems) : data
   const chartData = displayData.map(d => ({ name: d.label, value: d.value }))
@@ -52,7 +54,12 @@ export default function SpendBarChart({
               tick={{ fontSize: 12 }}
             />
             <Tooltip formatter={v => fmt(v)} />
-            <Bar dataKey="value" fill={color} />
+            <Bar
+              dataKey="value"
+              fill={color}
+              onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
+              style={onBarClick ? { cursor: 'pointer' } : undefined}
+            />
           </BarChart>
         ) : (
           <BarChart data={chartData}>
@@ -60,7 +67,12 @@ export default function SpendBarChart({
             <XAxis dataKey="name" tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize: 11 }} />
             <Tooltip formatter={v => fmt(v)} />
-            <Bar dataKey="value" fill={color} />
+            <Bar
+              dataKey="value"
+              fill={color}
+              onClick={onBarClick ? (entry: { name?: string }) => { if (entry.name) onBarClick(entry.name) } : undefined}
+              style={onBarClick ? { cursor: 'pointer' } : undefined}
+            />
           </BarChart>
         )}
       </ResponsiveContainer>
