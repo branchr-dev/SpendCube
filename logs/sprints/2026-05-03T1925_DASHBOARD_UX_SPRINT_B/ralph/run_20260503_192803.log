@@ -530,3 +530,65 @@ STORY_COMPLETE: US-008
 [2026-05-03 19:37:13] [OK] Marked US-008 as passed
 [2026-05-03 19:37:13] [INFO] Logged progress for US-008: PASSED
 [2026-05-03 19:37:13] [STEP] Committing changes...
+[2026-05-03 19:37:15] [INFO] Starting iteration 9
+[2026-05-03 19:37:15] [INFO] Processing story: US-009
+[2026-05-03 19:37:15] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: CLAUDE.md update — Dashboard UX Sprint B conventions
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md with the new patterns and components introduced in Sprint B.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — find the '## Dashboard UX Conventions (Sprint A)' section added by Sprint A and append a new '## Dashboard UX Conventions (Sprint B)' section immediately after it
+- Document: SpendAreaChart showReferenceLine prop and how the average is computed, RecommendationCard portfolioTotal and leverIndex props, DiagnosticsCheckCard new props (affectsRecommendations, onClick, expanded, CHECK_GUIDANCE map), Supplier page groupByParent toggle and expandedGroups state pattern, Category Fragmentation Scorecard new columns (avgInvoice, spendPerSupplier)
+- Document the priority matrix pattern: confidence string → numeric mapping (HIGH=0.9, MEDIUM=0.6, LOW=0.3), ZAxis for bubble size
+- Keep concise — bullet points and code snippets only
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - CLAUDE.md update — Dashboard UX Sprint B conventions`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+CLAUDE.md has been updated with a new `## Dashboard UX Conventions (Sprint B)` section covering all Sprint B patterns. The commit is `dbc0899`.
+
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-05-03 19:38:29] [OK] Story US-009 completed!
+[2026-05-03 19:38:29] [OK] Marked US-009 as passed
+[2026-05-03 19:38:29] [INFO] Logged progress for US-009: PASSED
+[2026-05-03 19:38:29] [STEP] Committing changes...

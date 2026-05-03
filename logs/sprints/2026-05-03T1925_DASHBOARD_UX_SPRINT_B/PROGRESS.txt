@@ -146,3 +146,31 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+
+## US-009 Complete — 2026-05-03
+
+### CLAUDE.md updated with Sprint B conventions
+
+- Appended '## Dashboard UX Conventions (Sprint B)' section immediately after the Sprint A section
+- Documented: SpendAreaChart showReferenceLine prop (mean computation, dashed line style)
+- Documented: RecommendationCard portfolioTotal (impact share bar) and leverIndex (CHART_COLORS border accent) props
+- Documented: DiagnosticsCheckCard affectsRecommendations, onClick, expanded props; CHECK_GUIDANCE map; severity sort; Progress bar
+- Documented: Priority matrix pattern — confidence→numeric mapping (HIGH=0.9, MEDIUM=0.6, LOW=0.3), ZAxis bubble sizing, per-lever Scatter
+- Documented: Supplier page groupByParent toggle, expandedGroups Set state, toggleGroup helper
+- Documented: Category Fragmentation Scorecard avgInvoice and spendPerSupplier columns with amber highlight rule
+- Committed: dbc0899
+
+
+---
+
+### [US-009] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-009] - 2026-05-03 19:38:29
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+
