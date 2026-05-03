@@ -298,3 +298,34 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 9
 
+---
+
+## US-010 — Shared dashboard components — KPI tiles, filter bar, chart wrappers, and formatters
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- `frontend/src/lib/formatters.ts` — formatCurrency ($ for AUD, currency code for others), formatPct (1dp), formatNumber (comma-separated integer), formatDate (DD MMM YYYY), formatMonth (MMM YYYY)
+- `frontend/src/types/filters.ts` — FilterState, FilterOptions interfaces + defaultFilters() factory
+- `frontend/src/hooks/useFilters.ts` — useFilters() with useState; updateFilter (generic key/value), clearFilters, toQueryParams (omits empty values)
+- `frontend/src/components/dashboard/KpiCard.tsx` — shadcn Card; formats value by valueType prop; optional delta row with TrendingUp/TrendingDown icon in green/red; optional subtext
+- `frontend/src/components/dashboard/FilterBar.tsx` — date-from/to inputs, business-unit + category-l1 custom multi-selects (checkbox dropdown with click-outside close), supplier text search, Clear button; only renders non-empty option arrays
+- `frontend/src/components/charts/constants.ts` — CHART_COLORS (6-color SpendCube brand palette)
+- `frontend/src/components/charts/SpendBarChart.tsx` — Recharts BarChart wrapper; horizontal=true uses layout='vertical' with YAxis type='category'; maxItems slices data; valueFormatter applied to tooltip and axis ticks
+- `frontend/src/components/charts/SpendAreaChart.tsx` — Recharts AreaChart; two Areas when rolling_3m_avg present (solid primary + dashed secondary); XAxis uses formatMonth; tooltip uses formatCurrency
+- `frontend/src/components/charts/SpendPieChart.tsx` — Recharts PieChart+Pie; CHART_COLORS via Cell; Legend below; Tooltip with valueFormatter
+- `frontend/src/components/charts/index.ts` — re-exports all three chart components + CHART_COLORS
+
+**Verified:**
+- `npm run build` → exits 0, zero TypeScript errors (tsc -b + vite build 2307 modules)
+
+**Learnings:**
+- Recharts v3 Tooltip `labelFormatter` prop types `label` as `ReactNode`, not `string` — must narrow with `typeof label === 'string'` before calling string formatters
+- FilterBar multi-select uses `useRef` + `mousedown` event listener for click-outside close (standard pattern when shadcn Select doesn't support multiple)
+- Recharts `formatter` prop on Tooltip types the value as `ValueType` (not `number`) — use `unknown` and guard with `typeof v === 'number'` for safe calling of numeric formatters
+
+---
+
+### [US-010] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
