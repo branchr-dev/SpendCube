@@ -535,3 +535,67 @@ STORY_COMPLETE: US-008
 [2026-05-03 18:44:26] [OK] Marked US-008 as passed
 [2026-05-03 18:44:26] [INFO] Logged progress for US-008: PASSED
 [2026-05-03 18:44:26] [STEP] Committing changes...
+[2026-05-03 18:44:28] [INFO] Starting iteration 9
+[2026-05-03 18:44:28] [INFO] Processing story: US-009
+[2026-05-03 18:44:28] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Collapsible FilterBar with active filter pills
+
+## Project Context
+**Project:** Dashboard UX Sprint A — Visual System & Core Cockpits
+**Project ID:** DASHBOARD-UX-A-2026-05
+**PRD:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Redesign FilterBar to collapse into a compact pill row by default, reclaiming ~80px of vertical space on every page. An expand button opens the full filter panel. Active filters are shown as removable badge pills when collapsed.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/dashboard/FilterBar.tsx
+- Add local state: const [expanded, setExpanded] = useState(false)
+- Import SlidersHorizontal from lucide-react. Import Badge from @/components/ui/badge. Import X from lucide-react for pill remove buttons.
+- Compute activePills array from current filters — an array of { label: string, onRemove: () => void }. Include pills for: date_from (if set: label='From: '+date_from, onRemove clears it), date_to (same), each entry in business_units (label=value, onRemove removes it), each entry in category_l1s, supplier_search (if non-empty: label='Supplier: '+supplier_search), each legal_entity, each currency, each country, each abc_segment entry. Skip any undefined/empty values.
+- When !expanded render: a single flex-row div className='flex items-center gap-2 flex-wrap py-2': (1) Button variant='outline' size='sm' onClick={() => setExpanded(true)}: <SlidersHorizontal className='h-4 w-4 mr-1.5' /> Filters {activePills.length > 0 && <span className='ml-1 bg-primary text-primary-foreground rounded-full text-xs px-1.5'>{activePills.length}</span>}. (2) For each activePill: a span className='inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs rounded-full px-2.5 py-1': pill.label + an X button (button onClick={pill.onRemove}). (3) If activePills.length > 0: a button className='text-xs text-muted-foreground underline ml-1' onClick={() => onChange(defaultFilters())} text 'Clear all'.
+- When expanded render: the existing full filter UI (all current JSX) wrapped in the existing container div. At the end of the filter controls row, add a Button variant='ghost' size='sm' onClick={() => setExpanded(false)} text 'Close ↑'.
+- The component starts collapsed (expanded=false) by default — this is intentional so pages start clean.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+   - Session: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Collapsible FilterBar with active filter pills`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-05-03 18:45:44] [OK] Story US-009 completed!
+[2026-05-03 18:45:44] [OK] Marked US-009 as passed
+[2026-05-03 18:45:44] [INFO] Logged progress for US-009: PASSED
+[2026-05-03 18:45:44] [STEP] Committing changes...

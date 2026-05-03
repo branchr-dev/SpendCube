@@ -149,3 +149,19 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 8
 
+
+## US-009 — Collapsible FilterBar (2026-05-03T17:45:40Z)
+- Added expanded state (default false) to FilterBar
+- Collapsed view: Filters button with active count badge + removable pills + Clear all
+- Expanded view: existing full filter panel + Close ↑ button
+- activePills computed from all filter fields (dates, arrays, supplier_search)
+- Build: zero TypeScript errors
+- Note: Badge import from @/components/ui/badge was not needed — pills built with plain span elements matching spec exactly
+
+
+---
+
+### [US-009] - 2026-05-03 18:45:44
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 9
+

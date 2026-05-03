@@ -208,7 +208,8 @@
         "The component starts collapsed (expanded=false) by default — this is intentional so pages start clean.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:45:44Z"
     },
     {
       "id": "US-010",
