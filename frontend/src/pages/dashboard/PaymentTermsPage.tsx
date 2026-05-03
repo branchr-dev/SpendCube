@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+} from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,8 +24,15 @@ import {
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendBarChart from '@/components/charts/SpendBarChart'
 import { api } from '@/lib/api'
-import { formatCurrency, formatNumber } from '@/lib/formatters'
+import { formatCurrency, formatNumber, formatPct } from '@/lib/formatters'
 import type { PaymentTermsRow, SupplierRow } from '@/types'
+
+const BUCKET_COLORS: Record<string, string> = {
+  '0-30': '#f43f5e',
+  '31-60': '#f59e0b',
+  '61-90': '#10b981',
+  '90+': '#3b82f6',
+}
 
 function deriveBucket(avgDays: number): string {
   if (avgDays <= 30) return '0-30'
@@ -24,7 +41,7 @@ function deriveBucket(avgDays: number): string {
   return '90+'
 }
 
-const BUCKET_ORDER = ['0-30', '31-60', '61-90', '90+']
+const BUCKET_ORDER = ['0-30', '31-60', '61-90', '90+'] as const
 
 export default function PaymentTermsPage() {
   const { id: engagementId } = useParams<{ id: string }>()
@@ -57,10 +74,18 @@ export default function PaymentTermsPage() {
   const pct0_30 = bucket0_30?.spend_pct ?? 0
   const pct90plus = bucket90plus?.spend_pct ?? 0
 
-  const bucketBarData = BUCKET_ORDER.map(b => {
-    const row = ptData.find(r => r.bucket === b)
-    return { label: b, value: row?.total_spend ?? 0 }
-  })
+  const totalBucketSpend = ptData.reduce((s, r) => s + (r.total_spend ?? 0), 0)
+
+  const stackedData = [
+    BUCKET_ORDER.reduce((acc, b) => {
+      const row = ptData.find(r => r.bucket === b)
+      const spend = row?.total_spend ?? 0
+      const pct = totalBucketSpend > 0 ? (spend / totalBucketSpend) * 100 : 0
+      acc[b] = pct
+      acc[`${b}_aud`] = spend
+      return acc
+    }, {} as Record<string, number>),
+  ]
 
   const suppliersSorted = [...supplierData]
     .filter(s => s.avg_payment_days != null)
@@ -150,15 +175,51 @@ export default function PaymentTermsPage() {
         )}
       </div>
 
-      <div className="mt-4 border rounded-lg p-4">
+      <div className="border rounded-xl p-5 bg-card shadow-sm">
+        <h3 className="section-header">Payment Terms Distribution</h3>
         {loadingPt ? (
-          <Skeleton className="h-80" />
+          <Skeleton className="h-20" />
         ) : (
-          <SpendBarChart
-            data={bucketBarData}
-            title="Spend by Payment Terms Bucket"
-            valueFormatter={v => formatCurrency(v)}
-          />
+          <>
+            <ResponsiveContainer width="100%" height={80}>
+              <BarChart data={stackedData} layout="vertical" margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <XAxis type="number" domain={[0, 100]} hide />
+                <YAxis type="category" hide />
+                <Tooltip
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: any, name: any) => {
+                    const numVal = typeof value === 'number' ? value : 0
+                    const nameStr = String(name)
+                    const aud = stackedData[0][`${nameStr}_aud`] ?? 0
+                    return [`${formatPct(numVal)} — ${formatCurrency(aud)}`, nameStr]
+                  }}
+                />
+                {BUCKET_ORDER.map(b => (
+                  <Bar key={b} dataKey={b} stackId="a" fill={BUCKET_COLORS[b]}>
+                    <LabelList
+                      dataKey={b}
+                      position="center"
+                      style={{ fontSize: 11, fill: '#fff', fontWeight: 500 }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(v: any) => {
+                        const n = typeof v === 'number' ? v : 0
+                        return n >= 5 ? `${n.toFixed(1)}%` : ''
+                      }}
+                    />
+                    <Cell fill={BUCKET_COLORS[b]} />
+                  </Bar>
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex gap-4 mt-2">
+              {BUCKET_ORDER.map(b => (
+                <div key={b} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: BUCKET_COLORS[b] }} />
+                  {b} days
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -186,7 +247,17 @@ export default function PaymentTermsPage() {
                     <TableCell className="font-medium">
                       {row.canonical_supplier_name ?? '—'}
                     </TableCell>
-                    <TableCell className="text-right">{formatNumber(avgDays)}</TableCell>
+                    <TableCell
+                      className={
+                        avgDays < 30
+                          ? 'text-right font-medium text-rose-700'
+                          : avgDays < 45
+                          ? 'text-right font-medium text-amber-700'
+                          : 'text-right'
+                      }
+                    >
+                      {formatNumber(avgDays)}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(spend)}</TableCell>
                     <TableCell>{deriveBucket(avgDays)}</TableCell>
                     <TableCell className="text-right">
