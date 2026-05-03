@@ -426,3 +426,76 @@ STORY_COMPLETE: US-006
 [2026-05-03 13:51:16] [OK] Marked US-006 as passed
 [2026-05-03 13:51:16] [INFO] Logged progress for US-006: PASSED
 [2026-05-03 13:51:16] [STEP] Committing changes...
+[2026-05-03 13:51:18] [INFO] Starting iteration 7
+[2026-05-03 13:51:18] [INFO] Processing story: US-007
+[2026-05-03 13:51:18] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Recommendations and review workstation API endpoints
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the recommendations engine endpoint and the full review workstation API. The recommendations endpoint wraps the existing RecommendationEngine from src/recommendations/engine.py and persists the output JSON to the engagements table. The review endpoints expose the supplier match queue, category overrides, and audit log for the internal review workstation page.
+
+## Acceptance Criteria
+- Create file: backend/app/routers/recommendations.py — APIRouter with prefix='/api/engagements/{engagement_id}/recommendations', tags=['recommendations']
+- POST /run — verifies ownership; imports src.recommendations.engine.RecommendationEngine; runs engine with Postgres engine and engagement_id; stores wrapped JSON in engagements.recommendations_json via UPDATE; returns the parsed JSON {recommendations: [...], portfolio_summary: {...}}. If LLM dry_run is false for this engagement and ANTHROPIC_API_KEY is set, passes dry_run=False to engine.
+- GET / (root) — SELECT recommendations_json FROM engagements WHERE id=engagement_id AND owner_email=user_email; parses and returns JSON; returns 404 with message 'Recommendations not yet generated — call POST /run first' if recommendations_json IS NULL
+- Create file: backend/app/routers/review.py — APIRouter with prefix='/api/engagements/{engagement_id}/review', tags=['review']
+- GET /supplier-queue — SELECT from supplier_match_log WHERE engagement_id=? AND review_status='PENDING' ORDER BY confidence ASC; parses evidence JSON field; returns list
+- POST /supplier/{match_id}/approve — UPDATE supplier_match_log SET review_status='APPROVED' WHERE id=match_id AND engagement_id=?; INSERT audit_log row (table_name='supplier_match_log', field_name='review_status', old_value='PENDING', new_value='APPROVED', changed_by=user_email); returns {status: 'approved'}
+- POST /supplier/{match_id}/reject — same pattern as approve but new_value='REJECTED'
+- POST /supplier/{match_id}/override — body: {canonical_supplier_id: str, canonical_name: str}; UPDATE supplier_match_log SET canonical_supplier_id=?, review_status='OVERRIDDEN'; UPDATE transactions SET canonical_supplier_id=?, canonical_supplier_name=? WHERE engagement_id=? AND raw_supplier_name=(SELECT raw_supplier_name FROM supplier_match_log WHERE id=match_id); INSERT audit_log row
+- GET /category-queue — SELECT transaction_id, raw_supplier_name, raw_line_description, base_amount, category_l1, category_l2, category_l3, category_confidence FROM transactions WHERE engagement_id=? AND category_confidence < 0.60 ORDER BY ABS(base_amount) DESC LIMIT 100; returns list
+- POST /category-override — body: {canonical_supplier_id?, gl_account?, override_l1, override_l2, override_l3, unspsc_code?, reason}; INSERT into category_overrides; INSERT audit_log row; returns created override with id
+- GET /category-overrides — SELECT all from category_overrides WHERE engagement_id=?; returns list
+- DELETE /category-override/{override_id} — DELETE from category_overrides WHERE id=? AND engagement_id=?; INSERT audit_log row; 404 if not found
+- GET /audit-log — SELECT last 100 from audit_log WHERE engagement_id=? ORDER BY changed_at DESC; returns list
+- Register both routers in backend/app/main.py
+- Verify: pytest backend/tests/test_review_api.py -v — create test file covering: supplier-queue returns list, approve updates review_status, category-override POST inserts row and audit entry
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Recommendations and review workstation API endpoints`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+All done. 30/30 tests pass with no regressions.
+
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-03 13:53:48] [OK] Story US-007 completed!
+[2026-05-03 13:53:48] [OK] Marked US-007 as passed
+[2026-05-03 13:53:48] [INFO] Logged progress for US-007: PASSED
+[2026-05-03 13:53:48] [STEP] Committing changes...

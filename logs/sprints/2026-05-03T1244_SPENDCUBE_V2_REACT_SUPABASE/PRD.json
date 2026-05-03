@@ -198,7 +198,8 @@
         "Register both routers in backend/app/main.py",
         "Verify: pytest backend/tests/test_review_api.py -v — create test file covering: supplier-queue returns list, approve updates review_status, category-override POST inserts row and audit entry"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:53:48Z"
     },
     {
       "id": "US-008",
