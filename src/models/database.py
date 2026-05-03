@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 import pandas as pd
@@ -18,6 +20,7 @@ from sqlalchemy import (
     create_engine,
     insert,
     select,
+    update,
     func,
 )
 
@@ -89,6 +92,7 @@ transactions_table = Table(
     Column("has_early_payment_discount", Integer, nullable=True),
     Column("payment_term_confidence", Float, nullable=True),
     Column("abc_segment", Text, nullable=True),
+    Column("source_raw_id", Text, nullable=True),
 )
 
 supplier_master_table = Table(
@@ -148,6 +152,36 @@ audit_log_table = Table(
     Column("changed_by", Text),
     Column("changed_at", Text),
     Column("engagement_id", Text, nullable=True),
+)
+
+ingestion_batches_table = Table(
+    "ingestion_batches",
+    metadata,
+    Column("id", Text, primary_key=True),
+    Column("engagement_id", Text),
+    Column("filename", Text),
+    Column("row_count", Integer),
+    Column("new_rows", Integer),
+    Column("duplicate_rows", Integer),
+    Column("status", Text),
+    Column("uploaded_at", Text),
+    Column("completed_at", Text),
+)
+
+transactions_raw_table = Table(
+    "transactions_raw",
+    metadata,
+    Column("id", Text, primary_key=True),
+    Column("engagement_id", Text),
+    Column("batch_id", Text),
+    Column("source_row_hash", Text, unique=True),
+    Column("pipeline_status", Text),
+    Column("invoice_number", Text),
+    Column("invoice_date", Text),
+    Column("raw_supplier_name", Text),
+    Column("base_amount", Float),
+    Column("raw_data", Text),
+    Column("created_at", Text),
 )
 
 # ---------------------------------------------------------------------------
@@ -216,6 +250,121 @@ def get_db_stats(engine: Engine) -> dict:
             count = conn.execute(select(func.count()).select_from(tbl)).scalar()
             stats[tbl.name] = count
     return stats
+
+
+# ---------------------------------------------------------------------------
+# Batch ingestion helpers
+# ---------------------------------------------------------------------------
+
+def create_batch(engine: Engine, engagement_id: str, filename: str, row_count: int) -> str:
+    batch_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    with engine.begin() as conn:
+        conn.execute(
+            insert(ingestion_batches_table),
+            {
+                "id": batch_id,
+                "engagement_id": engagement_id,
+                "filename": filename,
+                "row_count": row_count,
+                "new_rows": None,
+                "duplicate_rows": None,
+                "status": "processing",
+                "uploaded_at": now,
+                "completed_at": None,
+            },
+        )
+    return batch_id
+
+
+def insert_raw_transactions(
+    engine: Engine,
+    records: list[dict],
+    batch_id: str,
+    engagement_id: str,
+) -> tuple[int, int]:
+    if not records:
+        return 0, 0
+
+    is_postgres = "postgresql" in str(engine.url)
+    chunk_size = 5000
+    total_new = 0
+    total_dup = 0
+    now = datetime.now(timezone.utc).isoformat()
+
+    for i in range(0, len(records), chunk_size):
+        chunk = records[i : i + chunk_size]
+        rows = [
+            {
+                "id": str(uuid.uuid4()),
+                "engagement_id": engagement_id,
+                "batch_id": batch_id,
+                "pipeline_status": "queued",
+                "created_at": now,
+                **r,
+            }
+            for r in chunk
+        ]
+
+        if is_postgres:
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+            stmt = (
+                pg_insert(transactions_raw_table)
+                .values(rows)
+                .on_conflict_do_nothing(index_elements=["source_row_hash"])
+            )
+        else:
+            from sqlalchemy import insert as sa_insert
+
+            stmt = sa_insert(transactions_raw_table).prefix_with("OR IGNORE").values(rows)
+
+        with engine.begin() as conn:
+            result = conn.execute(stmt)
+
+        new_rows = result.rowcount if result.rowcount >= 0 else len(chunk)
+        total_new += new_rows
+        total_dup += len(chunk) - new_rows
+
+    return total_new, total_dup
+
+
+def get_queued_raw_rows(engine: Engine, engagement_id: str, batch_id: str) -> pd.DataFrame:
+    stmt = select(transactions_raw_table).where(
+        transactions_raw_table.c.pipeline_status == "queued",
+        transactions_raw_table.c.engagement_id == engagement_id,
+        transactions_raw_table.c.batch_id == batch_id,
+    )
+    return pd.read_sql(stmt, engine)
+
+
+def mark_raw_rows_processed(engine: Engine, row_ids: list[str], status: str) -> None:
+    if not row_ids:
+        return
+    stmt = (
+        update(transactions_raw_table)
+        .where(transactions_raw_table.c.id.in_(row_ids))
+        .values(pipeline_status=status)
+    )
+    with engine.begin() as conn:
+        conn.execute(stmt)
+
+
+def update_batch_status(
+    engine: Engine,
+    batch_id: str,
+    status: str,
+    new_rows: int,
+    duplicate_rows: int,
+) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    stmt = (
+        update(ingestion_batches_table)
+        .where(ingestion_batches_table.c.id == batch_id)
+        .values(status=status, new_rows=new_rows, duplicate_rows=duplicate_rows, completed_at=now)
+    )
+    with engine.begin() as conn:
+        conn.execute(stmt)
 
 
 # ---------------------------------------------------------------------------
