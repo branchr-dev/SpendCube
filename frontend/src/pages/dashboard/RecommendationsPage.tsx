@@ -5,9 +5,11 @@ import * as XLSX from 'xlsx'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import KpiCard from '@/components/dashboard/KpiCard'
 import RecommendationCard from '@/components/dashboard/RecommendationCard'
+import { SpendBarChart } from '@/components/charts'
+import { SEMANTIC_COLORS } from '@/components/charts/constants'
+import { formatCurrency } from '@/lib/formatters'
 import { api } from '@/lib/api'
 import type { Recommendation, PortfolioSummary, Engagement } from '@/types'
 
@@ -18,10 +20,17 @@ interface RecommendationsResponse {
   portfolio_summary: PortfolioSummary
 }
 
+interface LeverSummary {
+  lever: string
+  totalImpact: number
+  count: number
+}
+
 export default function RecommendationsPage() {
   const { id: engagementId } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
   const [confidenceFilter, setConfidenceFilter] = useState<Confidence>('ALL')
+  const [selectedLever, setSelectedLever] = useState<string | null>(null)
 
   const { data, isLoading, error } = useQuery<RecommendationsResponse>({
     queryKey: ['recommendations', engagementId],
@@ -58,18 +67,24 @@ export default function RecommendationsPage() {
     [recommendations, confidenceFilter],
   )
 
-  const leverTabs = useMemo(() => {
-    const seen = new Set<string>()
-    const levers: string[] = []
+  const leverSummaries: LeverSummary[] = useMemo(() => {
+    const map = new Map<string, { totalImpact: number; count: number }>()
     for (const r of recommendations) {
       const lever = r.lever ?? 'OTHER'
-      if (!seen.has(lever)) {
-        seen.add(lever)
-        levers.push(lever)
-      }
+      const existing = map.get(lever) ?? { totalImpact: 0, count: 0 }
+      map.set(lever, {
+        totalImpact: existing.totalImpact + (r.estimated_impact_aud ?? 0),
+        count: existing.count + 1,
+      })
     }
-    return levers
+    return Array.from(map.entries())
+      .map(([lever, { totalImpact, count }]) => ({ lever, totalImpact, count }))
+      .sort((a, b) => b.totalImpact - a.totalImpact)
   }, [recommendations])
+
+  const displayedRecs = (
+    selectedLever ? filtered.filter(r => (r.lever ?? 'OTHER') === selectedLever) : filtered
+  ).sort((a, b) => (b.estimated_impact_aud ?? 0) - (a.estimated_impact_aud ?? 0))
 
   function exportToExcel() {
     const clientName = (engagement?.client_name ?? engagementId ?? 'client')
@@ -189,39 +204,46 @@ export default function RecommendationsPage() {
         ))}
       </div>
 
-      {leverTabs.length === 0 ? (
-        <p className="text-muted-foreground">No recommendations available.</p>
-      ) : (
-        <Tabs defaultValue={leverTabs[0]}>
-          <TabsList>
-            {leverTabs.map(lever => {
-              const count = recommendations.filter(r => (r.lever ?? 'OTHER') === lever).length
-              return (
-                <TabsTrigger key={lever} value={lever}>
-                  {lever.replace(/_/g, ' ')} ({count})
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-          {leverTabs.map(lever => {
-            const leverRecs = filtered
-              .filter(r => (r.lever ?? 'OTHER') === lever)
-              .sort((a, b) => (b.estimated_impact_aud ?? 0) - (a.estimated_impact_aud ?? 0))
-            return (
-              <TabsContent key={lever} value={lever} className="space-y-3 mt-4">
-                {leverRecs.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    No {lever.replace(/_/g, ' ').toLowerCase()} recommendations match the current
-                    filter.
-                  </p>
-                ) : (
-                  leverRecs.map((rec, i) => <RecommendationCard key={i} rec={rec} />)
-                )}
-              </TabsContent>
-            )
-          })}
-        </Tabs>
+      {leverSummaries.length > 0 && (
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <SpendBarChart
+            data={leverSummaries.map(l => ({ label: l.lever.replace(/_/g, ' '), value: l.totalImpact }))}
+            title="Savings by Lever"
+            horizontal={true}
+            valueFormatter={v => formatCurrency(v)}
+            showLabel={false}
+            color={SEMANTIC_COLORS.opportunity}
+          />
+        </div>
       )}
+
+      {leverSummaries.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {leverSummaries.map(({ lever, totalImpact, count }) => (
+            <div
+              key={lever}
+              onClick={() => setSelectedLever(prev => prev === lever ? null : lever)}
+              className={
+                selectedLever === lever
+                  ? 'border-2 border-primary bg-primary/5 rounded-xl p-4 cursor-pointer'
+                  : 'border rounded-xl p-4 cursor-pointer hover:bg-muted/50'
+              }
+            >
+              <div className="text-sm font-semibold">{lever.replace(/_/g, ' ')}</div>
+              <div className="text-lg font-bold text-green-700">{formatCurrency(totalImpact)}</div>
+              <div className="text-xs text-muted-foreground">{count} recommendations</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {displayedRecs.length === 0 ? (
+          <p className="text-muted-foreground">No recommendations match the current filters.</p>
+        ) : (
+          displayedRecs.map((rec, i) => <RecommendationCard key={i} rec={rec} />)
+        )}
+      </div>
     </div>
   )
 }
