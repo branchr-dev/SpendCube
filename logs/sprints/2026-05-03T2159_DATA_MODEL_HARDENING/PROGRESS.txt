@@ -134,3 +134,24 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+---
+
+## US-008 COMPLETE — 2026-05-03
+Created tests/test_incremental_ingestion.py with 5 passing tests for the incremental ingestion path.
+
+Key design decisions:
+- Used tmp_path (pytest built-in) to write a minimal 5-row synthetic CSV with DEFAULT mapping column headers (VENDOR_NAME, INV_NO, etc.) — avoids disk fixtures.
+- conftest.py fixtures (config, in_memory_engine) reused directly; ingestor fixture defined locally as in test_ingestion.py.
+- test_batch_tracking asserts status='done' (not 'complete') — the implementation uses "done" in update_batch_status().
+- All 5 tests pass: test_source_row_hash_stability, test_source_row_hash_uniqueness, test_ingest_to_raw_new_rows, test_ingest_to_raw_dedup, test_batch_tracking.
+- No external API calls or network access; pure SQLite in-memory.
+- Run time: 0.07s for all 5 tests.
+
+
+---
+
+### [US-008] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
