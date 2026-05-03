@@ -557,3 +557,116 @@ pytest backend/tests/ -v
 # Frontend TypeScript check + build
 cd frontend && npm run build
 ```
+
+## Analytics Foundation
+
+Sprint `SPENDCUBE-ANALYTICS-FOUNDATION-2026-05` added purely additive structural extensions to support full procurement analytics across direct and indirect spend.
+
+### 12 New Transaction Fields
+
+Added to `CanonicalTransaction` (Pydantic) and `transactions_table` (SQLAlchemy) as nullable columns. All have `Optional` defaults so existing tests are unaffected.
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `legal_entity` | `str` | `None` | Buying legal entity code (e.g. "AU01") |
+| `vendor_country` | `str` | `None` | Supplier country of origin (ISO-2) |
+| `plant_country` | `str` | `None` | Receiving plant / delivery country |
+| `categorisation_status` | `str` | `'uncategorised'` | `'categorised'` if confidence >= 0.60 after pipeline; populated by categoriser |
+| `manual_override_flag` | `int` | `0` | 1 if classified by MANUAL override (Pass 0) |
+| `ai_classification_flag` | `int` | `0` | 1 if classified by LLM (Pass 5) |
+| `harmonised_payment_term` | `str` | `None` | Standardised payment term label from `payment_term_mappings` |
+| `discount_percent` | `float` | `0.0` | Early payment discount rate (e.g. 2.0 = 2%) |
+| `discount_days` | `int` | `0` | Days window for early payment discount |
+| `has_early_payment_discount` | `int` | `0` | 1 if the payment term carries an early pay discount |
+| `payment_term_confidence` | `float` | `None` | Confidence score from payment term mapping |
+| `abc_segment` | `str` | `None` | ABC segment: `'A'`, `'B'`, or `'C'` — populated by cube builder |
+
+**Population logic:**
+- `categorisation_status`, `ai_classification_flag`, `manual_override_flag` are set in `SpendCategoriser.update_transactions_in_db()` after the 6-pass pipeline.
+- `abc_segment` is computed in `src/cube/pipeline.py` (`_compute_abc_segments()`) after the cube is built, then written back to the transactions table.
+
+### Three New Reference Tables (Supabase migration `002_analytics_extensions.sql`)
+
+| Table | Key Columns | Purpose |
+|-------|-------------|---------|
+| `categories` | `engagement_id`, `category_id`, `parent_category_id`, `category_level`, `category_name` | Flexible taxonomy tree (L1–L5+); replaces hardcoded L1/L2/L3 for future use |
+| `legal_entities` | `engagement_id`, `legal_entity_code`, `legal_entity_name`, `country`, `currency` | Registry of buying entities; used for legal-entity spend analysis |
+| `payment_term_mappings` | `engagement_id`, `raw_payment_term`, `harmonised_payment_term`, `payment_term_days`, `discount_percent`, `discount_days`, `has_early_payment_discount`, `confidence_score` | Maps raw AP payment terms to standardised terms with discount fields |
+
+All three tables have RLS enabled with the same `owner_email = auth.jwt()->>'email'` policy pattern as `001_initial_schema.sql`.
+
+### Five New Cube Endpoints (`backend/app/routers/cube.py`)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /cube/by-legal-entity` | Spend by legal entity (transaction_count, total_spend, supplier_count, category_count) |
+| `GET /cube/by-currency` | Spend by currency (total_spend_base, total_spend_original, supplier_count) |
+| `GET /cube/by-country` | Spend by vendor country (transaction_count, total_spend, supplier_count) |
+| `GET /cube/abc-analysis` | Per-supplier spend with ABC segment, cumulative_spend_pct |
+| `GET /cube/categorisation-quality` | Categorisation quality summary: counts by method, confidence band, and a top-50 low-confidence backlog |
+
+All endpoints support `date_from` / `date_to` query params and enforce `verify_engagement_ownership()`.
+
+### FilterContext Architecture (`frontend/src/contexts/FilterContext.tsx`)
+
+`FilterContext` replaces per-page `useState` with a React Context + `useReducer` pattern so filter state is shared across all pages without prop drilling.
+
+- `FilterProvider` wraps the app at `main.tsx` (inside `QueryClientProvider`)
+- `useFilterContext()` returns `{ filters, updateFilter, clearFilters, toQueryParams }` — throws if used outside the provider
+- State is initialised from URL search params on mount (date_from, date_to, array fields, min_confidence)
+- `useFilters.ts` is a thin wrapper over `useFilterContext()` — existing pages call `useFilters()` unchanged
+
+**`FilterState` analytics dimensions** (in addition to existing date/BU/category/supplier):
+- `legal_entities: string[]`
+- `currencies: string[]`
+- `countries: string[]`
+- `categorisation_statuses: string[]`
+- `abc_segments: ABCSegment[]`
+- `min_confidence: number | null`
+
+### `aggregations.ts` Utility Functions (`frontend/src/lib/aggregations.ts`)
+
+Pure data transformation functions with no React imports or API calls:
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `calculateABCSegments` | `<T extends ABCInputRow>(rows: T[]) → ABCOutputRow<T>[]` | Sorts by spend desc, assigns A/B/C at 80%/95% cumulative thresholds |
+| `calculateSpendConcentration` | `(rows, topN) → { top_n_spend, top_n_pct, total_spend }` | Top-N concentration metrics |
+| `getTopN` | `<T>(rows, n) → T[]` | Generic sort by spend/total_spend, sliced to N |
+| `calculateTailSpendMetrics` | `(rows) → { tail_supplier_count, tail_spend, tail_pct, core_supplier_count }` | Core = suppliers to 80% of spend; tail = remainder |
+| `formatSpendSummary` | `(totalSpend, currency) → { formatted, millions, billions, scale }` | Formats to K/M/B with currency prefix |
+
+### DrilldownState Pattern (`frontend/src/hooks/useDrilldown.ts`)
+
+`useDrilldown()` manages a history stack for within-page drill-down navigation:
+
+```typescript
+type DrilldownLevel = 'overview' | 'category_l1' | 'category_l2' | 'supplier' | 'transaction'
+
+interface DrilldownState {
+  level: DrilldownLevel
+  category_l1?: string
+  category_l2?: string
+  supplier_id?: string
+  supplier_name?: string
+}
+```
+
+- `drillTo(level, context)` — pushes new state onto the stack
+- `drillUp()` — pops to the previous level
+- `reset()` — clears stack back to `{ level: 'overview' }`
+- `isFiltered` — `true` when level is not `'overview'`
+
+`DrilldownBreadcrumb` (`frontend/src/components/DrilldownBreadcrumb.tsx`) renders nothing when `level === 'overview'`. For deeper levels it renders clickable path segments (shadcn/ui `Button` + `ChevronRight`) with the current level as plain text.
+
+### ABC Segmentation Convention
+
+ABC segmentation follows the Pareto convention, computed from `SUM(base_amount)` per canonical supplier sorted descending:
+
+| Segment | Threshold | Meaning |
+|---------|-----------|---------|
+| **A** | Cumulative spend ≤ 80% of total | High-value suppliers — priority for contract and sourcing activity |
+| **B** | Cumulative spend > 80% and ≤ 95% | Mid-value suppliers — opportunistic renegotiation |
+| **C** | Cumulative spend > 95% | Low-value / tail suppliers — consolidation or rationalisation candidates |
+
+Computed server-side in `_compute_abc_segments()` in `src/cube/pipeline.py` (Step 1b of the Phase 4 pipeline) and stored as `abc_segment TEXT` on every transaction row. Also available client-side via `calculateABCSegments()` in `aggregations.ts` for in-browser chart rendering.

@@ -268,6 +268,17 @@ class SpendCategoriser:
                         values[col] = val
                 if not values:
                     continue
+
+                # Populate analytics status fields from categorisation results
+                confidence = values.get("category_confidence")
+                method = values.get("category_method")
+                values["categorisation_status"] = (
+                    "categorised" if (confidence is not None and confidence >= 0.60)
+                    else "uncategorised"
+                )
+                values["ai_classification_flag"] = 1 if method == "LLM" else 0
+                values["manual_override_flag"] = 1 if method == "MANUAL" else 0
+
                 stmt = (
                     update(transactions_table)
                     .where(transactions_table.c.transaction_id == str(tid))

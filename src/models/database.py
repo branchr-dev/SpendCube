@@ -77,6 +77,18 @@ transactions_table = Table(
     Column("review_date", Text),
     Column("raw_data", Text),
     Column("engagement_id", Text, nullable=True),
+    Column("legal_entity", Text, nullable=True),
+    Column("vendor_country", Text, nullable=True),
+    Column("plant_country", Text, nullable=True),
+    Column("categorisation_status", Text, nullable=True),
+    Column("manual_override_flag", Integer, nullable=True),
+    Column("ai_classification_flag", Integer, nullable=True),
+    Column("harmonised_payment_term", Text, nullable=True),
+    Column("discount_percent", Float, nullable=True),
+    Column("discount_days", Integer, nullable=True),
+    Column("has_early_payment_discount", Integer, nullable=True),
+    Column("payment_term_confidence", Float, nullable=True),
+    Column("abc_segment", Text, nullable=True),
 )
 
 supplier_master_table = Table(

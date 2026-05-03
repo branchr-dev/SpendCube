@@ -157,6 +157,20 @@ class CanonicalTransaction(BaseModel):
     # Raw source data (all original columns preserved as JSON)
     raw_data: dict[str, Any]
 
+    # Analytics foundation fields
+    legal_entity: Optional[str] = None
+    vendor_country: Optional[str] = None
+    plant_country: Optional[str] = None
+    categorisation_status: Optional[str] = 'uncategorised'
+    manual_override_flag: Optional[int] = 0
+    ai_classification_flag: Optional[int] = 0
+    harmonised_payment_term: Optional[str] = None
+    discount_percent: Optional[float] = 0.0
+    discount_days: Optional[int] = 0
+    has_early_payment_discount: Optional[int] = 0
+    payment_term_confidence: Optional[float] = None
+    abc_segment: Optional[str] = None
+
 
 # ---------------------------------------------------------------------------
 # Supplier Master
