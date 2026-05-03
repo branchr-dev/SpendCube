@@ -119,7 +119,7 @@ async def get_job_status(
     with engine.connect() as conn:
         row = conn.execute(
             text(
-                "SELECT id, status, stage, started_at, completed_at, error_message "
+                "SELECT id, status, stage, started_at, completed_at, error_message, batch_id "
                 "FROM pipeline_jobs WHERE id = :job_id AND engagement_id = :engagement_id"
             ),
             {"job_id": job_id, "engagement_id": engagement_id},
@@ -135,6 +135,7 @@ async def get_job_status(
         "started_at": row["started_at"],
         "completed_at": row["completed_at"],
         "error_message": row["error_message"],
+        "batch_id": row["batch_id"],
     }
 
 
@@ -159,23 +160,20 @@ def _run_pipeline(
     column_mapping: dict,
     config_path: str = "config.yaml",
 ) -> None:
+    import logging
+
     from src.config import load_config
-    from src.models.database import (
-        get_engine as src_get_engine,
-        init_db,
-        insert_transactions,
-        get_transactions,
-    )
+    from src.models.database import get_engine as src_get_engine, init_db
     from src.ingestion.ingest import Ingestor
-    from src.suppliers.harmoniser import SupplierHarmoniser
-    from src.categorisation.categoriser import SpendCategoriser
+    from src.ingestion.promoter import IncrementalPromoter
     from src.cube.pipeline import run_pipeline as run_cube_pipeline
 
+    logger = logging.getLogger(__name__)
     db_url = os.environ["SUPABASE_DATABASE_URL"]
     bg_engine = get_engine()
 
     try:
-        # Stage 1: ingesting
+        # Stage 1: ingesting — write to transactions_raw via ingest_to_raw()
         _update_job(bg_engine, job_id, status="running", stage="ingesting")
 
         config = load_config(config_path)
@@ -183,26 +181,36 @@ def _run_pipeline(
         init_db(src_engine)
 
         ingestor = Ingestor(config)
-        df = ingestor.ingest_file(file_path)
-        if column_mapping:
-            df = df.rename(columns=column_mapping)
-        records = ingestor._df_to_records(df)
-        insert_transactions(src_engine, records, engagement_id=engagement_id)
+        ingest_result = ingestor.ingest_to_raw(
+            file_path, src_engine, engagement_id, source_system=None
+        )
+        batch_id = ingest_result["batch_id"]
+        logger.info(
+            "ingest_to_raw complete: batch_id=%s new_rows=%s duplicate_rows=%s",
+            batch_id,
+            ingest_result["new_rows"],
+            ingest_result["duplicate_rows"],
+        )
 
-        # Stage 2: harmonising
-        _update_job(bg_engine, job_id, stage="harmonising")
-        txn_df = get_transactions(src_engine, {"engagement_id": engagement_id})
-        harmoniser = SupplierHarmoniser(config, src_engine)
-        harmoniser.harmonise(txn_df)
+        # Store batch_id on the pipeline_jobs row so it is retrievable via /status
+        with bg_engine.begin() as conn:
+            conn.execute(
+                text("UPDATE pipeline_jobs SET batch_id = :batch_id WHERE id = :job_id"),
+                {"batch_id": batch_id, "job_id": job_id},
+            )
 
-        # Stage 3: categorising
-        _update_job(bg_engine, job_id, stage="categorising")
-        txn_df = get_transactions(src_engine, {"engagement_id": engagement_id})
-        categoriser = SpendCategoriser(config, src_engine)
-        result_df = categoriser.categorise(txn_df)
-        categoriser.update_transactions_in_db(result_df, src_engine)
+        # Stage 2: promoting — run incremental harmonisation + categorisation on queued rows
+        _update_job(bg_engine, job_id, stage="promoting")
+        promoter = IncrementalPromoter(src_engine, config)
+        promote_result = promoter.promote(engagement_id, batch_id)
+        logger.info(
+            "promote complete: promoted=%s review_required=%s failed=%s",
+            promote_result["promoted_count"],
+            promote_result["review_required_count"],
+            promote_result["failed_count"],
+        )
 
-        # Stage 4: building cube
+        # Stage 3: building cube
         _update_job(bg_engine, job_id, stage="building_cube")
         with tempfile.TemporaryDirectory() as tmp_dir:
             run_cube_pipeline(db_url, config_path, tmp_dir)
