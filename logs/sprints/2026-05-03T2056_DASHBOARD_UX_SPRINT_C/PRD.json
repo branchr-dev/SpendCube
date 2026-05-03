@@ -141,7 +141,8 @@
         "Pass selectedLabel={selectedL1 ?? undefined} to the L1 SpendBarChart component. SpendBarChart already has the selectedLabel prop from US-002 of this sprint — this will dim unselected bars and highlight the active one.",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:09:11Z"
     },
     {
       "id": "US-007",

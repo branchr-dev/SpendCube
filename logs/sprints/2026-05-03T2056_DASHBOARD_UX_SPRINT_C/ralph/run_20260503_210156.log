@@ -339,3 +339,73 @@ STORY_COMPLETE: US-005
 [2026-05-03 21:08:04] [OK] Marked US-005 as passed
 [2026-05-03 21:08:04] [INFO] Logged progress for US-005: PASSED
 [2026-05-03 21:08:04] [STEP] Committing changes...
+[2026-05-03 21:08:07] [INFO] Starting iteration 6
+[2026-05-03 21:08:07] [INFO] Processing story: US-006
+[2026-05-03 21:08:07] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Category page — top suppliers within selected L1 + selected bar highlight
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+When a category L1 is selected, show the top 5 suppliers in that category as a mini table below the L2 breakdown. This prevents the user having to navigate away to find who they are buying from. Also pass the selectedLabel prop to the L1 bar chart so the active selection is visually confirmed.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx
+- Add a useQuery for top suppliers in the selected L1: queryKey ['suppliers-by-category', engagementId, selectedL1], queryFn: () => api.get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { category_l1: selectedL1 } }).then(r => r.data), enabled: !!engagementId && !!selectedL1. Store as topCategorySuppliers: SupplierRow[] (add SupplierRow to imports from @/types).
+- After the L2 bar chart section (and before the L3 table, if shown), add a new section when selectedL1Entry is truthy: a div className='border rounded-xl p-5 bg-card shadow-sm'. Title: h3 className='section-header': 'Top Suppliers — {selectedL1}'. Render a compact Table (no pagination) showing the top 5 suppliers from topCategorySuppliers sorted by total_spend desc, sliced to 5. Columns: Supplier Name (font-medium), Total Spend (text-right formatted), Invoice Count (text-right). If topCategorySuppliers.length === 0, show a p className='text-sm text-muted-foreground' 'No supplier data available for this category.'
+- Pass selectedLabel={selectedL1 ?? undefined} to the L1 SpendBarChart component. SpendBarChart already has the selectedLabel prop from US-002 of this sprint — this will dim unselected bars and highlight the active one.
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Category page — top suppliers within selected L1 + selected bar highlight`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+US-006 is complete. Changes made to `frontend/src/pages/dashboard/CategoryPage.tsx`:
+
+1. Added `SupplierRow` to the type import from `@/types`
+2. Added a `useQuery` for `topCategorySuppliers` fetching `/cube/by-supplier?category_l1=<selectedL1>`, enabled only when both `engagementId` and `selectedL1` are set
+3. Passed `selectedLabel={selectedL1 ?? undefined}` to the L1 `SpendBarChart` so the active bar is highlighted and unselected bars are dimmed
+4. Added a "Top Suppliers — {selectedL1}" section (shown when `selectedL1Entry` is truthy) with a compact 5-row table sorted by `total_spend` desc
+
+Build: zero TypeScript errors.
+
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-03 21:09:11] [OK] Story US-006 completed!
+[2026-05-03 21:09:11] [OK] Marked US-006 as passed
+[2026-05-03 21:09:11] [INFO] Logged progress for US-006: PASSED
+[2026-05-03 21:09:11] [STEP] Committing changes...

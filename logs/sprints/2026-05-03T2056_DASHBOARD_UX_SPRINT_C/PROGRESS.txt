@@ -49,3 +49,18 @@ US-005 COMPLETE Sun  3 May 2026 21:08:02 BST: Supplier drawer enriched with cont
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+US-006 COMPLETE 2026-05-03: CategoryPage — added useQuery for top 5 suppliers in selected L1 (queryKey: ['suppliers-by-category', engagementId, selectedL1]); inserted Top Suppliers mini-table section after L2 chart (before L3); passed selectedLabel={selectedL1 ?? undefined} to L1 SpendBarChart to dim unselected bars. Build: zero TS errors. Commit: c31051a.
+
+---
+
+### [US-006] - 2026-05-03
+**Status:** PASSED
+Story completed successfully.
+
+
+---
+
+### [US-006] - 2026-05-03 21:09:11
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
