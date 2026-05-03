@@ -132,3 +132,86 @@ export interface AuditLogEntry {
   changed_by?: string
   changed_at?: string
 }
+
+export interface Category {
+  id?: string
+  category_id: string
+  parent_category_id?: string | null
+  category_level: number
+  category_name: string
+  taxonomy_version?: string
+  is_active?: boolean
+  mapping_confidence?: number
+  mapping_source?: string
+  children?: Category[]
+}
+
+export interface LegalEntity {
+  id?: string
+  legal_entity_code: string
+  legal_entity_name: string
+  country?: string
+  currency?: string
+}
+
+export interface PaymentTermMapping {
+  id?: string
+  raw_payment_term: string
+  harmonised_payment_term?: string
+  payment_term_days?: number
+  discount_percent?: number
+  discount_days?: number
+  has_early_payment_discount?: boolean
+  confidence_score?: number
+}
+
+export type ABCSegment = 'A' | 'B' | 'C'
+
+export interface ABCRow {
+  canonical_supplier_id: string
+  canonical_supplier_name?: string
+  total_spend: number
+  transaction_count: number
+  cumulative_spend_pct: number
+  abc_segment: ABCSegment
+}
+
+export interface LegalEntityRow {
+  legal_entity: string
+  transaction_count: number
+  total_spend: number
+  supplier_count: number
+  category_count: number
+}
+
+export interface CurrencyRow {
+  currency: string
+  transaction_count: number
+  total_spend_base: number
+  total_spend_original: number
+  supplier_count: number
+}
+
+export interface CountryRow {
+  country: string
+  country_type: string
+  transaction_count: number
+  total_spend: number
+  supplier_count: number
+}
+
+export interface CategoryQualityReport {
+  total_transactions: number
+  categorised_count: number
+  uncategorised_count: number
+  categorised_pct: number
+  by_method: { method: string; count: number; spend: number; avg_confidence: number }[]
+  by_confidence_band: { band: string; count: number; spend: number }[]
+  low_confidence_backlog: {
+    transaction_id: string
+    raw_supplier_name?: string
+    base_amount: number
+    category_l1?: string
+    category_confidence?: number
+  }[]
+}

@@ -60,6 +60,9 @@ export default function OverviewPage() {
   const filterOptions: FilterOptions = {
     business_units: [],
     category_l1s: [...new Set(categoryData.map(c => c.category_l1 ?? '').filter(Boolean))].sort(),
+    legal_entities: [],
+    currencies: [],
+    countries: [],
   }
 
   const supplierBarData = supplierData.map(s => ({
