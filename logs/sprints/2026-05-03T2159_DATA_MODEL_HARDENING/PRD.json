@@ -154,7 +154,8 @@
         "Verify: python -m pytest tests/ -v -k categ -- all existing categorisation tests pass",
         "Verify: python -c \"from src.categorisation.embedding_classifier import PgvectorCategoryStore, EmbeddingCategoriser; print('import OK')\""
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:19:48Z"
     },
     {
       "id": "US-007",

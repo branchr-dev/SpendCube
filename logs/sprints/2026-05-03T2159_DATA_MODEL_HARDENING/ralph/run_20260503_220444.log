@@ -352,3 +352,65 @@ STORY_COMPLETE: US-005
 [2026-05-03 22:17:14] [OK] Marked US-005 as passed
 [2026-05-03 22:17:14] [INFO] Logged progress for US-005: PASSED
 [2026-05-03 22:17:14] [STEP] Committing changes...
+[2026-05-03 22:17:16] [INFO] Starting iteration 6
+[2026-05-03 22:17:16] [INFO] Processing story: US-006
+[2026-05-03 22:17:16] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Add pgvector cache to category embedding classifier
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Edit src/categorisation/embedding_classifier.py to add a PgvectorCategoryStore class that uses the description_embeddings Postgres table as a persistent cache for category description embeddings. Modify EmbeddingCategoriser._load_or_compute_embeddings() to check the pgvector store first when a Postgres engine is available, computing and storing only missing embeddings. Category embeddings are engagement-independent (global UNSPSC reference), so no engagement_id scoping on the description_embeddings table.
+
+## Acceptance Criteria
+- Edit file: src/categorisation/embedding_classifier.py
+- Add class PgvectorCategoryStore with: __init__(self, engine), is_available(self) -> bool (same pgvector extension check as US-005), get(self, texts: list[str]) -> dict[str, np.ndarray] (queries description_embeddings WHERE normalised_text IN (...)), store(self, text_vector_pairs: list[tuple[str, np.ndarray]]) -> None (upserts to description_embeddings using INSERT ... ON CONFLICT (normalised_text) DO NOTHING; chunks of 500)
+- Add optional parameter engine=None to EmbeddingCategoriser.__init__() — when provided and Postgres, instantiate PgvectorCategoryStore
+- Modify EmbeddingCategoriser._load_or_compute_embeddings() to: if PgvectorCategoryStore.is_available(), fetch cached embeddings for known descriptions; compute only missing ones; store new ones to pgvector; if not available, fall back to existing pickle logic unchanged
+- Verify: python -m pytest tests/ -v -k categ -- all existing categorisation tests pass
+- Verify: python -c "from src.categorisation.embedding_classifier import PgvectorCategoryStore, EmbeddingCategoriser; print('import OK')"
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Add pgvector cache to category embedding classifier`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-03 22:19:48] [OK] Story US-006 completed!
+[2026-05-03 22:19:48] [OK] Marked US-006 as passed
+[2026-05-03 22:19:48] [INFO] Logged progress for US-006: PASSED
+[2026-05-03 22:19:48] [STEP] Committing changes...

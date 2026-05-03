@@ -77,3 +77,30 @@ Key design decisions:
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+---
+
+## US-006 COMPLETE — 2026-05-03
+Added PgvectorCategoryStore class to src/categorisation/embedding_classifier.py and wired it into EmbeddingCategoriser._load_or_compute_embeddings().
+
+Key design decisions:
+- PgvectorCategoryStore mirrors PgvectorEmbeddingStore from US-005 but without engagement_id scoping — description_embeddings is a global UNSPSC reference table (no RLS).
+- Table key is normalised_text (UNIQUE); ON CONFLICT (normalised_text) DO NOTHING — safe to re-run.
+- get() uses parameterised IN clause (t0, t1, ...) to avoid SQL injection.
+- store() chunks at 500; includes gen_random_uuid() id and model_name uses table default 'all-MiniLM-L6-v2'.
+- _load_or_compute_embeddings() pgvector path: fetch all cached → compute missing → store new → assemble ordered array. Falls through to pickle logic unchanged when pgvector not available.
+- engine=None default on EmbeddingCategoriser.__init__() — fully backwards compatible; all 26 categorisation tests pass unchanged ✓; import OK ✓
+
+---
+
+### [US-006] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
+
+---
+
+### [US-006] - 2026-05-03 22:19:48
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
