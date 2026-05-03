@@ -648,3 +648,72 @@ All files created and build verified clean:
 [2026-05-03 14:07:35] [OK] Marked US-009 as passed
 [2026-05-03 14:07:35] [INFO] Logged progress for US-009: PASSED
 [2026-05-03 14:07:35] [STEP] Committing changes...
+[2026-05-03 14:07:37] [INFO] Starting iteration 10
+[2026-05-03 14:07:37] [INFO] Processing story: US-010
+[2026-05-03 14:07:38] [STEP] Spawning Claude with prompt for US-010
+--- PROMPT FOR US-010 ---
+You are working on story US-010: Shared dashboard components — KPI tiles, filter bar, chart wrappers, and formatters
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Build the shared component library used across all five dashboard pages. These primitives — the filter sidebar, KPI metric tiles, and Recharts wrapper components — must be built correctly before the dashboard pages, as every page depends on them. Getting the design system consistent here means each dashboard page story can focus on layout and data.
+
+## Acceptance Criteria
+- Create file: frontend/src/lib/formatters.ts — formatCurrency(value: number, currency='AUD'): string (e.g. '$1,234,567' or 'AUD 1,234,567'); formatPct(value: number): string (e.g. '12.3%'); formatNumber(value: number): string (comma-separated integer); formatDate(isoStr: string): string (DD MMM YYYY); formatMonth(isoStr: string): string (MMM YYYY)
+- Create file: frontend/src/types/filters.ts — FilterState {date_from?: string, date_to?: string, business_units: string[], category_l1s: string[], supplier_search: string}; FilterOptions {business_units: string[], category_l1s: string[]}; defaultFilters(): FilterState returning empty state
+- Create file: frontend/src/hooks/useFilters.ts — exports useFilters(): {filters: FilterState, updateFilter: (key, value) => void, clearFilters: () => void, toQueryParams: () => Record<string,string>}. Uses React useState. toQueryParams() omits empty/undefined values.
+- Create file: frontend/src/components/dashboard/KpiCard.tsx — shadcn Card with: large bold value text (formatCurrency or formatNumber or formatPct depending on valueType prop), label in muted text below, optional delta row showing trend arrow icon (TrendingUp/TrendingDown from lucide-react) in green/red, optional subtext in xs muted. Props: {label, value: string|number, valueType?: 'currency'|'number'|'pct'|'text', delta?: number, deltaLabel?: string, currency?: string}
+- Create file: frontend/src/components/dashboard/FilterBar.tsx — horizontal bar component. Props: {filters: FilterState, onChange: (f:FilterState)=>void, options: FilterOptions}. Renders: date-from input (type=date), date-to input, business-unit multi-select (shadcn Select with multiple prop or custom multi-select), category-l1 multi-select, supplier text search. 'Clear' button calls onChange(defaultFilters()). Only renders non-empty option arrays.
+- Create file: frontend/src/components/charts/constants.ts — export CHART_COLORS = ['#1B4F72','#2E86C1','#5DADE2','#85C1E9','#AED6F1','#D6EAF8'] (SpendCube brand palette)
+- Create file: frontend/src/components/charts/SpendBarChart.tsx — wraps Recharts: props {data: {label:string, value:number}[], title:string, horizontal?:boolean, color?:string, valueFormatter?:(v:number)=>string, maxItems?:number}. When horizontal=true renders BarChart with layout='vertical', YAxis type='category', XAxis type='number'. Includes ResponsiveContainer height=300, Tooltip with valueFormatter, no Legend.
+- Create file: frontend/src/components/charts/SpendAreaChart.tsx — wraps Recharts AreaChart: props {data: MonthRow[], title:string, currency?:string}. Renders two Areas if rolling_3m_avg present (solid primary + dashed secondary). XAxis uses formatMonth formatter. Tooltip shows both series formatted as currency.
+- Create file: frontend/src/components/charts/SpendPieChart.tsx — wraps Recharts PieChart + Pie: props {data: {name:string, value:number}[], title:string, valueFormatter?:(v:number)=>string}. Uses CHART_COLORS. Renders Legend below. Tooltip shows value formatted.
+- Create file: frontend/src/components/charts/index.ts — re-exports all chart components
+- Verify: npm run build succeeds with zero TypeScript errors after creating all these files
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-010
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-010: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-010 - Shared dashboard components — KPI tiles, filter bar, chart wrappers, and formatters`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-010 ---
+All 11 files committed. Build passes with zero TypeScript errors.
+
+STORY_COMPLETE: US-010
+--- END OUTPUT ---
+[2026-05-03 14:11:06] [OK] Story US-010 completed!
+[2026-05-03 14:11:06] [OK] Marked US-010 as passed
+[2026-05-03 14:11:06] [INFO] Logged progress for US-010: PASSED
+[2026-05-03 14:11:06] [STEP] Committing changes...
