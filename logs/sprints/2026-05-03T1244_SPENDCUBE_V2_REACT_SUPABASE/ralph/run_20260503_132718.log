@@ -499,3 +499,75 @@ STORY_COMPLETE: US-007
 [2026-05-03 13:53:48] [OK] Marked US-007 as passed
 [2026-05-03 13:53:48] [INFO] Logged progress for US-007: PASSED
 [2026-05-03 13:53:48] [STEP] Committing changes...
+[2026-05-03 13:53:50] [INFO] Starting iteration 8
+[2026-05-03 13:53:50] [INFO] Processing story: US-008
+[2026-05-03 13:53:50] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: React frontend scaffold — Vite, TypeScript, Tailwind, shadcn/ui, routing, API client
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Bootstrap the React frontend application with all required dependencies, configuration, type definitions, and shared infrastructure. This story does not implement any pages — it creates the foundation: Vite project, Tailwind configuration, shadcn/ui component library, React Router routing shell, Supabase auth client, Axios API client with auth headers injected from the Supabase session, TanStack Query provider, and TypeScript type definitions mirroring all backend response shapes.
+
+## Acceptance Criteria
+- Run in frontend/: npm create vite@latest . -- --template react-ts; npm install
+- Install and configure Tailwind: npm install -D tailwindcss @tailwindcss/vite; configure vite.config.ts to use @tailwindcss/vite plugin; create src/index.css with @import 'tailwindcss'
+- Install shadcn/ui: npx shadcn@latest init — use New York style, slate base, CSS variables. Install components: npx shadcn@latest add card button badge table input select dialog sheet tabs progress skeleton sonner collapsible
+- Install runtime deps: npm install recharts react-router-dom @tanstack/react-query @supabase/supabase-js axios react-dropzone xlsx lucide-react date-fns
+- Create file: frontend/src/lib/supabase.ts — export supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
+- Create file: frontend/src/lib/api.ts — export api = axios.create({baseURL: import.meta.env.VITE_API_BASE_URL}); request interceptor: const session = await supabase.auth.getSession(); if session.data.session add Authorization: Bearer <access_token> header; response interceptor: on 401, call supabase.auth.signOut() then navigate to /login
+- Create file: frontend/src/types/index.ts — TypeScript interfaces (all fields optional unless obviously required): Engagement {id, name, client_name, currency_label, engagement_title, is_admin, llm_dry_run, recommendations_json, created_at}; SupplierRow {engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name, transaction_count, total_spend, avg_payment_days}; CategoryRow {engagement_id, category_l1, category_l2, category_l3, unspsc_code, transaction_count, total_spend, supplier_count}; MonthRow {month, total_spend, transaction_count, rolling_3m_avg}; PaymentTermsRow {bucket, transaction_count, total_spend, spend_pct, wc_opportunity_aud}; OverviewData {total_spend, invoice_count, supplier_count, category_count, currency_label, maverick_spend_pct, tail_spend_pct, data_freshness}; Recommendation {type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative, baseline_spend, addressability_pct, saving_pct, addressable_baseline}; PortfolioSummary {total_spend, total_identified_savings, savings_as_pct_of_spend, sanity_check_passed, recommendation_count}; DiagnosticsCheck {check_name, status, value_pct, threshold_amber, threshold_red, row_count, description}; PipelineJob {id, engagement_id, status, stage, started_at, completed_at, error_message}; SupplierMatchLog {id, raw_supplier_name, canonical_supplier_id, match_method, confidence, evidence, review_status}; CategoryOverride {id, canonical_supplier_id, gl_account, override_l1, override_l2, override_l3, reviewer, reason, created_at}; AuditLogEntry {id, table_name, record_id, field_name, old_value, new_value, changed_by, changed_at}
+- Create file: frontend/src/hooks/useAuth.ts — exports useAuth() returning {user: User|null, session: Session|null, loading: boolean, signIn(email,password): Promise<void>, signOut(): Promise<void>}. Uses supabase.auth.onAuthStateChange() in useEffect to keep state current.
+- Create file: frontend/src/components/ProtectedRoute.tsx — if loading return LoadingSpinner; if no session return <Navigate to='/login' replace/>; else return <Outlet/>
+- Create file: frontend/src/components/Layout.tsx — renders a sidebar nav with links: Overview, Category, Supplier, Payment Terms, Data Quality, Recommendations, and (conditionally if engagement.is_admin) Review Workstation. Top bar shows engagement.client_name, user email, Logout button. Uses <Outlet/> for page content.
+- Create file: frontend/src/App.tsx — React Router v6 routes: /login → LoginPage; / → redirect to /engagements; /engagements → ProtectedRoute wrapping EngagementListPage; /engagements/new → ProtectedRoute wrapping NewEngagementPage; /engagements/:id/* → ProtectedRoute wrapping Layout with nested routes: overview, category, supplier, payment-terms, quality, recommendations, upload, admin/review
+- Create file: frontend/src/main.tsx — wraps App in <BrowserRouter>, <QueryClientProvider client={queryClient}> with staleTime: 5*60*1000, and <Toaster/> from sonner
+- Create file: frontend/vite.config.ts — @tailwindcss/vite plugin + path alias @/ -> ./src/
+- Verify: npm run build — exits 0 with zero TypeScript errors and zero Vite build errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - React frontend scaffold — Vite, TypeScript, Tailwind, shadcn/ui, routing, API client`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+All tasks complete. `npm run build` exits 0 with zero TypeScript errors and zero Vite build errors.
+
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-03 14:00:07] [OK] Story US-008 completed!
+[2026-05-03 14:00:07] [OK] Marked US-008 as passed
+[2026-05-03 14:00:07] [INFO] Logged progress for US-008: PASSED
+[2026-05-03 14:00:07] [STEP] Committing changes...
