@@ -156,7 +156,8 @@
         "Remove the old score display divs (text-4xl font-bold scoreColor, 'Overall Quality Score' text, 'Based on N checks' text) since these are replaced by the summary strip",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:10:48Z"
     },
     {
       "id": "US-008",

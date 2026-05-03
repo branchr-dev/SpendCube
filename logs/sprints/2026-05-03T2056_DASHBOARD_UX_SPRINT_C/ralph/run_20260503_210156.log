@@ -409,3 +409,70 @@ STORY_COMPLETE: US-006
 [2026-05-03 21:09:11] [OK] Marked US-006 as passed
 [2026-05-03 21:09:11] [INFO] Logged progress for US-006: PASSED
 [2026-05-03 21:09:11] [STEP] Committing changes...
+[2026-05-03 21:09:13] [INFO] Starting iteration 7
+[2026-05-03 21:09:13] [INFO] Processing story: US-007
+[2026-05-03 21:09:13] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Data Quality — narrative summary strip + inverted progress bar direction
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Replace the isolated small score card with a full-width narrative summary strip that reads like plain language ('6 of 9 checks passing · 2 issues · 1 warning'). Fix the misleading progress bar direction: for issue-type checks, the bar should visually represent the problem percentage, not the inverse.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx
+- Replace the max-w-xs Card with an overall score card with a full-width summary strip. Remove the Card entirely. Instead render a div className='flex items-center gap-6 p-4 border rounded-xl bg-card shadow-sm flex-wrap': (1) A primary text block: p className='text-base font-semibold' showing '{passingCount} of {checks.length} checks passing'. (2) Three badge-style counters in a flex gap-3 row: for RED checks: span className='flex items-center gap-1.5 text-sm' with a Circle icon (or just a colored dot div w-3 h-3 rounded-full bg-red-500) and '{redCount} issue{redCount!==1?"s":""}' text-rose-700 font-medium. Amber: same pattern bg-amber-500, text-amber-700. Green: bg-green-500, text-green-700. (3) If overall_score >= 80: a Badge className='bg-green-100 text-green-800 border-green-200' 'Good'. Else if >= 50: 'Needs attention' amber. Else 'Review required' red.
+- Compute: passingCount = checks.filter(c => c.status === 'GREEN').length. redCount = checks.filter(c => c.status === 'RED').length. amberCount = checks.filter(c => c.status === 'AMBER').length.
+- Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — fix the progress bar direction. For issue-type checks (missing_*, low_confidence_*, duplicate_transactions, maverick_spend, tail_spend_ratio — i.e., all checks where higher percentage = worse), the progress bar value should represent the problem. Currently value={value_pct} is passed to Progress. For issue checks, the value already represents the problem percentage (e.g., 15% missing category means 15% of rows have this issue) so the bar shows 15% filled — this is actually CORRECT. The confusion was about colour direction, not value direction. The fix is: for GREEN status checks the filled bar should be green (already default), but the container background should be muted. Add a wrapper div with className='mt-2 rounded overflow-hidden bg-muted': then the Progress inside. The green default fill on GREEN checks shows the issue is small, which is correct.
+- Remove the old score display divs (text-4xl font-bold scoreColor, 'Overall Quality Score' text, 'Based on N checks' text) since these are replaced by the summary strip
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Data Quality — narrative summary strip + inverted progress bar direction`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+Both files updated and build passes clean. Summary of changes:
+
+- **DataQualityPage.tsx**: Removed the `max-w-xs` Card with percentage score. Replaced with a full-width `div` showing `"{N} of 9 checks passing"` + three colour-coded dot counters (issues/warnings/passing) + a `Good`/`Needs attention`/`Review required` Badge. Cleaned up unused imports (`Card`, `CardContent`, `formatPct`).
+- **DiagnosticsCheckCard.tsx**: Added `bg-muted` to the Progress wrapper div so GREEN checks show a small filled bar against a muted background — correctly communicating that the problem is small.
+
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-03 21:10:48] [OK] Story US-007 completed!
+[2026-05-03 21:10:48] [OK] Marked US-007 as passed
+[2026-05-03 21:10:48] [INFO] Logged progress for US-007: PASSED
+[2026-05-03 21:10:48] [STEP] Committing changes...
