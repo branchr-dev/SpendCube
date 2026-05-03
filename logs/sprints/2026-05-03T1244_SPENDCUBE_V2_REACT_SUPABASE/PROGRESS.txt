@@ -59,3 +59,25 @@ Story completed successfully by Ralph loop iteration 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 2
 
+---
+
+## US-003 — FastAPI auth middleware + engagements CRUD endpoints
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- backend/app/database.py — get_db_url() + get_engine() reading SUPABASE_DATABASE_URL; adds repo root to sys.path
+- backend/app/middleware/auth.py — SupabaseAuthMiddleware: validates JWT via python-jose, injects user_email into request.state, skips /health
+- backend/app/dependencies.py — get_current_user_email(), verify_engagement_ownership()
+- backend/app/routers/engagements.py — CRUD: GET /api/engagements, POST /api/engagements, GET /{id}, PATCH /{id}
+- backend/app/main.py — updated to register SupabaseAuthMiddleware and engagements router
+- backend/tests/test_engagements.py — 5 tests: unauthenticated 401, /health skips auth, POST creates, GET lists, GET unknown 403
+
+**Verified:**
+- `pytest backend/tests/test_engagements.py -v` → 5 passed in 0.56s
+
+**Learnings:**
+- python-jose and pytest-mock were not pre-installed in the Python 3.14 homebrew environment; had to install with --break-system-packages
+- starlette.middleware.base.BaseHTTPMiddleware is the correct base class (imported from starlette directly, not fastapi)
+- TestClient with raise_server_exceptions=True surfaces 500s as test failures rather than returning 500 responses silently
+- Mocking app.routers.engagements.get_engine (not app.database.get_engine) is required because Python resolves the name in the module where it is used
+
