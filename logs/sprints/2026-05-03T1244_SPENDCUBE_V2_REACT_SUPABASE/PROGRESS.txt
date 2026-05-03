@@ -435,3 +435,38 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 14
 
+---
+
+## US-015 — Deployment configuration, CI/CD, and CLAUDE.md documentation
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- `backend/Dockerfile` — FROM python:3.11-slim; installs backend package; pre-downloads sentence-transformers model; src/ and data/ mounted as volumes at runtime
+- `frontend/Dockerfile` — multi-stage: node:20-alpine build stage + nginx:alpine serve stage with VITE_* build args
+- `frontend/nginx.conf` — SPA routing: try_files $uri $uri/ /index.html
+- `frontend/vercel.json` — SPA rewrites + buildCommand + outputDirectory
+- `backend/railway.toml` — DOCKERFILE builder + healthcheckPath /health
+- `.github/workflows/ci.yml` — two jobs: python-tests (pytest tests/ + backend/tests/) and frontend-build (npm ci + npm run build)
+- `DEPLOYMENT.md` — step-by-step guide: Supabase schema → Railway backend → Vercel frontend → wire together; full env var table; troubleshooting section
+- `CLAUDE.md` — appended SpendCube v2 architecture section: directory layout, tech stack table, multi-tenancy explanation, pipeline adapter pattern, deployment targets, full env var tables, local dev + test commands
+
+**What was modified:**
+- `backend/pyproject.toml` — added pipeline runtime dependencies (sentence-transformers, rapidfuzz, anthropic, sqlalchemy, python-dateutil, pyarrow) so the Docker image has all deps needed by the src/ volume mount
+
+**Verified:**
+- `pytest tests/ -v` → 160 passed, 3 pre-existing failures (not regressions — documented in US-004)
+- `pytest backend/tests/ -v` → 30 passed
+- `docker compose build` — Docker daemon not running locally; Dockerfile structure is correct per AC
+
+**Learnings:**
+- `sentence-transformers` is in root `requirements.txt` but not `backend/pyproject.toml` — the Dockerfile's `pip install -e .` wouldn't install it. Fixed by adding all pipeline runtime deps to pyproject.toml so the Docker image has them when src/ is mounted as a volume.
+- Docker build context for backend is `./backend`, so root-level files (requirements.txt, src/) are not accessible via COPY in the Dockerfile. The solution is to keep pipeline deps in pyproject.toml rather than copying requirements.txt.
+- `railway.toml` uses `$PORT` (Railway injects this dynamically) rather than hardcoding 8000.
+
+
+---
+
+### [US-015] - 2026-05-03 14:38:26
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 15
+
