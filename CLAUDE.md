@@ -558,6 +558,90 @@ pytest backend/tests/ -v
 cd frontend && npm run build
 ```
 
+## Data Model Hardening — Incremental Ingestion
+
+Sprint `DATA-MODEL-HARDENING-2026-05` added incremental ingestion with batch tracking and deduplication, pgvector-based embedding storage, and an `IncrementalPromoter` that processes only new rows. All changes are additive and fully backwards compatible with local dev and existing tests.
+
+### Two-Table Ingestion Pattern
+
+Raw CSV uploads land in `transactions_raw` (staging). The pipeline promotes enriched rows to `transactions` (the analytical fact table). This separates ingestion concerns from analytical concerns and enables incremental processing without re-running the full pipeline on every upload.
+
+| Table | Role |
+|-------|------|
+| `transactions_raw` | Landing zone — every uploaded row, one row per source line, with dedup via `source_row_hash` |
+| `transactions` | Enriched fact table — post-pipeline canonical records used by all dashboards |
+
+### `ingestion_batches` Table
+
+Tracks each CSV/Excel upload as a unit of work. Key columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key; set as `batch_id` on `pipeline_jobs` after upload |
+| `engagement_id` | UUID | Multi-tenant scope |
+| `filename` | TEXT | Original uploaded filename |
+| `row_count` | INTEGER | Total rows in the upload |
+| `new_rows` | INTEGER | Rows not already present (non-duplicate) |
+| `duplicate_rows` | INTEGER | Rows skipped due to `source_row_hash` collision |
+| `status` | TEXT | `processing` → `complete` → `failed` |
+| `created_at` | TIMESTAMPTZ | Upload timestamp |
+
+### `transactions_raw` Table — Staging Layer
+
+Every ingested row is written here first via `Ingestor.ingest_to_raw()`. The `pipeline_status` column tracks promotion state:
+
+| `pipeline_status` | Meaning |
+|-------------------|---------|
+| `queued` | Ingested but not yet promoted to `transactions` |
+| `processing` | Currently being promoted by `IncrementalPromoter` |
+| `processed` | Successfully promoted — row exists in `transactions` |
+| `review_required` | Below confidence threshold (< 0.60) — surfaces in Review Workstation |
+| `failed` | Promotion raised an unhandled exception |
+
+Deduplication is enforced by a `UNIQUE INDEX` on `(engagement_id, source_row_hash)`. Duplicate rows from re-exports are silently skipped at insert time (`ON CONFLICT DO NOTHING`).
+
+### `source_row_hash` Formula
+
+```python
+import hashlib, json
+source_row_hash = hashlib.sha256(
+    json.dumps(raw_row_dict, sort_keys=True, default=str).encode()
+).hexdigest()
+```
+
+`raw_row_dict` is the original CSV row dict before any transformation. The full-row hash is the most collision-resistant approach and handles `null` invoice numbers gracefully. A re-export with any changed field is treated as a new row — acceptable trade-off for correctness.
+
+### `IncrementalPromoter` Class
+
+**Location:** `src/ingestion/promoter.py`
+
+`IncrementalPromoter(engine, config).promote(engagement_id, batch_id)` processes all `queued` rows in a batch:
+
+1. **Supplier resolution** — normalises all `raw_supplier_name` values, computes `canonical_supplier_id` (SHA256[:12] of normalised name), and queries `supplier_master` in one batch. Only names whose `canonical_supplier_id` is **not** already present are passed to `SupplierHarmoniser`. Known names get `confidence=0.95` directly.
+2. **Categorisation** — runs the 6-pass deterministic pipeline (GL → keyword → embedding) on all queued rows. Always sets `dry_run=True` in a deep-copied config — no LLM API calls occur in the promotion path regardless of the original config.
+3. **Promotion split** — rows with `category_confidence >= 0.60` are written to `transactions` with `pipeline_status = 'processed'`; rows below threshold get `pipeline_status = 'review_required'` and surface in the Review Workstation.
+4. **`source_raw_id`** — every promoted `transactions` row carries a `source_raw_id UUID` back-reference to its originating `transactions_raw` row.
+
+Returns `{promoted_count, review_required_count, failed_count}`.
+
+### pgvector Embedding Cache Pattern
+
+Two classes provide a persistent pgvector embedding cache, replacing pickle files in production:
+
+**`PgvectorEmbeddingStore`** (`src/suppliers/embeddings.py`) — caches supplier name embeddings in the `supplier_embeddings` table. Scoped by `engagement_id` (per-tenant). `is_available()` probes the pgvector extension on first call and caches the result. `get(names)` fetches cached vectors in a parameterised `IN` query. `store(names, vectors)` inserts in chunks of 500 with `ON CONFLICT DO NOTHING`.
+
+**`PgvectorCategoryStore`** (`src/categorisation/embedding_classifier.py`) — caches UNSPSC category description embeddings in the `description_embeddings` table. No `engagement_id` scoping — this is a global reference table (no RLS). Same chunk/conflict pattern as `PgvectorEmbeddingStore`.
+
+Cosine similarity is still computed in Python using numpy — pgvector is used as a cache only, not for ANN similarity search.
+
+### Backwards Compatibility
+
+- **`Ingestor.ingest_to_db()`** is preserved unchanged. All existing tests call this method and are unaffected.
+- **`ingest_to_raw()`** is a new additive method on `Ingestor`.
+- **New tables** (`ingestion_batches`, `transactions_raw`, `supplier_embeddings`, `description_embeddings`) are added to the SQLAlchemy `metadata` in `database.py` and created automatically in SQLite for local dev and in-memory test DBs — no test changes required.
+- **Pickle fallback** — when `SUPABASE_DATABASE_URL` is not set (SQLite local dev, all tests), `PgvectorEmbeddingStore.is_available()` returns `False` and both embedding classes fall back to the existing pickle cache behaviour.
+- **Migration** — Supabase migration `003_data_model_hardening.sql` adds all new tables with `IF NOT EXISTS` guards. Existing tables (`transactions`, `pipeline_jobs`) gain `source_raw_id` and `batch_id` columns respectively via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+
 ## Analytics Foundation
 
 Sprint `SPENDCUBE-ANALYTICS-FOUNDATION-2026-05` added purely additive structural extensions to support full procurement analytics across direct and indirect spend.
