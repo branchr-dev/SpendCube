@@ -7,9 +7,10 @@ and data cleaning into a single Ingestor class.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -145,6 +146,69 @@ class Ingestor:
         df["last_modified_at"] = now
 
         return df
+
+    @staticmethod
+    def compute_source_row_hash(raw_row_dict: dict) -> str:
+        return hashlib.sha256(
+            json.dumps(raw_row_dict, sort_keys=True, default=str).encode()
+        ).hexdigest()
+
+    def ingest_to_raw(
+        self,
+        file_path: str,
+        engine,
+        engagement_id: str,
+        source_system: str = None,
+    ) -> dict:
+        from src.models.database import create_batch, insert_raw_transactions, update_batch_status
+
+        path = Path(file_path)
+        if path.suffix.lower() in (".xlsx", ".xls"):
+            df_raw = pd.read_excel(path)
+        else:
+            df_raw = pd.read_csv(path)
+
+        raw_row_dicts = [row.to_dict() for _, row in df_raw.iterrows()]
+
+        batch_id = create_batch(engine, engagement_id, path.name, len(raw_row_dicts))
+
+        df = self.ingest_file(file_path, source_system)
+
+        now = datetime.now(timezone.utc).isoformat()
+        records = []
+        for i, raw_row in enumerate(raw_row_dicts):
+            source_row_hash = self.compute_source_row_hash(raw_row)
+            mapped_row = df.iloc[i] if i < len(df) else None
+
+            def _val(col):
+                if mapped_row is None or col not in df.columns:
+                    return None
+                v = mapped_row[col]
+                if v is pd.NaT or (isinstance(v, float) and __import__('math').isnan(v)):
+                    return None
+                if hasattr(v, "isoformat"):
+                    return v.isoformat()
+                return v
+
+            records.append({
+                "source_row_hash": source_row_hash,
+                "invoice_number": _val("invoice_number"),
+                "invoice_date": _val("invoice_date"),
+                "raw_supplier_name": _val("raw_supplier_name"),
+                "base_amount": _val("base_amount"),
+                "raw_data": json.dumps(raw_row, default=str),
+                "created_at": now,
+            })
+
+        new_rows, duplicate_rows = insert_raw_transactions(engine, records, batch_id, engagement_id)
+        update_batch_status(engine, batch_id, "done", new_rows, duplicate_rows)
+
+        return {
+            "batch_id": batch_id,
+            "new_rows": new_rows,
+            "duplicate_rows": duplicate_rows,
+            "total_rows": len(raw_row_dicts),
+        }
 
     def ingest_to_db(self, file_path: str, engine, source_system: str = None) -> int:
         """Ingest a file and write the resulting rows to the database.
