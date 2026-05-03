@@ -225,6 +225,7 @@ export default function CategoryPage() {
                 <TableHead className="text-right">% of Total</TableHead>
                 <TableHead className="text-right">Suppliers</TableHead>
                 <TableHead className="text-right">Avg Invoice</TableHead>
+                <TableHead className="text-right">Spend / Supplier</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -237,10 +238,17 @@ export default function CategoryPage() {
                     {totalSpend > 0 ? ((entry.total_spend / totalSpend) * 100).toFixed(1) : '0.0'}%
                   </TableCell>
                   <TableCell className="text-right">{formatNumber(entry.supplier_count)}</TableCell>
+                  <TableCell
+                    className={
+                      entry.total_spend / Math.max(entry.transaction_count, 1) > 50000
+                        ? 'text-right font-medium text-amber-600'
+                        : 'text-right'
+                    }
+                  >
+                    {formatCurrency(entry.total_spend / Math.max(entry.transaction_count, 1))}
+                  </TableCell>
                   <TableCell className="text-right">
-                    {entry.transaction_count > 0
-                      ? formatCurrency(entry.total_spend / entry.transaction_count)
-                      : '—'}
+                    {formatCurrency(entry.total_spend / Math.max(entry.supplier_count, 1))}
                   </TableCell>
                   <TableCell>{fragmentationBadge(entry.supplier_count)}</TableCell>
                 </TableRow>
