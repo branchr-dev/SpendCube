@@ -9,6 +9,7 @@ Only invoked for transactions not classified by passes 0-3.
 
 from __future__ import annotations
 
+import json
 import pickle
 import sys
 from pathlib import Path
@@ -32,6 +33,83 @@ except ImportError:
     _SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
+# ---------------------------------------------------------------------------
+# Pgvector Category Store
+# ---------------------------------------------------------------------------
+
+class PgvectorCategoryStore:
+    """Persistent embedding cache backed by the description_embeddings Postgres table.
+
+    Category embeddings are engagement-independent (global UNSPSC reference),
+    so there is no engagement_id scoping on this table.
+    """
+
+    _CHUNK_SIZE = 500
+
+    def __init__(self, engine) -> None:
+        self._engine = engine
+        self._available: Optional[bool] = None
+
+    def is_available(self) -> bool:
+        """Return True only if engine is Postgres and the pgvector extension is present."""
+        if self._available is not None:
+            return self._available
+        if "postgresql" not in str(self._engine.url):
+            self._available = False
+            return False
+        try:
+            from sqlalchemy import text
+            with self._engine.connect() as conn:
+                conn.execute(text("SELECT 1::vector"))
+            self._available = True
+        except Exception:
+            self._available = False
+        return self._available
+
+    def get(self, texts: list[str]) -> dict[str, np.ndarray]:
+        """Query description_embeddings for the given texts and return text -> vector dict."""
+        if not texts:
+            return {}
+        from sqlalchemy import text
+        placeholders = ", ".join(f":t{i}" for i in range(len(texts)))
+        params = {f"t{i}": t for i, t in enumerate(texts)}
+        sql = text(
+            f"SELECT normalised_text, embedding FROM description_embeddings "
+            f"WHERE normalised_text IN ({placeholders})"
+        )
+        result: dict[str, np.ndarray] = {}
+        with self._engine.connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        for row in rows:
+            raw = row[1]
+            if isinstance(raw, str):
+                vec = np.array(json.loads(raw), dtype=np.float32)
+            else:
+                vec = np.array(raw, dtype=np.float32)
+            result[row[0]] = vec
+        return result
+
+    def store(self, text_vector_pairs: list[tuple[str, np.ndarray]]) -> None:
+        """Upsert text-vector pairs to description_embeddings in chunks of 500."""
+        if not text_vector_pairs:
+            return
+        from sqlalchemy import text
+        for i in range(0, len(text_vector_pairs), self._CHUNK_SIZE):
+            chunk = text_vector_pairs[i: i + self._CHUNK_SIZE]
+            with self._engine.begin() as conn:
+                for txt, vec in chunk:
+                    vec_str = "[" + ",".join(str(float(v)) for v in vec) + "]"
+                    conn.execute(
+                        text(
+                            "INSERT INTO description_embeddings "
+                            "(id, normalised_text, embedding) "
+                            "VALUES (gen_random_uuid(), :normalised_text, :embedding::vector) "
+                            "ON CONFLICT (normalised_text) DO NOTHING"
+                        ),
+                        {"normalised_text": txt, "embedding": vec_str},
+                    )
+
+
 class EmbeddingCategoriser:
     """Pass 4 of the categorisation pipeline — embedding similarity classification.
 
@@ -53,6 +131,7 @@ class EmbeddingCategoriser:
         model_name: str = "all-MiniLM-L6-v2",
         cache_path: str = "data/cache/category_embeddings.pkl",
         config=None,
+        engine=None,
     ) -> None:
         self.config = config
         if config is not None:
@@ -60,6 +139,10 @@ class EmbeddingCategoriser:
         else:
             import logging
             self.logger = logging.getLogger(__name__)
+
+        self._pgvector_store: Optional[PgvectorCategoryStore] = (
+            PgvectorCategoryStore(engine) if engine is not None else None
+        )
 
         self._model: Optional[object] = None
         self._available = _SENTENCE_TRANSFORMERS_AVAILABLE
@@ -118,7 +201,28 @@ class EmbeddingCategoriser:
         """Load cached category embeddings or compute and cache them."""
         descriptions = [c["description"] for c in self._categories]
 
-        # Try to load from cache
+        # Try pgvector first when a Postgres engine is available
+        if self._pgvector_store is not None and self._pgvector_store.is_available():
+            pg_cached = self._pgvector_store.get(descriptions)
+            missing = [d for d in descriptions if d not in pg_cached]
+            if missing:
+                self.logger.info(
+                    f"Computing embeddings for {len(missing)} missing category descriptions "
+                    f"({len(pg_cached)} already in pgvector)..."
+                )
+                new_vecs = np.array(
+                    self._model.encode(missing, show_progress_bar=False)
+                )
+                self._pgvector_store.store(list(zip(missing, new_vecs)))
+                for desc, vec in zip(missing, new_vecs):
+                    pg_cached[desc] = vec
+            else:
+                self.logger.info(
+                    f"Loaded all {len(descriptions)} category embeddings from pgvector"
+                )
+            return np.array([pg_cached[d] for d in descriptions])
+
+        # Fall back to pickle cache
         if self._cache_path.exists():
             try:
                 with open(self._cache_path, "rb") as fh:
