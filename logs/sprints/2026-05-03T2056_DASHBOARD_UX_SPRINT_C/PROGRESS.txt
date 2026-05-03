@@ -41,3 +41,11 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+US-005 COMPLETE Sun  3 May 2026 21:08:02 BST: Supplier drawer enriched with context badge row (parent company + ABC badge below SheetTitle) and second KPI row (Spend Share, WC Opportunity, Segment). Build: zero TS errors.
+
+---
+
+### [US-005] - 2026-05-03 21:08:04
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

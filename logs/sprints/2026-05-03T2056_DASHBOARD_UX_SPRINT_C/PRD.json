@@ -127,7 +127,8 @@
         "Above the KPI grid, just below SheetTitle, add a row of context badges: if selectedSupplier?.parent_company_name exists: <Badge variant='outline' className='text-xs'>{selectedSupplier.parent_company_name}</Badge>. If selectedSupplier?.abc_segment: render <AbcBadge segment={selectedSupplier.abc_segment} />",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:08:04Z"
     },
     {
       "id": "US-006",

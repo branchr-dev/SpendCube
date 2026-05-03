@@ -279,3 +279,63 @@ STORY_COMPLETE: US-004
 [2026-05-03 21:07:13] [OK] Marked US-004 as passed
 [2026-05-03 21:07:13] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 21:07:13] [STEP] Committing changes...
+[2026-05-03 21:07:15] [INFO] Starting iteration 5
+[2026-05-03 21:07:15] [INFO] Processing story: US-005
+[2026-05-03 21:07:16] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Supplier drawer — enriched with spend share, WC opportunity, ABC and tail context
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enrich the supplier detail Sheet drawer with the additional context a category manager needs before a negotiation: spend share percentage, working capital opportunity value, ABC segment chip, and tail spend indicator.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx
+- Inside the SheetContent, change the KPI grid from 3 columns to 2 rows of 3: first row keeps Total Spend, Invoice Count, Avg Payment Days. Second row adds three new KpiCards: (1) 'Spend Share' value={totalSupplierSpend > 0 ? (selectedSupplier?.total_spend ?? 0) / totalSupplierSpend * 100 : 0} valueType='pct' (2) 'WC Opportunity' value={computeWc(selectedSupplier?.avg_payment_days ?? 0, selectedSupplier?.total_spend ?? 0)} valueType='currency' accentColor={computeWc(selectedSupplier?.avg_payment_days ?? 0, selectedSupplier?.total_spend ?? 0) > 0 ? 'opportunity' : 'neutral'} (3) 'Segment' value={selectedSupplier?.abc_segment ?? '—'} valueType='text' — use accentColor: A→'opportunity', B→'neutral', C→'neutral'
+- Above the KPI grid, just below SheetTitle, add a row of context badges: if selectedSupplier?.parent_company_name exists: <Badge variant='outline' className='text-xs'>{selectedSupplier.parent_company_name}</Badge>. If selectedSupplier?.abc_segment: render <AbcBadge segment={selectedSupplier.abc_segment} />
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Supplier drawer — enriched with spend share, WC opportunity, ABC and tail context`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 21:08:04] [OK] Story US-005 completed!
+[2026-05-03 21:08:04] [OK] Marked US-005 as passed
+[2026-05-03 21:08:04] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 21:08:04] [STEP] Committing changes...
