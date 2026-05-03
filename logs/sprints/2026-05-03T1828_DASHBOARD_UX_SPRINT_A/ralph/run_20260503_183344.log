@@ -78,3 +78,66 @@ STORY_COMPLETE: US-001
 [2026-05-03 18:35:12] [OK] Marked US-001 as passed
 [2026-05-03 18:35:12] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 18:35:12] [STEP] Committing changes...
+[2026-05-03 18:35:14] [INFO] Starting iteration 2
+[2026-05-03 18:35:14] [INFO] Processing story: US-002
+[2026-05-03 18:35:14] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: KPI card v2 — status accent border and benchmark label
+
+## Project Context
+**Project:** Dashboard UX Sprint A — Visual System & Core Cockpits
+**Project ID:** DASHBOARD-UX-A-2026-05
+**PRD:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance KpiCard to support a coloured left-border accent communicating metric health at a glance, and an optional benchmarkLabel string rendered below the delta. Existing callers with no new props must be visually unchanged.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/dashboard/KpiCard.tsx
+- Add optional prop accentColor?: 'green' | 'amber' | 'red' | 'opportunity' | 'risk' | 'neutral'
+- Add optional prop benchmarkLabel?: string
+- When accentColor is provided the Card element gets an additional className for a 4px left border: green→'border-l-4 border-l-green-500', amber→'border-l-4 border-l-amber-500', red→'border-l-4 border-l-red-500', opportunity→'border-l-4 border-l-emerald-500', risk→'border-l-4 border-l-rose-500', neutral→'border-l-4 border-l-slate-300'
+- When benchmarkLabel is provided render it as a p tag with className='text-xs text-muted-foreground italic mt-1' after the delta section
+- Existing callers with no accentColor render identically to before (plain Card with no border-l class)
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+   - Session: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - KPI card v2 — status accent border and benchmark label`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 18:35:55] [OK] Story US-002 completed!
+[2026-05-03 18:35:55] [OK] Marked US-002 as passed
+[2026-05-03 18:35:55] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 18:35:55] [STEP] Committing changes...

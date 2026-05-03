@@ -83,7 +83,8 @@
         "Existing callers with no accentColor render identically to before (plain Card with no border-l class)",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:35:55Z"
     },
     {
       "id": "US-003",

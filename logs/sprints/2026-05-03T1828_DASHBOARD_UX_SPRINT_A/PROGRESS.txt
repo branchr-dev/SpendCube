@@ -23,3 +23,18 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+
+## US-002 — KpiCard v2: accent border + benchmarkLabel
+- Added accentColor prop (green/amber/red/opportunity/risk/neutral) → 4px left border via Tailwind border-l-4
+- Added benchmarkLabel prop → italic muted p tag after delta
+- accentBorderMap lookup object keeps Card className clean
+- Existing callers unchanged (undefined className on Card = no border)
+- Build: zero TS errors
+
+
+---
+
+### [US-002] - 2026-05-03 18:35:55
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+
