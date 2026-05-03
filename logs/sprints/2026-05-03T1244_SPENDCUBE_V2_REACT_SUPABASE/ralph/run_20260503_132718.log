@@ -780,3 +780,72 @@ STORY_COMPLETE: US-011
 [2026-05-03 14:17:08] [OK] Marked US-011 as passed
 [2026-05-03 14:17:08] [INFO] Logged progress for US-011: PASSED
 [2026-05-03 14:17:08] [STEP] Committing changes...
+[2026-05-03 14:17:10] [INFO] Starting iteration 12
+[2026-05-03 14:17:10] [INFO] Processing story: US-012
+[2026-05-03 14:17:10] [STEP] Spawning Claude with prompt for US-012
+--- PROMPT FOR US-012 ---
+You are working on story US-012: Supplier Deep Dive and Payment Terms pages
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the Supplier Deep Dive page (searchable supplier table with per-supplier detail panel) and the Payment Terms page (working capital opportunity analysis with bucket distribution and supplier-level table). Both pages use the existing shared components and query the /cube/by-supplier and /cube/by-payment-terms endpoints.
+
+## Acceptance Criteria
+- Create file: frontend/src/pages/dashboard/SupplierPage.tsx
+- SupplierPage fetches /cube/by-supplier (no limit — full dataset) with useQuery. Implements client-side search via useState(searchTerm) filtering on canonical_supplier_name (case-insensitive includes). useState for selected_supplier_id: string|null.
+- SupplierPage renders: search Input above table; shadcn Table with columns: Supplier Name (clickable, bold), Total Spend (formatCurrency), Invoice Count, Avg Payment Days, Parent Company (or '—'). Sorting: click column header toggles asc/desc. Selected row is highlighted.
+- When supplier selected: detail panel below table (or side panel on wide screen) showing: KpiCards for that supplier's total_spend, transaction_count, avg_payment_days; SpendAreaChart of monthly spend — fetched from /cube/by-month filtered by supplier (add ?supplier_id= param to endpoint if supported, else filter client-side from full month data); SpendPieChart of category mix filtered to that supplier from the by-category data.
+- Create file: frontend/src/pages/dashboard/PaymentTermsPage.tsx
+- PaymentTermsPage fetches /cube/by-payment-terms with useQuery.
+- PaymentTermsPage renders: 3 KpiCards: Total WC Opportunity AUD (sum of wc_opportunity_aud), % Spend in 0-30 bucket (spend_pct for bucket '0-30'), % Spend in 90+ bucket; Recharts BarChart showing all 4 buckets side by side (x=bucket, y=total_spend formatted as currency); shadcn Table of suppliers from /cube/by-supplier sorted by avg_payment_days ASC showing columns: Supplier, Avg Days, Total Spend, Bucket (derived from avg_payment_days), Individual WC Opportunity (computed client-side); Footer note: 'WC opportunity uses target 45-day terms at 8% WACC'.
+- Verify: npm run build succeeds; both pages have no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-012
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-012: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-012 - Supplier Deep Dive and Payment Terms pages`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-012 ---
+Build passes with zero TypeScript errors. Both pages are complete:
+
+- **SupplierPage** (`/supplier`): searchable table with sortable columns, row selection, and a detail panel showing KPI tiles + monthly trend + category mix charts.
+- **PaymentTermsPage** (`/payment-terms`): 3 KPI tiles (total WC opportunity, 0–30 bucket %, 90+ bucket %), bucket bar chart, and supplier table sorted by avg payment days with computed individual WC opportunity. Footer note included.
+
+STORY_COMPLETE: US-012
+--- END OUTPUT ---
+[2026-05-03 14:21:10] [OK] Story US-012 completed!
+[2026-05-03 14:21:10] [OK] Marked US-012 as passed
+[2026-05-03 14:21:10] [INFO] Logged progress for US-012: PASSED
+[2026-05-03 14:21:10] [STEP] Committing changes...

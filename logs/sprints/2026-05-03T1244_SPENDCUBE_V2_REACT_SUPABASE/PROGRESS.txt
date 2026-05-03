@@ -344,3 +344,24 @@ US-011 COMPLETE: OverviewPage and CategoryPage created, build passes
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 11
 
+
+## US-012 — Supplier Deep Dive and Payment Terms pages
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- `frontend/src/pages/dashboard/SupplierPage.tsx` — full supplier table with client-side search, sortable columns (click header toggles asc/desc), row selection highlighting, detail panel with 3 KpiCards + SpendAreaChart + SpendPieChart
+- `frontend/src/pages/dashboard/PaymentTermsPage.tsx` — 3 KpiCards (total WC opportunity, % spend in 0-30 bucket, % spend in 90+ bucket), bucket BarChart, supplier table sorted by avg_payment_days ASC with derived bucket and individual WC opportunity computed client-side
+- `frontend/src/App.tsx` — wired SupplierPage and PaymentTermsPage replacing placeholder routes
+
+**Key learnings:**
+- SupplierRow doesn't include per-supplier monthly or category breakdown; detail panel charts show engagement-level data as context (by-month and by-category endpoints are engagement-scoped, not per-supplier)
+- Individual WC opportunity = `(45 - avg_payment_days) / 365 * total_spend * 0.08` — only computed when avg_payment_days < 45
+- TypeScript sort comparator needs explicit type narrowing when the sort key is a union of string | number fields — cast via `isStr` conditional
+- Build passes: `npm run build` succeeds with 0 TypeScript errors (chunk size warning is non-breaking)
+
+---
+
+### [US-012] - 2026-05-03 14:21:10
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 12
+

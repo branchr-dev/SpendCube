@@ -292,7 +292,8 @@
         "PaymentTermsPage renders: 3 KpiCards: Total WC Opportunity AUD (sum of wc_opportunity_aud), % Spend in 0-30 bucket (spend_pct for bucket '0-30'), % Spend in 90+ bucket; Recharts BarChart showing all 4 buckets side by side (x=bucket, y=total_spend formatted as currency); shadcn Table of suppliers from /cube/by-supplier sorted by avg_payment_days ASC showing columns: Supplier, Avg Days, Total Spend, Bucket (derived from avg_payment_days), Individual WC Opportunity (computed client-side); Footer note: 'WC opportunity uses target 45-day terms at 8% WACC'.",
         "Verify: npm run build succeeds; both pages have no TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T13:21:10Z"
     },
     {
       "id": "US-013",
