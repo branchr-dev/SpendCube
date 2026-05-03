@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Layout from '@/components/Layout'
-import LoginPage from '@/pages/LoginPage'
-import EngagementListPage from '@/pages/EngagementListPage'
-import NewEngagementPage from '@/pages/NewEngagementPage'
+import LoginPage from '@/pages/auth/LoginPage'
+import EngagementListPage from '@/pages/engagements/EngagementListPage'
+import NewEngagementPage from '@/pages/engagements/NewEngagementPage'
+import UploadPage from '@/pages/ingest/UploadPage'
 
 function PlaceholderPage({ title }: { title: string }) {
   return <div className="p-6 text-muted-foreground">{title}</div>
@@ -26,7 +27,7 @@ export default function App() {
           <Route path="payment-terms" element={<PlaceholderPage title="Payment Terms" />} />
           <Route path="quality" element={<PlaceholderPage title="Data Quality" />} />
           <Route path="recommendations" element={<PlaceholderPage title="Recommendations" />} />
-          <Route path="upload" element={<PlaceholderPage title="Upload" />} />
+          <Route path="upload" element={<UploadPage />} />
           <Route path="admin/review" element={<PlaceholderPage title="Review Workstation" />} />
         </Route>
       </Route>
