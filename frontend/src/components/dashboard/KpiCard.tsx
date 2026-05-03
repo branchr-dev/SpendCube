@@ -10,6 +10,17 @@ interface KpiCardProps {
   deltaLabel?: string
   currency?: string
   subtext?: string
+  accentColor?: 'green' | 'amber' | 'red' | 'opportunity' | 'risk' | 'neutral'
+  benchmarkLabel?: string
+}
+
+const accentBorderMap: Record<NonNullable<KpiCardProps['accentColor']>, string> = {
+  green: 'border-l-4 border-l-green-500',
+  amber: 'border-l-4 border-l-amber-500',
+  red: 'border-l-4 border-l-red-500',
+  opportunity: 'border-l-4 border-l-emerald-500',
+  risk: 'border-l-4 border-l-rose-500',
+  neutral: 'border-l-4 border-l-slate-300',
 }
 
 export default function KpiCard({
@@ -20,6 +31,8 @@ export default function KpiCard({
   deltaLabel,
   currency = 'AUD',
   subtext,
+  accentColor,
+  benchmarkLabel,
 }: KpiCardProps) {
   function formatValue(): string {
     if (typeof value === 'string') return value
@@ -35,7 +48,7 @@ export default function KpiCard({
   const isNegative = delta !== undefined && delta < 0
 
   return (
-    <Card>
+    <Card className={accentColor ? accentBorderMap[accentColor] : undefined}>
       <CardContent className="pt-6">
         <div className="text-3xl font-bold">{formatValue()}</div>
         <div className="text-sm text-muted-foreground mt-1">{label}</div>
@@ -53,6 +66,7 @@ export default function KpiCard({
           </div>
         )}
         {subtext && <div className="text-xs text-muted-foreground mt-1">{subtext}</div>}
+        {benchmarkLabel && <p className="text-xs text-muted-foreground italic mt-1">{benchmarkLabel}</p>}
       </CardContent>
     </Card>
   )
