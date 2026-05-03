@@ -45,3 +45,42 @@ Story completed successfully by Ralph loop iteration 2
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+## US-004 COMPLETE — 2026-05-03
+Created frontend/src/contexts/FilterContext.tsx:
+- FilterContextValue interface + FilterProvider (useReducer with SET_FILTER/CLEAR_ALL actions)
+- State initialised from URL search params on mount (date_from, date_to, all array fields, min_confidence)
+- useFilterContext() hook throws if used outside FilterProvider
+
+Edited frontend/src/hooks/useFilters.ts:
+- Replaced useState with useFilterContext() — return signature unchanged, all existing pages unaffected
+
+Edited frontend/src/main.tsx:
+- Wrapped App in <FilterProvider> inside QueryClientProvider
+
+Created frontend/src/lib/aggregations.ts:
+- calculateABCSegments — sorts desc, assigns A/B/C at 80%/95%/100% cumulative thresholds
+- calculateSpendConcentration — top-N spend and percentage of total
+- getTopN — generic sort by spend/total_spend, slice to N
+- calculateTailSpendMetrics — core = top suppliers to 80% spend; tail = remainder
+- formatSpendSummary — formats to K/M/B with currency prefix
+
+Created frontend/src/hooks/useDrilldown.ts:
+- DrilldownLevel type, DrilldownState interface, useDrilldown() hook
+- History stack; drillTo pushes, drillUp pops, reset clears to overview
+- isFiltered = level !== 'overview'
+
+Created frontend/src/components/DrilldownBreadcrumb.tsx:
+- Returns null when level === 'overview'
+- Renders clickable segments using Button + ChevronRight separators
+- Last segment rendered as plain text (current level); earlier segments are links
+- Uses shadcn/ui Button and lucide-react ChevronRight
+
+Build: npm run build exits 0 with zero TypeScript errors
+
+
+---
+
+### [US-004] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
