@@ -202,7 +202,7 @@ export default function OverviewPage() {
         {loadingMonths ? (
           <Skeleton className="h-80" />
         ) : (
-          <SpendAreaChart data={monthData} title="Monthly Spend Trend" currency={currency} />
+          <SpendAreaChart data={monthData} title="Monthly Spend Trend" currency={currency} showReferenceLine={true} />
         )}
       </div>
 

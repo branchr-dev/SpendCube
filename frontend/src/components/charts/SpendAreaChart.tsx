@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts'
 import { MonthRow } from '@/types/index'
 import { formatMonth, formatCurrency } from '@/lib/formatters'
@@ -15,9 +16,13 @@ interface SpendAreaChartProps {
   data: MonthRow[]
   title: string
   currency?: string
+  showReferenceLine?: boolean
 }
 
-export default function SpendAreaChart({ data, title, currency = 'AUD' }: SpendAreaChartProps) {
+export default function SpendAreaChart({ data, title, currency = 'AUD', showReferenceLine = false }: SpendAreaChartProps) {
+  const avgSpend = data.length > 0
+    ? data.reduce((sum, d) => sum + (d.total_spend ?? 0), 0) / data.length
+    : null
   const hasRollingAvg = data.some(
     d => d.rolling_3m_avg !== undefined && d.rolling_3m_avg !== null,
   )
@@ -59,6 +64,15 @@ export default function SpendAreaChart({ data, title, currency = 'AUD' }: SpendA
               fill="transparent"
               strokeWidth={2}
               strokeDasharray="5 5"
+            />
+          )}
+          {showReferenceLine && avgSpend !== null && (
+            <ReferenceLine
+              y={avgSpend}
+              stroke="#94a3b8"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{ value: 'Avg', position: 'insideTopRight', fontSize: 11, fill: '#94a3b8' }}
             />
           )}
         </AreaChart>
