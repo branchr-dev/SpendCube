@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -26,6 +27,7 @@ import { api } from '@/lib/api'
 import { formatCurrency, formatNumber, formatPct } from '@/lib/formatters'
 import type { SupplierRow, MonthRow, CategoryRow } from '@/types'
 import type { DrilldownLevel, DrilldownState } from '@/hooks/useDrilldown'
+import { Building2, ChevronRight, ChevronDown } from 'lucide-react'
 
 type SortKey = 'canonical_supplier_name' | 'total_spend' | 'transaction_count' | 'avg_payment_days'
 type SortDir = 'asc' | 'desc'
@@ -54,6 +56,15 @@ export default function SupplierPage() {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('total_spend')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [groupByParent, setGroupByParent] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroup = (g: string) =>
+    setExpandedGroups(prev => {
+      const n = new Set(prev)
+      n.has(g) ? n.delete(g) : n.add(g)
+      return n
+    })
 
   const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
     queryKey: ['all-suppliers', engagementId],
@@ -118,6 +129,24 @@ export default function SupplierPage() {
     [filtered, sortKey, sortDir],
   )
 
+  const groupedData = useMemo(() => {
+    if (!groupByParent) return null
+    const map = new Map<string, { rows: SupplierRow[]; totalSpend: number }>()
+    for (const row of sorted) {
+      const key = row.parent_company_name ?? '__independent__'
+      const existing = map.get(key) ?? { rows: [], totalSpend: 0 }
+      existing.rows.push(row)
+      existing.totalSpend += row.total_spend ?? 0
+      map.set(key, existing)
+    }
+    return [...map.entries()]
+      .sort(([keyA, a], [keyB, b]) => {
+        if (keyA === '__independent__') return 1
+        if (keyB === '__independent__') return -1
+        return b.totalSpend - a.totalSpend
+      })
+  }, [sorted, groupByParent])
+
   const selectedSupplier = selectedSupplierId
     ? (supplierData.find(s => s.canonical_supplier_id === selectedSupplierId) ?? null)
     : null
@@ -171,12 +200,22 @@ export default function SupplierPage() {
         reset={handleBreadcrumbReset}
       />
 
-      <Input
-        placeholder="Search suppliers…"
-        value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex items-center gap-3">
+        <Input
+          placeholder="Search suppliers…"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setGroupByParent(p => !p)}
+        >
+          <Building2 className="h-4 w-4 mr-2" />
+          {groupByParent ? 'Show All' : 'Group by Parent'}
+        </Button>
+      </div>
 
       <div className="border rounded-lg overflow-auto">
         {loadingSuppliers ? (
@@ -207,52 +246,137 @@ export default function SupplierPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map(row => {
-                const sid = row.canonical_supplier_id ?? row.canonical_supplier_name ?? ''
-                const isSelected = selectedSupplierId === row.canonical_supplier_id
-                return (
-                  <TableRow
-                    key={sid}
-                    className={`cursor-pointer ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
-                    onClick={() =>
-                      setSelectedSupplierId(
-                        isSelected ? null : (row.canonical_supplier_id ?? null),
-                      )
-                    }
-                  >
-                    <TableCell className="font-bold">
-                      {row.canonical_supplier_name ?? '—'}
-                    </TableCell>
-                    <TableCell>
-                      <AbcBadge segment={row.abc_segment} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(row.total_spend ?? 0)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {totalSupplierSpend > 0
-                        ? formatPct(((row.total_spend ?? 0) / totalSupplierSpend) * 100)
-                        : '—'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatNumber(row.transaction_count ?? 0)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.avg_payment_days != null ? formatNumber(row.avg_payment_days) : '—'}
-                    </TableCell>
-                    <TableCell>{row.parent_company_name ?? '—'}</TableCell>
-                  </TableRow>
-                )
-              })}
-              {sorted.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    No suppliers match your search.
-                  </TableCell>
-                </TableRow>
+              {!groupByParent ? (
+                <>
+                  {sorted.map(row => {
+                    const sid = row.canonical_supplier_id ?? row.canonical_supplier_name ?? ''
+                    const isSelected = selectedSupplierId === row.canonical_supplier_id
+                    return (
+                      <TableRow
+                        key={sid}
+                        className={`cursor-pointer ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                        onClick={() =>
+                          setSelectedSupplierId(
+                            isSelected ? null : (row.canonical_supplier_id ?? null),
+                          )
+                        }
+                      >
+                        <TableCell className="font-bold">
+                          {row.canonical_supplier_name ?? '—'}
+                        </TableCell>
+                        <TableCell>
+                          <AbcBadge segment={row.abc_segment} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(row.total_spend ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {totalSupplierSpend > 0
+                            ? formatPct(((row.total_spend ?? 0) / totalSupplierSpend) * 100)
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatNumber(row.transaction_count ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.avg_payment_days != null ? formatNumber(row.avg_payment_days) : '—'}
+                        </TableCell>
+                        <TableCell>{row.parent_company_name ?? '—'}</TableCell>
+                      </TableRow>
+                    )
+                  })}
+                  {sorted.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        No suppliers match your search.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              ) : (
+                <>
+                  {(groupedData ?? []).map(([groupKey, { rows, totalSpend }]) => {
+                    const isExpanded = expandedGroups.has(groupKey)
+                    const displayName =
+                      groupKey === '__independent__' ? 'Independent Suppliers' : groupKey
+                    return (
+                      <>
+                        <TableRow
+                          key={`group-${groupKey}`}
+                          className="bg-muted/40 cursor-pointer hover:bg-muted/60"
+                          onClick={() => toggleGroup(groupKey)}
+                        >
+                          <TableCell colSpan={7}>
+                            <div className="flex items-center gap-2 font-semibold">
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 shrink-0" />
+                              )}
+                              <span>{displayName}</span>
+                              <span className="ml-2 text-muted-foreground font-normal">
+                                {formatCurrency(totalSpend)}
+                              </span>
+                              <span className="text-muted-foreground font-normal text-sm">
+                                · {rows.length} supplier{rows.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded &&
+                          rows.map(row => {
+                            const sid =
+                              row.canonical_supplier_id ?? row.canonical_supplier_name ?? ''
+                            const isSelected = selectedSupplierId === row.canonical_supplier_id
+                            return (
+                              <TableRow
+                                key={sid}
+                                className={`cursor-pointer ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                                onClick={() =>
+                                  setSelectedSupplierId(
+                                    isSelected ? null : (row.canonical_supplier_id ?? null),
+                                  )
+                                }
+                              >
+                                <TableCell className="font-bold pl-8">
+                                  {row.canonical_supplier_name ?? '—'}
+                                </TableCell>
+                                <TableCell>
+                                  <AbcBadge segment={row.abc_segment} />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(row.total_spend ?? 0)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {totalSupplierSpend > 0
+                                    ? formatPct(
+                                        ((row.total_spend ?? 0) / totalSupplierSpend) * 100,
+                                      )
+                                    : '—'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatNumber(row.transaction_count ?? 0)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {row.avg_payment_days != null
+                                    ? formatNumber(row.avg_payment_days)
+                                    : '—'}
+                                </TableCell>
+                                <TableCell>{row.parent_company_name ?? '—'}</TableCell>
+                              </TableRow>
+                            )
+                          })}
+                      </>
+                    )
+                  })}
+                  {(groupedData ?? []).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        No suppliers match your search.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
           </Table>
