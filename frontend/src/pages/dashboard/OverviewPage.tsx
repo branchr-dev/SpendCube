@@ -198,7 +198,7 @@ export default function OverviewPage() {
         </Link>
       </div>
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-xl p-5 bg-card shadow-sm">
         {loadingMonths ? (
           <Skeleton className="h-80" />
         ) : (
@@ -207,7 +207,7 @@ export default function OverviewPage() {
       </div>
 
       <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-3 border rounded-lg p-4">
+        <div className="col-span-3 border rounded-xl p-5 bg-card shadow-sm">
           {loadingSuppliers ? (
             <Skeleton className="h-80" />
           ) : (
@@ -219,7 +219,7 @@ export default function OverviewPage() {
             />
           )}
         </div>
-        <div className="col-span-2 border rounded-lg p-4">
+        <div className="col-span-2 border rounded-xl p-5 bg-card shadow-sm">
           {loadingCategories ? (
             <Skeleton className="h-80" />
           ) : (

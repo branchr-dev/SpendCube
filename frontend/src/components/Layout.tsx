@@ -13,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
-import type { Engagement } from '@/types'
+import { formatCurrency } from '@/lib/formatters'
+import type { Engagement, OverviewData } from '@/types'
 
 const navItems = [
   { to: 'overview', label: 'Overview', icon: BarChart3 },
@@ -35,6 +36,13 @@ export default function Layout() {
     enabled: !!id,
   })
 
+  const { data: sidebarOverview } = useQuery<OverviewData>({
+    queryKey: ['sidebar-overview', id],
+    queryFn: () => api.get(`/api/engagements/${id}/cube/overview`).then(r => r.data),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  })
+
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r bg-card flex flex-col">
@@ -42,6 +50,12 @@ export default function Layout() {
           <h1 className="font-semibold text-sm">SpendCube</h1>
           {engagement?.client_name && (
             <p className="text-xs text-muted-foreground mt-0.5">{engagement.client_name}</p>
+          )}
+          {sidebarOverview?.total_spend != null && (
+            <>
+              <p className="text-base font-bold text-foreground/80 mt-2">{formatCurrency(sidebarOverview.total_spend, sidebarOverview.currency_label ?? 'AUD')}</p>
+              <p className="text-xs text-muted-foreground">Total Spend</p>
+            </>
           )}
         </div>
         <nav className="flex-1 p-2 space-y-1">

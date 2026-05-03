@@ -215,8 +215,8 @@ export default function CategoryPage() {
       )}
 
       {!isLoading && !selectedL1Entry && (
-        <div className="border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Fragmentation Scorecard</h3>
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <h3 className="section-header">Fragmentation Scorecard</h3>
           <Table>
             <TableHeader>
               <TableRow>
@@ -250,9 +250,9 @@ export default function CategoryPage() {
         </div>
       )}
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-xl p-5 bg-card shadow-sm">
         <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-sm font-medium">Spend by L1 Category</h3>
+          <h3 className="section-header">Spend by L1 Category</h3>
           {selectedL1Entry && (
             <>
               <span className="text-sm font-medium text-primary">— {selectedL1}</span>
@@ -282,9 +282,9 @@ export default function CategoryPage() {
       </div>
 
       {selectedL1Entry && (
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
           <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-sm font-medium">L2 Breakdown — {selectedL1}</h3>
+            <h3 className="section-header">L2 Breakdown — {selectedL1}</h3>
             {selectedL2 && (
               <>
                 <span className="text-sm text-muted-foreground">/ {selectedL2}</span>
@@ -309,8 +309,8 @@ export default function CategoryPage() {
       )}
 
       {selectedL2Entry && l3Rows.length > 0 && (
-        <div className="border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">L3 Detail — {selectedL2}</h3>
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <h3 className="section-header">L3 Detail — {selectedL2}</h3>
           <Table>
             <TableHeader>
               <TableRow>
