@@ -159,3 +159,72 @@ STORY_COMPLETE: US-002
 [2026-05-03 13:31:26] [OK] Marked US-002 as passed
 [2026-05-03 13:31:26] [INFO] Logged progress for US-002: PASSED
 [2026-05-03 13:31:26] [STEP] Committing changes...
+[2026-05-03 13:31:28] [INFO] Starting iteration 3
+[2026-05-03 13:31:28] [INFO] Processing story: US-003
+[2026-05-03 13:31:28] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: FastAPI auth middleware + engagements CRUD endpoints
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Implement the authentication layer and engagement management endpoints. The middleware validates the Supabase JWT on every protected route and injects the user's email into the request state. The engagements router handles creating and listing engagements for the authenticated user. This is the foundation that all other routers depend on for ownership checks.
+
+## Acceptance Criteria
+- Create file: backend/app/middleware/auth.py — class SupabaseAuthMiddleware(BaseHTTPMiddleware): validates Authorization: Bearer <jwt> header using python-jose jwt.decode() with SUPABASE_JWT_SECRET and algorithms=['HS256']; extracts email from payload['email']; injects request.state.user_email; returns JSONResponse(status_code=401) for missing or invalid tokens; skips validation for path '/health'
+- Create file: backend/app/database.py — function get_engine() -> Engine: reads SUPABASE_DATABASE_URL env var; if set returns create_engine(url, pool_pre_ping=True); raises RuntimeError if not set. Function get_db_url() -> str: returns the env var value. Note: imports sys and adds repo root to sys.path so that 'from src.models.database import ...' works.
+- Create file: backend/app/dependencies.py — async function get_current_user_email(request: Request) -> str: returns request.state.user_email. Async function verify_engagement_ownership(engagement_id: str, user_email: str, engine: Engine) -> dict: queries engagements table, returns engagement dict, raises HTTPException(403) if not found or owner_email != user_email.
+- Create file: backend/app/routers/engagements.py — APIRouter with prefix='/api/engagements', tags=['engagements']:
+-   GET /api/engagements — SELECT * FROM engagements WHERE owner_email = user_email ORDER BY created_at DESC; returns list
+-   POST /api/engagements — body: {name, client_name, currency_label='AUD', engagement_title='Procurement Spend Diagnostic', llm_dry_run=true}; INSERT into engagements; returns created row including id
+-   GET /api/engagements/{engagement_id} — returns single engagement; 403 if not owned by user
+-   PATCH /api/engagements/{engagement_id} — updates any of: name, client_name, currency_label, engagement_title, llm_dry_run; 403 if not owned
+- Register SupabaseAuthMiddleware and engagements router in backend/app/main.py
+- Create file: backend/tests/test_engagements.py — uses pytest-mock or monkeypatch to mock JWT validation and DB calls: (1) POST creates engagement and returns id, (2) GET lists only engagements matching user_email, (3) GET unknown engagement_id returns 403, (4) unauthenticated request to /api/engagements returns 401
+- Verify: pytest backend/tests/test_engagements.py -v — all tests pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - FastAPI auth middleware + engagements CRUD endpoints`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+All 5 tests pass and the commit is done.
+
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-03 13:33:22] [OK] Story US-003 completed!
+[2026-05-03 13:33:22] [OK] Marked US-003 as passed
+[2026-05-03 13:33:22] [INFO] Logged progress for US-003: PASSED
+[2026-05-03 13:33:22] [STEP] Committing changes...

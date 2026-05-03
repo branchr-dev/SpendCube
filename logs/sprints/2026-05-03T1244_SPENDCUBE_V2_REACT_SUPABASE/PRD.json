@@ -117,7 +117,8 @@
         "Create file: backend/tests/test_engagements.py — uses pytest-mock or monkeypatch to mock JWT validation and DB calls: (1) POST creates engagement and returns id, (2) GET lists only engagements matching user_email, (3) GET unknown engagement_id returns 403, (4) unauthenticated request to /api/engagements returns 401",
         "Verify: pytest backend/tests/test_engagements.py -v — all tests pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T12:33:22Z"
     },
     {
       "id": "US-004",
