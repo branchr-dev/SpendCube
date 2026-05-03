@@ -237,7 +237,8 @@
         "Document: chart container class convention ('border rounded-xl p-5 bg-card shadow-sm'), Sheet drawer pattern for detail panels, FilterBar collapsed vs expanded states",
         "Keep concise — bullet points and code snippets, not prose paragraphs"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:48:40Z"
     }
   ],
   "verification": {
