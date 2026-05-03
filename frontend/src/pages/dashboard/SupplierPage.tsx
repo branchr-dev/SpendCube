@@ -50,6 +50,9 @@ function AbcBadge({ segment }: { segment?: string }) {
   return <Badge className={classMap[segment] ?? 'text-xs'}>{segment}</Badge>
 }
 
+const computeWc = (avgDays: number, spend: number) =>
+  avgDays < 45 ? ((45 - avgDays) / 365) * spend * 0.08 : 0
+
 export default function SupplierPage() {
   const { id: engagementId } = useParams<{ id: string }>()
   const [searchTerm, setSearchTerm] = useState('')
@@ -172,7 +175,11 @@ export default function SupplierPage() {
     { key: 'share', label: 'Share', align: 'right' },
     { key: 'transaction_count', label: 'Invoice Count', align: 'right' },
     { key: 'avg_payment_days', label: 'Avg Payment Days', align: 'right' },
+    { key: 'wc_opp', label: 'WC Opp.', align: 'right' },
   ]
+
+  const top5Spend = sorted.slice(0, 5).reduce((s, r) => s + (r.total_spend ?? 0), 0)
+  const top10Spend = sorted.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0)
 
   const drilldownState: DrilldownState = selectedSupplier
     ? {
@@ -216,6 +223,13 @@ export default function SupplierPage() {
           {groupByParent ? 'Show All' : 'Group by Parent'}
         </Button>
       </div>
+
+      {totalSupplierSpend > 0 && sorted.length >= 5 && (
+        <div className="flex items-center gap-6 text-sm text-muted-foreground bg-muted/30 rounded-lg px-4 py-2">
+          <span>Top 5 suppliers: {formatPct((top5Spend / totalSupplierSpend) * 100)} of spend</span>
+          <span>Top 10 suppliers: {formatPct((top10Spend / totalSupplierSpend) * 100)} of spend</span>
+        </div>
+      )}
 
       <div className="border rounded-lg overflow-auto">
         {loadingSuppliers ? (
@@ -278,8 +292,26 @@ export default function SupplierPage() {
                         <TableCell className="text-right">
                           {formatNumber(row.transaction_count ?? 0)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell
+                          className={
+                            (row.avg_payment_days ?? 0) < 30
+                              ? 'text-right font-medium bg-rose-50 text-rose-700'
+                              : (row.avg_payment_days ?? 0) < 45
+                                ? 'text-right font-medium bg-amber-50 text-amber-700'
+                                : 'text-right'
+                          }
+                        >
                           {row.avg_payment_days != null ? formatNumber(row.avg_payment_days) : '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(() => {
+                            const wc = computeWc(row.avg_payment_days ?? 0, row.total_spend ?? 0)
+                            return wc > 0 ? (
+                              <span className="text-emerald-600 font-medium">{formatCurrency(wc)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )
+                          })()}
                         </TableCell>
                         <TableCell>{row.parent_company_name ?? '—'}</TableCell>
                       </TableRow>
@@ -287,7 +319,7 @@ export default function SupplierPage() {
                   })}
                   {sorted.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         No suppliers match your search.
                       </TableCell>
                     </TableRow>
@@ -306,7 +338,7 @@ export default function SupplierPage() {
                           className="bg-muted/40 cursor-pointer hover:bg-muted/60"
                           onClick={() => toggleGroup(groupKey)}
                         >
-                          <TableCell colSpan={7}>
+                          <TableCell colSpan={8}>
                             <div className="flex items-center gap-2 font-semibold">
                               {isExpanded ? (
                                 <ChevronDown className="h-4 w-4 shrink-0" />
@@ -357,10 +389,33 @@ export default function SupplierPage() {
                                 <TableCell className="text-right">
                                   {formatNumber(row.transaction_count ?? 0)}
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell
+                                  className={
+                                    (row.avg_payment_days ?? 0) < 30
+                                      ? 'text-right font-medium bg-rose-50 text-rose-700'
+                                      : (row.avg_payment_days ?? 0) < 45
+                                        ? 'text-right font-medium bg-amber-50 text-amber-700'
+                                        : 'text-right'
+                                  }
+                                >
                                   {row.avg_payment_days != null
                                     ? formatNumber(row.avg_payment_days)
                                     : '—'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {(() => {
+                                    const wc = computeWc(
+                                      row.avg_payment_days ?? 0,
+                                      row.total_spend ?? 0,
+                                    )
+                                    return wc > 0 ? (
+                                      <span className="text-emerald-600 font-medium">
+                                        {formatCurrency(wc)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">—</span>
+                                    )
+                                  })()}
                                 </TableCell>
                                 <TableCell>{row.parent_company_name ?? '—'}</TableCell>
                               </TableRow>
@@ -371,7 +426,7 @@ export default function SupplierPage() {
                   })}
                   {(groupedData ?? []).length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         No suppliers match your search.
                       </TableCell>
                     </TableRow>
