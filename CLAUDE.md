@@ -670,3 +670,116 @@ ABC segmentation follows the Pareto convention, computed from `SUM(base_amount)`
 | **C** | Cumulative spend > 95% | Low-value / tail suppliers — consolidation or rationalisation candidates |
 
 Computed server-side in `_compute_abc_segments()` in `src/cube/pipeline.py` (Step 1b of the Phase 4 pipeline) and stored as `abc_segment TEXT` on every transaction row. Also available client-side via `calculateABCSegments()` in `aggregations.ts` for in-browser chart rendering.
+
+## Dashboard UX Conventions (Sprint A)
+
+### Semantic Colours
+
+Defined in `frontend/src/components/charts/constants.ts` and mirrored as CSS custom properties in `frontend/src/index.css`:
+
+```ts
+export const SEMANTIC_COLORS = {
+  opportunity: '#10b981',  // emerald-500 — positive signal, savings, WC gain
+  risk:        '#f43f5e',  // rose-500   — high fragmentation, maverick spend
+  attention:   '#f59e0b',  // amber-500  — moderate concern, review needed
+  neutral:     '#64748b',  // slate-500  — context/informational, no signal
+}
+```
+
+CSS custom properties (`:root`): `--color-opportunity`, `--color-risk`, `--color-attention`, `--color-neutral`.  
+Tailwind aliases (`tailwind.config.js` `theme.extend.colors`): `opportunity`, `risk`, `attention` — enables `bg-opportunity/10`, `text-risk`, etc.
+
+Use `SEMANTIC_COLORS` for Recharts `fill`/`stroke` props. Use Tailwind aliases for non-chart UI elements.
+
+### KpiCard — `accentColor` and `benchmarkLabel` Props
+
+`frontend/src/components/dashboard/KpiCard.tsx`
+
+- `accentColor?: 'green' | 'amber' | 'red' | 'opportunity' | 'risk' | 'neutral'` — adds a 4px left border to the Card:
+  - `opportunity` → `border-l-4 border-l-emerald-500`
+  - `risk` → `border-l-4 border-l-rose-500`
+  - `neutral` → `border-l-4 border-l-slate-300`
+  - `green/amber/red` → standard green-500/amber-500/red-500
+- `benchmarkLabel?: string` — renders a small italic line below the delta (`text-xs text-muted-foreground italic mt-1`)
+- Omitting `accentColor` renders a plain card with no left border (backwards compatible)
+
+Example usage:
+```tsx
+<KpiCard label="WC Opportunity" value={wcTotal} valueType="currency"
+  accentColor="opportunity" benchmarkLabel="vs. 45-day target" />
+```
+
+### SpendTreemap Component
+
+`frontend/src/components/charts/SpendTreemap.tsx` — exported from `frontend/src/components/charts/index.ts`
+
+Props:
+```ts
+data: { name: string; value: number; color?: string }[]
+title: string
+valueFormatter?: (v: number) => string
+onCellClick?: (name: string) => void
+```
+
+- Renders `section-header` title, then a `ResponsiveContainer` wrapping Recharts `Treemap` (height 320)
+- Cell labels (name truncated to 16 chars + formatted value) shown only when cell is wide enough (`width > 60 && height > 40`)
+- Falls back to `CHART_COLORS[index % length]` when no per-item `color`
+- Empty state (`data.length === 0` or all-zero values): renders `h-80` centred "No data available" message
+
+### SpendBarChart — New Props
+
+`frontend/src/components/charts/SpendBarChart.tsx`
+
+- `showLabel?: boolean` (default `false`) — adds a Recharts `LabelList`: `position='right'` for horizontal bars, `position='top'` for vertical. Font size 11, fill `#64748b`. Uses `valueFormatter` if provided.
+- `clickHint?: boolean` (default `false`) — when `true` and `onBarClick` is provided, renders `"Click a bar to explore"` italic hint aligned right beside the chart title.
+- `colors?: string[]` — per-bar fill via `Cell` components; index-mapped. Falls back to `CHART_COLORS[0]` for out-of-range indices.
+- Empty/undefined `data` renders `h-64` "No data available" instead of the chart.
+
+### `.section-header` CSS Class
+
+Defined in `frontend/src/index.css` `@layer utilities`:
+```css
+.section-header {
+  @apply text-sm font-semibold border-l-2 border-primary pl-2 mb-3;
+}
+```
+
+Use for chart section titles (`<h3 className="section-header">`) inside chart containers. `SpendTreemap` applies it automatically. For pages, apply manually to `<h3>` tags inside chart containers (replacing `text-sm font-medium mb-3`).
+
+### Chart Container Class Convention
+
+All chart wrapper `<div>` elements use:
+```
+className="border rounded-xl p-5 bg-card shadow-sm"
+```
+
+Applied on `OverviewPage` and `CategoryPage` chart containers (Sprint A). Replaces the older `border rounded-lg p-4` pattern.
+
+### Sheet Drawer — Supplier Detail Panel Pattern
+
+`SupplierPage` uses `shadcn/ui Sheet` (right-side drawer) for supplier detail. Pattern:
+
+```tsx
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+
+<Sheet open={!!selectedSupplierId} onOpenChange={(open) => { if (!open) setSelectedSupplierId(null) }}>
+  <SheetContent side="right" className="w-[500px] sm:w-[560px] overflow-y-auto p-6">
+    <SheetHeader>
+      <SheetTitle>{selectedSupplier?.canonical_supplier_name ?? ''}</SheetTitle>
+    </SheetHeader>
+    {/* KPI row + charts */}
+  </SheetContent>
+</Sheet>
+```
+
+- Clicking an already-selected table row closes the drawer (toggle via `setSelectedSupplierId(null)`)
+- Detail charts query with `supplier_id` param; render empty state if backend returns `[]`
+
+### FilterBar — Collapsed and Expanded States
+
+`frontend/src/components/dashboard/FilterBar.tsx`
+
+- **Collapsed (default, `expanded=false`):** single flex row with an "Filters [N]" outline button + removable badge pills for each active filter + "Clear all" text link. Active filters as `{ label, onRemove }` objects derived from all `FilterState` fields.
+- **Expanded (`expanded=true`):** full filter UI (all selects/date inputs) with a "Close ↑" ghost button to collapse.
+- State: `const [expanded, setExpanded] = useState(false)` — starts collapsed on every page load.
+- Active pill sources: `date_from`, `date_to`, `business_units[]`, `category_l1s[]`, `supplier_search`, `legal_entities[]`, `currencies[]`, `countries[]`, `abc_segments[]`.

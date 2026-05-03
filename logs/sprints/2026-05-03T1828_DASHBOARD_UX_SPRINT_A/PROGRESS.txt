@@ -173,3 +173,14 @@ US-010 complete: sidebar KPI strip, chart container polish — Sun  3 May 2026 1
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 10
 
+
+## US-011 — CLAUDE.md update: Dashboard UX Sprint A conventions
+- Appended '## Dashboard UX Conventions (Sprint A)' section to CLAUDE.md after the Analytics Foundation section (end of file)
+- Documented: SEMANTIC_COLORS (hex values + when-to-use), KpiCard accentColor values and border mapping, SpendTreemap props and behaviour, SpendBarChart showLabel/clickHint/colors/empty-state props, .section-header class definition and usage
+- Documented: chart container class convention (border rounded-xl p-5 bg-card shadow-sm), Sheet drawer pattern for supplier detail, FilterBar collapsed/expanded state behaviour and active pill sources
+- Note: Tailwind v4 project — semantic colors defined in @theme block in index.css, no tailwind.config.js exists
+
+### [US-011] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 11
+
