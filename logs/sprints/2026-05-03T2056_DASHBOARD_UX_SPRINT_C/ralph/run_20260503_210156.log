@@ -1,0 +1,76 @@
+[2026-05-03 21:01:56] [INFO] Ralph loop starting
+[2026-05-03 21:01:56] [INFO] Created progress file: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Sun  3 May 2026 21:01:56 BST
+PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-03 21:01:56] [INFO] Starting iteration 1
+[2026-05-03 21:01:56] [INFO] Processing story: US-001
+[2026-05-03 21:01:56] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Overview — Tail Spend KPI, clickable charts, concentration line, date context
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Four targeted improvements to the Overview page: (1) replace the weakest KPI (Invoice Count) with Tail Spend %, which is a core procurement diagnostic; (2) wire the supplier bar chart so clicking a supplier name navigates to the Supplier page; (3) wire the category treemap so clicking a category navigates to the Category page; (4) add a concentration stat line below the supplier chart title; (5) add a data freshness date below the page title so users always know what period they are analysing.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/OverviewPage.tsx
+- Add import: import { useNavigate } from 'react-router-dom'
+- Add const navigate = useNavigate() inside the component
+- Replace the Invoice Count KpiCard with: <KpiCard label='Tail Spend' value={overview?.tail_spend_pct ?? 0} valueType='pct' accentColor={overview?.tail_spend_pct != null && overview.tail_spend_pct > 30 ? 'risk' : overview?.tail_spend_pct != null && overview.tail_spend_pct > 15 ? 'amber' : 'green'} benchmarkLabel='% of spend in tail suppliers' />
+- Wire the supplier SpendBarChart: add prop onBarClick={(label) => navigate(`/engagements/${engagementId}/supplier`)} and clickHint={true}. This navigates to the supplier page; no pre-filtering needed.
+- Wire the SpendTreemap: add prop onCellClick={(name) => navigate(`/engagements/${engagementId}/category`)}
+- Add concentration stat: compute top10Spend = supplierData.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0). Compute allSpend = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0). In the supplier chart container, change the title from the existing plain h3 to a div with flex justify-between: left side is the 'Top 10 Suppliers' section-header, right side is a span className='text-xs text-muted-foreground' showing: allSpend > 0 ? `Top 10 = ${((top10Spend/allSpend)*100).toFixed(1)}% of total spend` : ''
+- Add date context: below the h1 'Spend Overview' heading, add: {overview?.data_freshness && <p className='text-sm text-muted-foreground -mt-4'>{formatDate(overview.data_freshness)}</p>}. Import formatDate from @/lib/formatters.
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Overview — Tail Spend KPI, clickable charts, concentration line, date context`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-03 21:03:36] [OK] Story US-001 completed!
+[2026-05-03 21:03:36] [OK] Marked US-001 as passed
+[2026-05-03 21:03:36] [INFO] Logged progress for US-001: PASSED
+[2026-05-03 21:03:36] [STEP] Committing changes...

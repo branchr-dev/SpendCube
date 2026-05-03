@@ -1,0 +1,21 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+# Created: Sun  3 May 2026 21:01:56 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+## US-001 COMPLETE — 2026-05-03
+- Replaced Invoice Count KPI with Tail Spend % (risk/amber/green accent based on >30/>15 thresholds)
+- Added useNavigate; wired supplier bar onBarClick → /supplier page, treemap onCellClick → /category page
+- Added concentration stat div (flex justify-between with section-header title + top10/allSpend %)
+- Added data_freshness date below h1 using formatDate()
+- SpendBarChart required title prop — passed title="" so internal title h3 is suppressed (falsy guard)
+- Build: zero TypeScript errors. Commit: 6d83803
+
+
+---
+
+### [US-001] - 2026-05-03 21:03:36
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+

@@ -1,0 +1,226 @@
+{
+  "project": {
+    "id": "DASHBOARD-UX-C-2026-05",
+    "name": "Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C",
+    "track": "code"
+  },
+  "summary": "Sprint C addresses the critical gaps identified in a systematic end-to-end review against five evaluation criteria (speed to insight, opportunity completeness, analytical depth, data credibility, client readiness). Key changes: Overview gains Tail Spend KPI, clickable charts that navigate to relevant pages, and a concentration stat. Recommendations page gets a hero savings number, priority matrix legend, and a fixed confidence filter position. Supplier table gains payment days colour coding and WC opportunity column. Category page shows top suppliers within the selected L1. Data Quality replaces the score card with a narrative summary strip and fixes the inverted progress bar direction. Payment Terms gains a 100% stacked distribution bar. Sidebar nav is reordered to match the opportunity assessment workflow. All frontend-only.",
+  "decisions": {
+    "tail_spend_replaces_invoice_count": "OverviewData already has tail_spend_pct field. Invoice Count is an operational metric, not a procurement diagnostic. Tail Spend % directly answers a standard category manager question.",
+    "chart_navigation": "Overview supplier bar onBarClick navigates to /supplier page. Treemap onCellClick navigates to /category page. Both use useNavigate() from react-router-dom. No pre-filter state needed — the user lands on the page and can drill in.",
+    "data_freshness_label": "OverviewData.data_freshness field exists in the TypeScript type. If it returns an ISO date string from the backend, format it with formatDate(). If null, omit the label.",
+    "concentration_stat": "Computed client-side from already-fetched supplierData. Top 10 suppliers = sum of top-10 total_spend / total of all supplierData. Displayed as a text line below the supplier bar chart title.",
+    "savings_hero": "Total Identified Savings rendered as a standalone display above the 4-card KPI grid on the Recommendations page. 5xl font-bold text-green-700. This is the most important number on the page and deserves visual primacy.",
+    "priority_matrix_legend": "A simple flex row of colored dot + label pairs rendered below the ScatterChart. One entry per lever in leverSummaries order, using CHART_COLORS[leverIndex]. No new dependency.",
+    "payment_days_colour": "Cells in payment days columns: <30 days bg-rose-50 text-rose-700, 30-44 bg-amber-50 text-amber-700, >=45 no extra class (already good terms). Applied in both SupplierPage table and PaymentTermsPage table.",
+    "category_top_suppliers": "When L1 selected, fetch /cube/by-supplier with params { category_l1: selectedL1 }. Backend may not filter by category — if so, returns all engagement suppliers, still useful as a starting point. Show top 5 by total_spend as a mini table below the L2 bar chart.",
+    "data_quality_narrative": "Replace isolated max-w-xs score card with a full-width summary strip showing counts: X passing, X warnings, X issues. The strip uses coloured counter badges (green/amber/red) and is more scannable than a single score percentage.",
+    "stacked_bar_payment_terms": "Recharts BarChart in horizontal layout with one Bar per bucket, stacked, showing percentage of total spend. No new component — render inline in PaymentTermsPage using recharts directly. The existing bucket vertical bar chart is replaced.",
+    "nav_reorder": "New order matches opportunity assessment workflow: Overview → Recommendations → Category → Supplier → Payment Terms → Quality. Review Workstation stays at bottom.",
+    "selected_bar_highlight": "Add selectedLabel prop to SpendBarChart. When a bar's name matches selectedLabel, render it with a darker/fuller opacity and a 2px border stroke. Other bars get opacity 0.7.",
+    "no_backend_changes": "All frontend-only. Uses existing API endpoints with optional query params that may or may not be supported by the backend."
+  },
+  "context": {
+    "existing_tables": {},
+    "key_files": [
+      "frontend/src/pages/dashboard/OverviewPage.tsx — replace Invoice Count KPI, wire onBarClick + onCellClick, add concentration stat, add data_freshness label",
+      "frontend/src/pages/dashboard/RecommendationsPage.tsx — add hero savings display, add matrix legend, reposition confidence filter, fix sanity check card",
+      "frontend/src/pages/dashboard/SupplierPage.tsx — add concentration banner, payment days colour coding, WC opportunity column",
+      "frontend/src/pages/dashboard/CategoryPage.tsx — fetch top suppliers for selected L1, add selected-bar highlighting",
+      "frontend/src/pages/dashboard/DataQualityPage.tsx — replace score card with narrative summary strip",
+      "frontend/src/pages/dashboard/PaymentTermsPage.tsx — add stacked % bar, add payment days colour coding to table",
+      "frontend/src/components/Layout.tsx — reorder nav items, add date range to sidebar",
+      "frontend/src/components/charts/SpendBarChart.tsx — add selectedLabel prop for bar highlight",
+      "frontend/src/types/index.ts — OverviewData.tail_spend_pct already present, OverviewData.data_freshness already present"
+    ],
+    "patterns_to_follow": [
+      "useNavigate from react-router-dom for programmatic navigation (already used in some pages)",
+      "OverviewData interface already has tail_spend_pct?: number and data_freshness?: string fields",
+      "SpendBarChart already has onBarClick, colors, selectedLabel can be added alongside",
+      "SpendTreemap already has onCellClick prop but OverviewPage does not pass it — just add the prop",
+      "Payment days colour: use className='text-right bg-rose-50 text-rose-700' etc on TableCell",
+      "CHART_COLORS from frontend/src/components/charts/constants.ts for priority matrix legend dots",
+      "Sprint A/B conventions: chart containers 'border rounded-xl p-5 bg-card shadow-sm', section titles 'section-header' class",
+      "formatDate from @/lib/formatters for data_freshness string",
+      "All recharts components (BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer) already imported in various pages — add to import as needed"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Overview — Tail Spend KPI, clickable charts, concentration line, date context",
+      "description": "Four targeted improvements to the Overview page: (1) replace the weakest KPI (Invoice Count) with Tail Spend %, which is a core procurement diagnostic; (2) wire the supplier bar chart so clicking a supplier name navigates to the Supplier page; (3) wire the category treemap so clicking a category navigates to the Category page; (4) add a concentration stat line below the supplier chart title; (5) add a data freshness date below the page title so users always know what period they are analysing.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx",
+        "Add import: import { useNavigate } from 'react-router-dom'",
+        "Add const navigate = useNavigate() inside the component",
+        "Replace the Invoice Count KpiCard with: <KpiCard label='Tail Spend' value={overview?.tail_spend_pct ?? 0} valueType='pct' accentColor={overview?.tail_spend_pct != null && overview.tail_spend_pct > 30 ? 'risk' : overview?.tail_spend_pct != null && overview.tail_spend_pct > 15 ? 'amber' : 'green'} benchmarkLabel='% of spend in tail suppliers' />",
+        "Wire the supplier SpendBarChart: add prop onBarClick={(label) => navigate(`/engagements/${engagementId}/supplier`)} and clickHint={true}. This navigates to the supplier page; no pre-filtering needed.",
+        "Wire the SpendTreemap: add prop onCellClick={(name) => navigate(`/engagements/${engagementId}/category`)}",
+        "Add concentration stat: compute top10Spend = supplierData.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0). Compute allSpend = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0). In the supplier chart container, change the title from the existing plain h3 to a div with flex justify-between: left side is the 'Top 10 Suppliers' section-header, right side is a span className='text-xs text-muted-foreground' showing: allSpend > 0 ? `Top 10 = ${((top10Spend/allSpend)*100).toFixed(1)}% of total spend` : ''",
+        "Add date context: below the h1 'Spend Overview' heading, add: {overview?.data_freshness && <p className='text-sm text-muted-foreground -mt-4'>{formatDate(overview.data_freshness)}</p>}. Import formatDate from @/lib/formatters.",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-03T20:03:36Z"
+    },
+    {
+      "id": "US-002",
+      "title": "SpendBarChart — selectedLabel prop for bar highlight",
+      "description": "Add a selectedLabel prop to SpendBarChart so the currently-selected bar can be visually distinguished from others. When a bar is selected, it renders at full opacity with a 2px white stroke border; other bars render at 0.65 opacity. This is needed by the Category page to confirm which L1 bar is active.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/charts/SpendBarChart.tsx",
+        "Add optional prop selectedLabel?: string to the SpendBarChartProps interface and destructure it in the function signature (default undefined)",
+        "Inside the Bar component's Cell rendering: when colors is provided or selectedLabel is provided, render Cell components for every bar. For each bar: if selectedLabel is set and entry.name === selectedLabel, render <Cell key={...} fill={colors?.[index] ?? color} opacity={1} stroke='#ffffff' strokeWidth={2} />. If selectedLabel is set and entry.name !== selectedLabel, render <Cell key={...} fill={colors?.[index] ?? color} opacity={0.55} />. If selectedLabel is not set and colors is provided, render <Cell key={...} fill={colors[index] ?? color} />.",
+        "When neither colors nor selectedLabel is provided, the Bar renders with its single fill prop as before (no Cell children) — ensure this case still works",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Recommendations — hero savings, matrix legend, repositioned confidence filter, fixed sanity check",
+      "description": "Four fixes to the Recommendations page: (1) make Total Identified Savings the hero number; (2) add a colour legend to the priority matrix; (3) move the confidence filter buttons to sit directly above the recommendation cards section; (4) replace the inconsistent Sanity Check badge with a proper KpiCard.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx",
+        "Hero number: above the 4-card KPI grid, add a div className='text-center py-4 border rounded-xl bg-card shadow-sm': inside render <p className='text-xs text-muted-foreground uppercase tracking-wide mb-1'>Total Identified Savings</p> and <p className='text-5xl font-bold text-green-700'>{formatCurrency(portfolio?.total_identified_savings ?? 0)}</p>. Only render this div when portfolio is defined.",
+        "Replace the 4th KPI card (the Sanity Check div) with a proper KpiCard: <KpiCard label='Sanity Check' value={portfolio?.sanity_check_passed ? 'Passed' : 'Review'} valueType='text' accentColor={portfolio?.sanity_check_passed ? 'green' : 'risk'} />",
+        "Remove the current confidence filter buttons section (the div with flex items-center gap-2 flex-wrap containing the ALL/HIGH/MEDIUM/LOW buttons). These will be added back in a different position below.",
+        "Add a legend below PriorityMatrix and above the savings bar chart: a div className='flex flex-wrap gap-x-4 gap-y-1 px-1': for each entry in leverSummaries (index i), render a span className='flex items-center gap-1.5 text-xs text-muted-foreground': a span className='inline-block w-3 h-3 rounded-full flex-shrink-0' style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}, and the lever name humanized (replace(/_/g,' ')). Only render the legend div when leverSummaries.length > 0.",
+        "Add the confidence filter buttons back immediately above the displayedRecs section (before the space-y-3 div): a div className='flex items-center gap-2 flex-wrap pt-2 border-t': span text 'Filter by confidence:' text-sm text-muted-foreground, then the ALL/HIGH/MEDIUM/LOW buttons as before.",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Supplier table — concentration banner, payment days colour, WC opportunity column",
+      "description": "Three additions to the Supplier page table: (1) a concentration banner above the table showing what percentage of total spend the top N suppliers represent; (2) payment days colour coding on the avg_payment_days cell; (3) a WC opportunity column showing the per-supplier working capital opportunity using the same WACC=8% / target=45-day formula from the Payment Terms page.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx",
+        "Concentration banner: between the search/group-by row and the table, add a div className='flex items-center gap-6 text-sm text-muted-foreground bg-muted/30 rounded-lg px-4 py-2'. Inside, compute: top5Spend = sorted.slice(0,5).reduce((s,r)=>s+(r.total_spend??0),0). top10Spend = sorted.slice(0,10).reduce((s,r)=>s+(r.total_spend??0),0). Render two spans: 'Top 5 suppliers: {formatPct(top5Spend/totalSupplierSpend*100)} of spend' and 'Top 10 suppliers: {formatPct(top10Spend/totalSupplierSpend*100)} of spend'. Guard: only render when totalSupplierSpend > 0 and sorted.length >= 5.",
+        "Add a computeWc helper function at the top of the component (or file): const computeWc = (avgDays: number, spend: number) => avgDays < 45 ? ((45 - avgDays) / 365) * spend * 0.08 : 0",
+        "Add 'WC Opp.' column to the columns array: { key: 'wc_opp', label: 'WC Opp.', align: 'right' }",
+        "In the TableHeader, add a TableHead className='text-right' for 'WC Opp.' after the existing 'Avg Payment Days' column header (update colSpan references too)",
+        "In each sorted TableRow (non-grouped): add a TableCell className='text-right' after avg_payment_days cell: const wc = computeWc(row.avg_payment_days ?? 0, row.total_spend ?? 0); render wc > 0 ? <span className='text-emerald-600 font-medium'>{formatCurrency(wc)}</span> : <span className='text-muted-foreground'>—</span>",
+        "Payment days colour: in the avg_payment_days TableCell, replace the plain className with a dynamic one: avgDays < 30 ? 'text-right font-medium bg-rose-50 text-rose-700' : avgDays < 45 ? 'text-right font-medium bg-amber-50 text-amber-700' : 'text-right'. Apply to both grouped and non-grouped rows.",
+        "Apply the same WC Opp. cell and payment days colouring to grouped supplier rows inside the expandedGroups section",
+        "Update colSpan values in empty-state rows and group header rows to account for the new column (was 7, now 8)",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Supplier drawer — enriched with spend share, WC opportunity, ABC and tail context",
+      "description": "Enrich the supplier detail Sheet drawer with the additional context a category manager needs before a negotiation: spend share percentage, working capital opportunity value, ABC segment chip, and tail spend indicator.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx",
+        "Inside the SheetContent, change the KPI grid from 3 columns to 2 rows of 3: first row keeps Total Spend, Invoice Count, Avg Payment Days. Second row adds three new KpiCards: (1) 'Spend Share' value={totalSupplierSpend > 0 ? (selectedSupplier?.total_spend ?? 0) / totalSupplierSpend * 100 : 0} valueType='pct' (2) 'WC Opportunity' value={computeWc(selectedSupplier?.avg_payment_days ?? 0, selectedSupplier?.total_spend ?? 0)} valueType='currency' accentColor={computeWc(selectedSupplier?.avg_payment_days ?? 0, selectedSupplier?.total_spend ?? 0) > 0 ? 'opportunity' : 'neutral'} (3) 'Segment' value={selectedSupplier?.abc_segment ?? '—'} valueType='text' — use accentColor: A→'opportunity', B→'neutral', C→'neutral'",
+        "Above the KPI grid, just below SheetTitle, add a row of context badges: if selectedSupplier?.parent_company_name exists: <Badge variant='outline' className='text-xs'>{selectedSupplier.parent_company_name}</Badge>. If selectedSupplier?.abc_segment: render <AbcBadge segment={selectedSupplier.abc_segment} />",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Category page — top suppliers within selected L1 + selected bar highlight",
+      "description": "When a category L1 is selected, show the top 5 suppliers in that category as a mini table below the L2 breakdown. This prevents the user having to navigate away to find who they are buying from. Also pass the selectedLabel prop to the L1 bar chart so the active selection is visually confirmed.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx",
+        "Add a useQuery for top suppliers in the selected L1: queryKey ['suppliers-by-category', engagementId, selectedL1], queryFn: () => api.get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { category_l1: selectedL1 } }).then(r => r.data), enabled: !!engagementId && !!selectedL1. Store as topCategorySuppliers: SupplierRow[] (add SupplierRow to imports from @/types).",
+        "After the L2 bar chart section (and before the L3 table, if shown), add a new section when selectedL1Entry is truthy: a div className='border rounded-xl p-5 bg-card shadow-sm'. Title: h3 className='section-header': 'Top Suppliers — {selectedL1}'. Render a compact Table (no pagination) showing the top 5 suppliers from topCategorySuppliers sorted by total_spend desc, sliced to 5. Columns: Supplier Name (font-medium), Total Spend (text-right formatted), Invoice Count (text-right). If topCategorySuppliers.length === 0, show a p className='text-sm text-muted-foreground' 'No supplier data available for this category.'",
+        "Pass selectedLabel={selectedL1 ?? undefined} to the L1 SpendBarChart component. SpendBarChart already has the selectedLabel prop from US-002 of this sprint — this will dim unselected bars and highlight the active one.",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Data Quality — narrative summary strip + inverted progress bar direction",
+      "description": "Replace the isolated small score card with a full-width narrative summary strip that reads like plain language ('6 of 9 checks passing · 2 issues · 1 warning'). Fix the misleading progress bar direction: for issue-type checks, the bar should visually represent the problem percentage, not the inverse.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx",
+        "Replace the max-w-xs Card with an overall score card with a full-width summary strip. Remove the Card entirely. Instead render a div className='flex items-center gap-6 p-4 border rounded-xl bg-card shadow-sm flex-wrap': (1) A primary text block: p className='text-base font-semibold' showing '{passingCount} of {checks.length} checks passing'. (2) Three badge-style counters in a flex gap-3 row: for RED checks: span className='flex items-center gap-1.5 text-sm' with a Circle icon (or just a colored dot div w-3 h-3 rounded-full bg-red-500) and '{redCount} issue{redCount!==1?\"s\":\"\"}' text-rose-700 font-medium. Amber: same pattern bg-amber-500, text-amber-700. Green: bg-green-500, text-green-700. (3) If overall_score >= 80: a Badge className='bg-green-100 text-green-800 border-green-200' 'Good'. Else if >= 50: 'Needs attention' amber. Else 'Review required' red.",
+        "Compute: passingCount = checks.filter(c => c.status === 'GREEN').length. redCount = checks.filter(c => c.status === 'RED').length. amberCount = checks.filter(c => c.status === 'AMBER').length.",
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — fix the progress bar direction. For issue-type checks (missing_*, low_confidence_*, duplicate_transactions, maverick_spend, tail_spend_ratio — i.e., all checks where higher percentage = worse), the progress bar value should represent the problem. Currently value={value_pct} is passed to Progress. For issue checks, the value already represents the problem percentage (e.g., 15% missing category means 15% of rows have this issue) so the bar shows 15% filled — this is actually CORRECT. The confusion was about colour direction, not value direction. The fix is: for GREEN status checks the filled bar should be green (already default), but the container background should be muted. Add a wrapper div with className='mt-2 rounded overflow-hidden bg-muted': then the Progress inside. The green default fill on GREEN checks shows the issue is small, which is correct.",
+        "Remove the old score display divs (text-4xl font-bold scoreColor, 'Overall Quality Score' text, 'Based on N checks' text) since these are replaced by the summary strip",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Payment Terms — 100% stacked distribution bar + payment days colouring in table",
+      "description": "Replace the 4-bucket vertical bar chart (which shows AUD totals) with a 100% stacked horizontal bar showing the percentage distribution across buckets. This makes the composition immediately readable. Also add the same payment days colour coding used on the Supplier page to this table.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx",
+        "Add these recharts imports at the top (add to existing recharts import): BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList — use the ones already available from recharts",
+        "Replace the 'Spend by Payment Terms Bucket' SpendBarChart div with an inline recharts chart. Compute: totalBucketSpend = ptData.reduce((s,r) => s+(r.total_spend??0), 0). Build stackedData = [{ '0-30': pct0_30, '31-60': pct31_60, '61-90': pct61_90, '90+': pct90plus }] where pct values are (row.total_spend/totalBucketSpend*100) for each bucket row. Also compute AUD labels per bucket.",
+        "Render inside a div className='border rounded-xl p-5 bg-card shadow-sm': h3 className='section-header' 'Payment Terms Distribution'. Below that, a ResponsiveContainer width='100%' height={80}: BarChart data={stackedData} layout='vertical'. One Bar per bucket in order ['0-30','31-60','61-90','90+'] with stackId='a'. Colors: '0-30'→'#f43f5e' (rose-500), '31-60'→'#f59e0b' (amber-500), '61-90'→'#10b981' (emerald-500), '90+'→'#3b82f6' (blue-500). Each Bar has a LabelList showing the percentage formatted as '{pct.toFixed(1)}%' only if pct >= 5. XAxis type='number' domain=[0,100] hide. YAxis type='category' hide. Tooltip showing bucket name and formatPct(value) and formatCurrency(aud).",
+        "Add a simple legend below the chart: a flex gap-4 row with 4 items each showing a colored square and the bucket label using the same 4 colors above.",
+        "Add payment days colour coding to the suppliersSorted table: in the Avg Days TableCell, apply dynamic className: avgDays < 30 ? 'text-right font-medium text-rose-700' : avgDays < 45 ? 'text-right font-medium text-amber-700' : 'text-right'",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Layout — nav reorder and engagement date range in sidebar",
+      "description": "Reorder the sidebar navigation to match the opportunity assessment workflow (Overview → Recommendations → Category → Supplier → Payment Terms → Quality). Add an engagement date range line below the total spend KPI in the sidebar so users always know what period they are analysing on every page.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/Layout.tsx",
+        "Reorder the navItems array: [{ to: 'overview', label: 'Overview', icon: BarChart3 }, { to: 'recommendations', label: 'Recommendations', icon: Lightbulb }, { to: 'category', label: 'Category', icon: Tag }, { to: 'supplier', label: 'Supplier', icon: Building2 }, { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard }, { to: 'quality', label: 'Data Quality', icon: ShieldCheck }]",
+        "Extend the sidebarOverview useQuery to also capture data_freshness: already done since sidebarOverview is typed as OverviewData which has data_freshness?: string.",
+        "Below the 'Total Spend' p tag and 'Total Spend' label in the sidebar header, add: {sidebarOverview?.data_freshness && <p className='text-xs text-muted-foreground mt-0.5'>{formatDate(sidebarOverview.data_freshness)}</p>}",
+        "Verify imports: Lightbulb should already be imported in Layout.tsx (check — if not, add it to the lucide-react import). formatDate should already be imported. If not, add import { formatDate } from '@/lib/formatters'.",
+        "Run: cd frontend && npm run build — zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "CLAUDE.md — Sprint C evaluation criteria and conventions",
+      "description": "Document the five evaluation dimensions established in Sprint C and the design decisions made.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — append a '## Dashboard UX Conventions (Sprint C)' section after the Sprint B section",
+        "Document the five evaluation dimensions: Speed to First Insight, Opportunity Completeness, Analytical Depth, Data Credibility, Client Presentation Readiness",
+        "Document: chart navigation pattern (onBarClick/onCellClick → useNavigate), concentration stat formula (top N / total), SpendBarChart selectedLabel prop, payment days colour convention (<30 rose, 30-44 amber, >=45 neutral), Data Quality summary strip pattern, nav order rationale (opportunity assessment workflow)"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {},
+    "expected_counts": {},
+    "checks": [
+      "cd frontend && npm run build — zero TypeScript errors",
+      "Verify OverviewPage renders Tail Spend % KPI (not Invoice Count)",
+      "Verify OverviewData.tail_spend_pct is read (field exists in types/index.ts OverviewData interface)",
+      "Verify sidebar nav order: Overview first, Recommendations second",
+      "Verify SpendBarChart selectedLabel prop dims unselected bars",
+      "Verify RecommendationsPage hero savings renders above KPI grid",
+      "Verify Data Quality page uses summary strip instead of isolated score card",
+      "Verify Payment Terms table has coloured avg days cells",
+      "Verify Supplier table has concentration banner and WC Opp column"
+    ]
+  },
+  "risks": [
+    "The category top-suppliers fetch (/cube/by-supplier?category_l1=X) may return all engagement suppliers if the backend ignores the category_l1 param — guard this: if topCategorySuppliers.length > 50 it is likely unfiltered; show top 5 regardless but do not label the section as category-specific in that case",
+    "SpendBarChart selectedLabel Cell rendering: when selectedLabel is set, ALL bars need Cell children or the rendering will be inconsistent. Ensure the Cell rendering path covers both the colors-provided and colors-not-provided cases",
+    "BarChart stacked layout in PaymentTermsPage: Recharts stacked bar needs all data in a single object { '0-30': val, '31-60': val, ... } passed as data={[stackedRow]}. Ensure ptData is fully loaded before computing stackedData (loadingPt guard)",
+    "Lightbulb icon in Layout.tsx: verify it is already imported from lucide-react in Layout.tsx — if not it must be added",
+    "Data Quality summary strip: the old scoreColor and scoreBorder variables were used by the removed Card — ensure they are also removed to avoid unused variable TypeScript warnings"
+  ],
+  "outOfScope": [
+    "YoY period delta on KPI cards (requires backend to return prior-period data)",
+    "Contract coverage overlay on supplier/category views (no contract data in schema)",
+    "Cross-page filter propagation (clicking a category on Category page pre-filters Supplier page)",
+    "Supplier sparkline column in table",
+    "Benchmarking against industry averages"
+  ]
+}
