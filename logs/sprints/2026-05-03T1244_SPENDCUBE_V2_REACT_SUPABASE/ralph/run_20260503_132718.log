@@ -86,3 +86,76 @@ STORY_COMPLETE: US-001
 [2026-05-03 13:30:00] [OK] Marked US-001 as passed
 [2026-05-03 13:30:00] [INFO] Logged progress for US-001: PASSED
 [2026-05-03 13:30:00] [STEP] Committing changes...
+[2026-05-03 13:30:02] [INFO] Starting iteration 2
+[2026-05-03 13:30:02] [INFO] Processing story: US-002
+[2026-05-03 13:30:02] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Supabase SQL schema migration — all tables with engagement_id and Postgres views
+
+## Project Context
+**Project:** SpendCube v2 — React + Supabase
+**Project ID:** SPENDCUBE-V2-2026-05
+**PRD:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Write the SQL migration that creates the full SpendCube v2 schema in Supabase (Postgres). This is the authoritative database definition for the v2 application. The schema adds engagement_id to all five existing tables, creates two new tables (engagements, pipeline_jobs), and defines five Postgres views that replace the Parquet cube files from v1. Row Level Security policies are added to enforce engagement isolation.
+
+## Acceptance Criteria
+- Create file: supabase/migrations/001_initial_schema.sql
+- Migration creates table engagements: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, client_name TEXT NOT NULL, currency_label TEXT NOT NULL DEFAULT 'AUD', engagement_title TEXT NOT NULL DEFAULT 'Procurement Spend Diagnostic', owner_email TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT false, llm_dry_run BOOLEAN NOT NULL DEFAULT true, recommendations_json TEXT, created_at TIMESTAMPTZ DEFAULT now()
+- Migration creates table pipeline_jobs: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, status TEXT NOT NULL DEFAULT 'queued', stage TEXT, started_at TIMESTAMPTZ DEFAULT now(), completed_at TIMESTAMPTZ, error_message TEXT
+- Migration creates table transactions with all 45 columns from src/models/database.py (transaction_id TEXT PRIMARY KEY, source_system TEXT, source_row_number INTEGER, ingested_at TEXT, last_modified_at TEXT, invoice_number TEXT, document_type TEXT, invoice_date TEXT, raw_supplier_name TEXT, raw_supplier_id TEXT, raw_line_description TEXT, original_amount DOUBLE PRECISION, original_currency TEXT, base_amount DOUBLE PRECISION, base_currency TEXT, fx_rate DOUBLE PRECISION, gl_account TEXT, cost_centre TEXT, raw_payment_terms TEXT, payment_terms_days INTEGER, po_number TEXT, business_unit TEXT, plant_site TEXT, canonical_supplier_id TEXT, canonical_supplier_name TEXT, canonical_supplier_confidence DOUBLE PRECISION, parent_company_id TEXT, parent_company_name TEXT, category_l1 TEXT, category_l2 TEXT, category_l3 TEXT, unspsc_code TEXT, category_confidence DOUBLE PRECISION, category_method TEXT, spend_type TEXT, addressability TEXT, managed_status TEXT, is_credit_note INTEGER, is_intercompany INTEGER, is_tax_line INTEGER, is_duplicate INTEGER, review_status TEXT, reviewer TEXT, review_notes TEXT, review_date TEXT, raw_data TEXT) PLUS engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE
+- Migration creates table supplier_master: canonical_supplier_id TEXT NOT NULL, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, canonical_name TEXT, parent_company_id TEXT, parent_name TEXT, country TEXT, identifiers TEXT, created_at TEXT, updated_at TEXT, PRIMARY KEY (canonical_supplier_id, engagement_id)
+- Migration creates table supplier_match_log: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, raw_supplier_name TEXT, raw_supplier_id TEXT, canonical_supplier_id TEXT, match_method TEXT, confidence DOUBLE PRECISION, evidence TEXT, review_status TEXT, created_at TEXT
+- Migration creates table category_overrides: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, canonical_supplier_id TEXT, gl_account TEXT, override_l1 TEXT, override_l2 TEXT, override_l3 TEXT, unspsc_code TEXT, reviewer TEXT, reason TEXT, created_at TEXT
+- Migration creates table audit_log: id TEXT PRIMARY KEY, engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, table_name TEXT, record_id TEXT, field_name TEXT, old_value TEXT, new_value TEXT, changed_by TEXT, changed_at TEXT
+- Migration creates indexes: CREATE INDEX ON transactions(engagement_id); CREATE INDEX ON transactions(engagement_id, invoice_date); CREATE INDEX ON transactions(engagement_id, canonical_supplier_id); CREATE INDEX ON transactions(engagement_id, category_l1); CREATE INDEX ON supplier_match_log(engagement_id, review_status); CREATE INDEX ON pipeline_jobs(engagement_id, status)
+- Migration creates view v_by_supplier: SELECT engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, AVG(payment_terms_days) AS avg_payment_days FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, canonical_supplier_id, canonical_supplier_name, parent_company_name
+- Migration creates view v_by_category: SELECT engagement_id, category_l1, category_l2, category_l3, unspsc_code, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, category_l1, category_l2, category_l3, unspsc_code
+- Migration creates view v_by_month: SELECT engagement_id, DATE_TRUNC('month', invoice_date::date) AS month, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, DATE_TRUNC('month', invoice_date::date)
+- Migration creates view v_by_bu: SELECT engagement_id, business_unit, cost_centre, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 GROUP BY engagement_id, business_unit, cost_centre
+- Migration creates view v_by_payment_terms: SELECT engagement_id, CASE WHEN payment_terms_days <= 30 THEN '0-30' WHEN payment_terms_days <= 60 THEN '31-60' WHEN payment_terms_days <= 90 THEN '61-90' ELSE '90+' END AS bucket, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend FROM transactions WHERE payment_terms_days IS NOT NULL AND COALESCE(is_intercompany,0)=0 GROUP BY engagement_id, bucket
+- Migration enables RLS: ALTER TABLE engagements ENABLE ROW LEVEL SECURITY; (repeat for all 7 tables)
+- Migration creates RLS SELECT policy on transactions: CREATE POLICY select_own_engagement ON transactions FOR SELECT USING (engagement_id IN (SELECT id FROM engagements WHERE owner_email = auth.jwt()->>'email')). Repeat equivalent policies for INSERT/UPDATE/DELETE on all 7 tables.
+- Create file: supabase/README.md — documents: npx supabase login; npx supabase link --project-ref <ref>; npx supabase db push to apply migration
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/PRD.json
+   - Session: logs/sprints/2026-05-03T1244_SPENDCUBE_V2_REACT_SUPABASE/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Supabase SQL schema migration — all tables with engagement_id and Postgres views`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-03 13:31:26] [OK] Story US-002 completed!
+[2026-05-03 13:31:26] [OK] Marked US-002 as passed
+[2026-05-03 13:31:26] [INFO] Logged progress for US-002: PASSED
+[2026-05-03 13:31:26] [STEP] Committing changes...
