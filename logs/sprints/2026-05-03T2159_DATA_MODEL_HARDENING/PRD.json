@@ -191,7 +191,8 @@
         "Test test_batch_tracking: after ingest_to_raw(), ingestion_batches table contains one row with status='complete', new_rows=5, duplicate_rows=0",
         "All 5 tests must pass: python -m pytest tests/test_incremental_ingestion.py -v"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:23:41Z"
     },
     {
       "id": "US-009",

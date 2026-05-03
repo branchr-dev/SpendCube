@@ -483,3 +483,69 @@ STORY_COMPLETE: US-007
 [2026-05-03 22:21:18] [OK] Marked US-007 as passed
 [2026-05-03 22:21:18] [INFO] Logged progress for US-007: PASSED
 [2026-05-03 22:21:18] [STEP] Committing changes...
+[2026-05-03 22:21:20] [INFO] Starting iteration 8
+[2026-05-03 22:21:20] [INFO] Processing story: US-008
+[2026-05-03 22:21:20] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Add tests for incremental ingestion — dedup, batch tracking, queued rows
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create tests/test_incremental_ingestion.py with five tests covering the new incremental ingestion path. Use in-memory SQLite (same pattern as tests/test_ingest.py) and a minimal synthetic CSV fixture. All tests must pass without any external API calls or network access.
+
+## Acceptance Criteria
+- Create file: tests/test_incremental_ingestion.py
+- Import and use the same pattern as tests/test_ingest.py: pytest fixtures, in-memory SQLite engine, load_config from tests/fixtures or config.yaml
+- Test test_source_row_hash_stability: Ingestor.compute_source_row_hash({'a': 1, 'b': 'x'}) called twice returns the same 64-char hex string both times
+- Test test_source_row_hash_uniqueness: two different dicts produce different hashes
+- Test test_ingest_to_raw_new_rows: ingest a 5-row synthetic CSV; result['new_rows'] == 5 and result['duplicate_rows'] == 0; transactions_raw table contains 5 rows with pipeline_status='queued'
+- Test test_ingest_to_raw_dedup: ingest the same 5-row CSV a second time; result['new_rows'] == 0 and result['duplicate_rows'] == 5; transactions_raw still contains exactly 5 rows
+- Test test_batch_tracking: after ingest_to_raw(), ingestion_batches table contains one row with status='complete', new_rows=5, duplicate_rows=0
+- All 5 tests must pass: python -m pytest tests/test_incremental_ingestion.py -v
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Add tests for incremental ingestion — dedup, batch tracking, queued rows`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+All 5 tests pass and the commit is done.
+
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-03 22:23:41] [OK] Story US-008 completed!
+[2026-05-03 22:23:41] [OK] Marked US-008 as passed
+[2026-05-03 22:23:41] [INFO] Logged progress for US-008: PASSED
+[2026-05-03 22:23:41] [STEP] Committing changes...
