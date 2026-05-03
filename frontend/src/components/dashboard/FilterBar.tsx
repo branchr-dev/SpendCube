@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { SlidersHorizontal, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { FilterState, FilterOptions, defaultFilters } from '@/types/filters'
@@ -72,8 +73,74 @@ interface FilterBarProps {
 }
 
 export default function FilterBar({ filters, onChange, options, showConfidenceFilter = false }: FilterBarProps) {
+  const [expanded, setExpanded] = useState(false)
   const abcOptions: ABCSegment[] = options.abc_segments ?? []
   const catStatusOptions = options.categorisation_statuses ?? []
+
+  const activePills: { label: string; onRemove: () => void }[] = []
+
+  if (filters.date_from) {
+    activePills.push({ label: 'From: ' + filters.date_from, onRemove: () => onChange({ ...filters, date_from: undefined }) })
+  }
+  if (filters.date_to) {
+    activePills.push({ label: 'To: ' + filters.date_to, onRemove: () => onChange({ ...filters, date_to: undefined }) })
+  }
+  for (const bu of filters.business_units) {
+    activePills.push({ label: bu, onRemove: () => onChange({ ...filters, business_units: filters.business_units.filter(v => v !== bu) }) })
+  }
+  for (const cat of filters.category_l1s) {
+    activePills.push({ label: cat, onRemove: () => onChange({ ...filters, category_l1s: filters.category_l1s.filter(v => v !== cat) }) })
+  }
+  if (filters.supplier_search) {
+    activePills.push({ label: 'Supplier: ' + filters.supplier_search, onRemove: () => onChange({ ...filters, supplier_search: '' }) })
+  }
+  for (const le of filters.legal_entities) {
+    activePills.push({ label: le, onRemove: () => onChange({ ...filters, legal_entities: filters.legal_entities.filter(v => v !== le) }) })
+  }
+  for (const cur of filters.currencies) {
+    activePills.push({ label: cur, onRemove: () => onChange({ ...filters, currencies: filters.currencies.filter(v => v !== cur) }) })
+  }
+  for (const country of filters.countries) {
+    activePills.push({ label: country, onRemove: () => onChange({ ...filters, countries: filters.countries.filter(v => v !== country) }) })
+  }
+  for (const seg of filters.abc_segments) {
+    activePills.push({ label: seg, onRemove: () => onChange({ ...filters, abc_segments: filters.abc_segments.filter(v => v !== seg) as ABCSegment[] }) })
+  }
+
+  if (!expanded) {
+    return (
+      <div className="flex items-center gap-2 flex-wrap py-2">
+        <Button variant="outline" size="sm" onClick={() => setExpanded(true)}>
+          <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+          Filters
+          {activePills.length > 0 && (
+            <span className="ml-1 bg-primary text-primary-foreground rounded-full text-xs px-1.5">
+              {activePills.length}
+            </span>
+          )}
+        </Button>
+        {activePills.map((pill, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs rounded-full px-2.5 py-1"
+          >
+            {pill.label}
+            <button onClick={pill.onRemove}>
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        {activePills.length > 0 && (
+          <button
+            className="text-xs text-muted-foreground underline ml-1"
+            onClick={() => onChange(defaultFilters())}
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-wrap items-end gap-3 p-4 bg-muted/30 rounded-lg border">
@@ -234,6 +301,9 @@ export default function FilterBar({ filters, onChange, options, showConfidenceFi
       )}
       <Button variant="outline" size="sm" onClick={() => onChange(defaultFilters())}>
         Clear
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>
+        Close ↑
       </Button>
     </div>
   )
