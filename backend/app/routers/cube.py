@@ -439,3 +439,361 @@ async def get_diagnostics(
     df = get_transactions(src_engine, {"engagement_id": engagement_id})
     diag = DataQualityDiagnostics(df, config)
     return diag.run_all()
+
+
+# ---------------------------------------------------------------------------
+# GET /by-legal-entity
+# ---------------------------------------------------------------------------
+
+@router.get("/by-legal-entity")
+async def get_by_legal_entity(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    where_clauses = [
+        "engagement_id = :eid",
+        "COALESCE(is_intercompany, 0) = 0",
+        "COALESCE(is_tax_line, 0) = 0",
+        "legal_entity IS NOT NULL",
+    ]
+    params: dict = {"eid": engagement_id}
+
+    if date_from:
+        where_clauses.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        where_clauses.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+
+    where_sql = " AND ".join(where_clauses)
+    sql = (
+        f"SELECT legal_entity,"
+        f" COUNT(*) AS transaction_count,"
+        f" SUM(base_amount) AS total_spend,"
+        f" COUNT(DISTINCT canonical_supplier_id) AS supplier_count,"
+        f" COUNT(DISTINCT category_l1) AS category_count"
+        f" FROM transactions WHERE {where_sql}"
+        f" GROUP BY legal_entity"
+        f" ORDER BY total_spend DESC"
+    )
+
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    return [
+        {
+            "legal_entity": r["legal_entity"],
+            "transaction_count": int(r["transaction_count"] or 0),
+            "total_spend": float(r["total_spend"] or 0),
+            "supplier_count": int(r["supplier_count"] or 0),
+            "category_count": int(r["category_count"] or 0),
+        }
+        for r in rows
+    ]
+
+
+# ---------------------------------------------------------------------------
+# GET /by-currency
+# ---------------------------------------------------------------------------
+
+@router.get("/by-currency")
+async def get_by_currency(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    where_clauses = [
+        "engagement_id = :eid",
+        "COALESCE(is_intercompany, 0) = 0",
+        "COALESCE(is_tax_line, 0) = 0",
+    ]
+    params: dict = {"eid": engagement_id}
+
+    if date_from:
+        where_clauses.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        where_clauses.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+
+    where_sql = " AND ".join(where_clauses)
+    sql = (
+        f"SELECT original_currency AS currency,"
+        f" COUNT(*) AS transaction_count,"
+        f" SUM(base_amount) AS total_spend_base,"
+        f" SUM(original_amount) AS total_spend_original,"
+        f" COUNT(DISTINCT canonical_supplier_id) AS supplier_count"
+        f" FROM transactions WHERE {where_sql}"
+        f" GROUP BY original_currency"
+        f" ORDER BY total_spend_base DESC"
+    )
+
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    return [
+        {
+            "currency": r["currency"],
+            "transaction_count": int(r["transaction_count"] or 0),
+            "total_spend_base": float(r["total_spend_base"] or 0),
+            "total_spend_original": float(r["total_spend_original"] or 0) if r["total_spend_original"] is not None else None,
+            "supplier_count": int(r["supplier_count"] or 0),
+        }
+        for r in rows
+    ]
+
+
+# ---------------------------------------------------------------------------
+# GET /by-country
+# ---------------------------------------------------------------------------
+
+@router.get("/by-country")
+async def get_by_country(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    where_clauses = [
+        "engagement_id = :eid",
+        "COALESCE(is_intercompany, 0) = 0",
+        "COALESCE(is_tax_line, 0) = 0",
+        "vendor_country IS NOT NULL",
+    ]
+    params: dict = {"eid": engagement_id}
+
+    if date_from:
+        where_clauses.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        where_clauses.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+
+    where_sql = " AND ".join(where_clauses)
+    sql = (
+        f"SELECT vendor_country AS country,"
+        f" 'vendor' AS country_type,"
+        f" COUNT(*) AS transaction_count,"
+        f" SUM(base_amount) AS total_spend,"
+        f" COUNT(DISTINCT canonical_supplier_id) AS supplier_count"
+        f" FROM transactions WHERE {where_sql}"
+        f" GROUP BY vendor_country"
+        f" ORDER BY total_spend DESC"
+    )
+
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    return [
+        {
+            "country": r["country"],
+            "country_type": r["country_type"],
+            "transaction_count": int(r["transaction_count"] or 0),
+            "total_spend": float(r["total_spend"] or 0),
+            "supplier_count": int(r["supplier_count"] or 0),
+        }
+        for r in rows
+    ]
+
+
+# ---------------------------------------------------------------------------
+# GET /abc-analysis
+# ---------------------------------------------------------------------------
+
+@router.get("/abc-analysis")
+async def get_abc_analysis(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    where_clauses = [
+        "engagement_id = :eid",
+        "COALESCE(is_intercompany, 0) = 0",
+        "COALESCE(is_tax_line, 0) = 0",
+    ]
+    params: dict = {"eid": engagement_id}
+
+    if date_from:
+        where_clauses.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        where_clauses.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+
+    where_sql = " AND ".join(where_clauses)
+    sql = (
+        f"SELECT canonical_supplier_id, canonical_supplier_name,"
+        f" SUM(base_amount) AS total_spend,"
+        f" COUNT(*) AS transaction_count"
+        f" FROM transactions WHERE {where_sql}"
+        f" GROUP BY canonical_supplier_id, canonical_supplier_name"
+        f" ORDER BY total_spend DESC"
+    )
+
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    if not rows:
+        return []
+
+    grand_total = sum(float(r["total_spend"] or 0) for r in rows)
+    result = []
+    cumulative = 0.0
+    for r in rows:
+        spend = float(r["total_spend"] or 0)
+        cumulative += spend
+        cumulative_pct = cumulative / grand_total if grand_total else 0.0
+        if cumulative_pct <= 0.80:
+            abc_segment = "A"
+        elif cumulative_pct <= 0.95:
+            abc_segment = "B"
+        else:
+            abc_segment = "C"
+        result.append(
+            {
+                "canonical_supplier_id": r["canonical_supplier_id"],
+                "canonical_supplier_name": r["canonical_supplier_name"],
+                "total_spend": spend,
+                "transaction_count": int(r["transaction_count"] or 0),
+                "cumulative_spend_pct": round(cumulative_pct, 4),
+                "abc_segment": abc_segment,
+            }
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# GET /categorisation-quality
+# ---------------------------------------------------------------------------
+
+@router.get("/categorisation-quality")
+async def get_categorisation_quality(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    base_where = ["engagement_id = :eid"]
+    params: dict = {"eid": engagement_id}
+
+    if date_from:
+        base_where.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        base_where.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+
+    base_where_sql = " AND ".join(base_where)
+
+    with engine.connect() as conn:
+        totals = conn.execute(
+            text(
+                f"SELECT"
+                f" COUNT(*) AS total_transactions,"
+                f" SUM(CASE WHEN category_confidence >= 0.60 THEN 1 ELSE 0 END) AS categorised_count,"
+                f" SUM(CASE WHEN category_confidence < 0.60 OR category_confidence IS NULL THEN 1 ELSE 0 END) AS uncategorised_count"
+                f" FROM transactions WHERE {base_where_sql}"
+            ),
+            params,
+        ).mappings().first()
+
+        by_method_rows = conn.execute(
+            text(
+                f"SELECT category_method AS method,"
+                f" COUNT(*) AS count,"
+                f" SUM(base_amount) AS spend,"
+                f" AVG(category_confidence) AS avg_confidence"
+                f" FROM transactions WHERE {base_where_sql}"
+                f" AND category_method IS NOT NULL"
+                f" GROUP BY category_method"
+                f" ORDER BY spend DESC"
+            ),
+            params,
+        ).mappings().all()
+
+        by_band_rows = conn.execute(
+            text(
+                f"SELECT"
+                f" CASE"
+                f"  WHEN category_confidence >= 0.85 THEN 'HIGH'"
+                f"  WHEN category_confidence >= 0.60 THEN 'MEDIUM'"
+                f"  ELSE 'LOW'"
+                f" END AS band,"
+                f" COUNT(*) AS count,"
+                f" SUM(base_amount) AS spend"
+                f" FROM transactions WHERE {base_where_sql}"
+                f" AND category_confidence IS NOT NULL"
+                f" GROUP BY band"
+                f" ORDER BY band"
+            ),
+            params,
+        ).mappings().all()
+
+        backlog_rows = conn.execute(
+            text(
+                f"SELECT transaction_id, raw_supplier_name, base_amount,"
+                f" category_l1, category_confidence"
+                f" FROM transactions WHERE {base_where_sql}"
+                f" AND (category_confidence < 0.60 OR category_confidence IS NULL)"
+                f" ORDER BY ABS(base_amount) DESC"
+                f" LIMIT 50"
+            ),
+            params,
+        ).mappings().all()
+
+    total = int(totals["total_transactions"] or 0)
+    categorised = int(totals["categorised_count"] or 0)
+    uncategorised = int(totals["uncategorised_count"] or 0)
+
+    return {
+        "total_transactions": total,
+        "categorised_count": categorised,
+        "uncategorised_count": uncategorised,
+        "categorised_pct": round(categorised / total, 4) if total else 0.0,
+        "by_method": [
+            {
+                "method": r["method"],
+                "count": int(r["count"] or 0),
+                "spend": float(r["spend"] or 0),
+                "avg_confidence": round(float(r["avg_confidence"]), 4) if r["avg_confidence"] is not None else None,
+            }
+            for r in by_method_rows
+        ],
+        "by_confidence_band": [
+            {
+                "band": r["band"],
+                "count": int(r["count"] or 0),
+                "spend": float(r["spend"] or 0),
+            }
+            for r in by_band_rows
+        ],
+        "low_confidence_backlog": [
+            {
+                "transaction_id": r["transaction_id"],
+                "raw_supplier_name": r["raw_supplier_name"],
+                "base_amount": float(r["base_amount"] or 0),
+                "category_l1": r["category_l1"],
+                "category_confidence": float(r["category_confidence"]) if r["category_confidence"] is not None else None,
+            }
+            for r in backlog_rows
+        ],
+    }
