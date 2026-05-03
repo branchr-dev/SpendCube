@@ -81,3 +81,27 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+## US-006 Complete — 2026-05-03
+
+### Supplier page parent company grouping
+
+- Added `groupByParent` boolean state and `expandedGroups` Set state
+- Added `toggleGroup` helper function
+- Added `groupedData` useMemo that builds a Map<groupKey, {rows, totalSpend}> from sorted rows; '__independent__' always sorts last
+- Added "Group by Parent" / "Show All" Button with Building2 icon in toolbar next to search input
+- Flat list renders unchanged when groupByParent=false
+- Grouped view renders collapsible group header TableRows (bg-muted/40, cursor-pointer) with ChevronRight/ChevronDown, display name, total spend, supplier count
+- Expanded group rows get pl-8 indent on first column
+- Search filters before grouping so narrowing works within groups
+- All groups start collapsed (empty Set)
+- Build: zero TypeScript errors ✓
+- Committed: 1223821
+
+
+---
+
+### [US-006] - 2026-05-03 19:35:15
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+

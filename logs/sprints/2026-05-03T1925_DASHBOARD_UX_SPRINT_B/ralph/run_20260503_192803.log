@@ -338,3 +338,69 @@ STORY_COMPLETE: US-005
 [2026-05-03 19:33:50] [OK] Marked US-005 as passed
 [2026-05-03 19:33:50] [INFO] Logged progress for US-005: PASSED
 [2026-05-03 19:33:50] [STEP] Committing changes...
+[2026-05-03 19:33:52] [INFO] Starting iteration 6
+[2026-05-03 19:33:52] [INFO] Processing story: US-006
+[2026-05-03 19:33:53] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Supplier page — parent company grouping
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Group the supplier table by parent_company_name to reveal consolidated enterprise spend. Each group is a collapsible header row showing the parent name, total group spend, and subsidiary count. Suppliers with no parent form an 'Independent' group rendered at the bottom. Clicking a group header expands/collapses its supplier rows.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx
+- Add state: const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set()). Toggle: const toggleGroup = (g: string) => setExpandedGroups(prev => { const n = new Set(prev); n.has(g) ? n.delete(g) : n.add(g); return n; })
+- Add a state: const [groupByParent, setGroupByParent] = useState(false). Add a toggle button in the toolbar area above the table (next to the search input): Button variant='outline' size='sm' onClick={() => setGroupByParent(p => !p)} — label 'Group by Parent' when false, 'Show All' when true. Use Building2 icon from lucide-react.
+- When groupByParent is false: render the table exactly as it is now (sorted flat list).
+- When groupByParent is true: compute groups from the sorted array. Group key = row.parent_company_name ?? '__independent__'. Build a Map<string, { rows: SupplierRow[], totalSpend: number }>. Sort groups by totalSpend desc. The '__independent__' group always appears last.
+- Render the table with group headers interleaved. For each group: (1) A TableRow acting as a group header with className='bg-muted/40 cursor-pointer hover:bg-muted/60' onClick={() => toggleGroup(groupKey)}. This row spans all columns (or uses colSpan). Show: ChevronRight/ChevronDown icon, group display name (parent_company_name or 'Independent Suppliers'), group total spend formatted, supplier count 'N suppliers'. (2) If expandedGroups.has(groupKey): render the individual supplier rows for that group as normal TableRow entries with a left indent: TableCell gets pl-8 on the first column.
+- All groups start collapsed (expandedGroups is empty Set initially).
+- The search filter still works — filter the rows before grouping so search narrows within groups.
+- Import ChevronRight, ChevronDown from lucide-react.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Supplier page — parent company grouping`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-03 19:35:15] [OK] Story US-006 completed!
+[2026-05-03 19:35:15] [OK] Marked US-006 as passed
+[2026-05-03 19:35:15] [INFO] Logged progress for US-006: PASSED
+[2026-05-03 19:35:15] [STEP] Committing changes...
