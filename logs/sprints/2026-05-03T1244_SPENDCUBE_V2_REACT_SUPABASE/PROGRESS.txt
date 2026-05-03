@@ -365,3 +365,25 @@ Story completed successfully by Ralph loop iteration 11
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 12
 
+---
+
+### US-013 — Data Quality Scorecard and Recommendations Pages
+
+**What was created:**
+- `frontend/src/components/dashboard/DiagnosticsCheckCard.tsx` — compact Card with colored left border (border-l-4 + conditional Tailwind color), status Badge with GREEN/AMBER/RED inline color classes, humanized check_name, value_pct formatted as percentage, muted description text
+- `frontend/src/pages/dashboard/DataQualityPage.tsx` — fetches /cube/diagnostics (returns dict keyed by check name, with `pct` field as 0–100 percentage); transforms to array; computes overall_score (GREEN=100, AMBER=50, RED=0); renders a colored score Card (border-l-4 + text color) + 3×3 grid of DiagnosticsCheckCard; handles INFO/WARN/ALERT → GREEN/AMBER/RED normalization
+- `frontend/src/components/dashboard/RecommendationCard.tsx` — Card with type Badge + confidence Badge (colored), large estimated_impact_aud in green; action text; Collapsible "Calculation Basis" table (Baseline Spend, Addressability, Addressable Baseline, Saving Rate, Estimated Saving) + italic narrative
+- `frontend/src/pages/dashboard/RecommendationsPage.tsx` — fetches GET /recommendations; 404 shows empty state with "Run Recommendations Engine" button (POST /run via useMutation, invalidates query on success); renders portfolio summary KpiCards × 3 + sanity check Badge; confidence toggle buttons (ALL/HIGH/MEDIUM/LOW); Tabs by lever type with RecommendationCard list sorted by impact DESC; Export to Excel using xlsx package
+- `frontend/src/App.tsx` — replaced PlaceholderPage for quality and recommendations routes with the new page components
+
+**Key learnings:**
+- Diagnostics API (`/cube/diagnostics`) returns a plain dict keyed by check name, not an array — transform via `Object.entries()` on the frontend
+- Backend `pct` field is already 0–100 (computed as `missing / total * 100`), so call `formatPct(pct)` directly without multiplying
+- `negative_reversal_lines` check uses INFO/WARN/ALERT status instead of GREEN/AMBER/RED — map to normalized colors in the page
+- `savings_as_pct_of_spend` from PortfolioSummary is a fraction (0–1); multiply by 100 before passing to KpiCard `valueType="pct"`
+- `addressability_pct` and `saving_pct` on Recommendation are fractions (0–1) per CLAUDE.md; spec says `formatPct(addressability_pct)` — implemented as-is per spec
+- Excel export uses `xlsx` v0.18.5 (SheetJS Community) — already in package.json; `XLSX.writeFile()` triggers browser download
+- KpiCard has no color prop — colored overall score uses a custom Card with `border-l-4` and conditional text color class instead
+- Tabs defaultValue must be the first leverTab string; tabs only render if leverTabs.length > 0
+- Build: `npm run build` passes with 0 TypeScript errors (1,468 kB bundle, chunk size warning is non-breaking)
+
