@@ -449,6 +449,19 @@ export default function SupplierPage() {
             <SheetTitle>{selectedSupplier?.canonical_supplier_name ?? ''}</SheetTitle>
           </SheetHeader>
 
+          {(selectedSupplier?.parent_company_name || selectedSupplier?.abc_segment) && (
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              {selectedSupplier?.parent_company_name && (
+                <Badge variant="outline" className="text-xs">
+                  {selectedSupplier.parent_company_name}
+                </Badge>
+              )}
+              {selectedSupplier?.abc_segment && (
+                <AbcBadge segment={selectedSupplier.abc_segment} />
+              )}
+            </div>
+          )}
+
           <div className="mt-4 space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <KpiCard
@@ -465,6 +478,39 @@ export default function SupplierPage() {
                 label="Avg Payment Days"
                 value={selectedSupplier?.avg_payment_days ?? 0}
                 valueType="number"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <KpiCard
+                label="Spend Share"
+                value={
+                  totalSupplierSpend > 0
+                    ? ((selectedSupplier?.total_spend ?? 0) / totalSupplierSpend) * 100
+                    : 0
+                }
+                valueType="pct"
+              />
+              <KpiCard
+                label="WC Opportunity"
+                value={computeWc(
+                  selectedSupplier?.avg_payment_days ?? 0,
+                  selectedSupplier?.total_spend ?? 0,
+                )}
+                valueType="currency"
+                accentColor={
+                  computeWc(
+                    selectedSupplier?.avg_payment_days ?? 0,
+                    selectedSupplier?.total_spend ?? 0,
+                  ) > 0
+                    ? 'opportunity'
+                    : 'neutral'
+                }
+              />
+              <KpiCard
+                label="Segment"
+                value={selectedSupplier?.abc_segment ?? '—'}
+                valueType="text"
+                accentColor={selectedSupplier?.abc_segment === 'A' ? 'opportunity' : 'neutral'}
               />
             </div>
 
