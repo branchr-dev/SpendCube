@@ -270,3 +270,72 @@ STORY_COMPLETE: US-004
 [2026-05-03 18:37:44] [OK] Marked US-004 as passed
 [2026-05-03 18:37:44] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 18:37:44] [STEP] Committing changes...
+[2026-05-03 18:37:47] [INFO] Starting iteration 5
+[2026-05-03 18:37:47] [INFO] Processing story: US-005
+[2026-05-03 18:37:47] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Overview page — treemap, signal badges, enriched KPI cards
+
+## Project Context
+**Project:** Dashboard UX Sprint A — Visual System & Core Cockpits
+**Project ID:** DASHBOARD-UX-A-2026-05
+**PRD:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Overhaul the Overview page: replace the category pie chart with SpendTreemap, add three signal badges linking to WC opportunity/recommendations/data issues, apply accentColor to Maverick Spend KPI card based on risk level, and add spend share % to the supplier bar chart labels.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/OverviewPage.tsx
+- Import SpendTreemap from @/components/charts and CHART_COLORS from @/components/charts/constants
+- Replace the SpendPieChart in the col-span-2 grid cell with SpendTreemap. Pass data as categoryPieData mapped to include a color per entry: categoryPieData.map((d, i) => ({ ...d, color: CHART_COLORS[i % CHART_COLORS.length] })). Pass title='Spend by Category' and valueFormatter
+- Add a useQuery for payment terms: queryKey ['pt-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/cube/by-payment-terms, enabled: !!engagementId. Compute totalWcOpportunity = ptData.reduce((s,r) => s + (r.wc_opportunity_aud ?? 0), 0)
+- Add a useQuery for recommendations: queryKey ['rec-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/recommendations with retry: false. Extract recCount = recData?.recommendations?.length ?? 0. Handle 404 gracefully (recCount stays 0).
+- Add a useQuery for diagnostics: queryKey ['diag-overview', engagementId], queryFn fetches /api/engagements/${engagementId}/cube/diagnostics. Compute redCount = count of checks where status === 'RED' or status === 'ALERT'
+- Add a signal badges row between the KPI cards grid and the area chart. Render three clickable card-badges using Link from react-router-dom: (1) Link to='payment-terms': DollarSign icon text-emerald-600, label 'WC Opportunity', value formatCurrency(totalWcOpportunity). (2) Link to='recommendations': Lightbulb icon text-blue-600, label 'Recommendations', value recCount or '—'. (3) Link to='quality': AlertTriangle icon, color text-rose-600 if redCount>0 else text-slate-400, label 'Data Issues', value redCount. Each badge is a div with className='flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer'
+- Update Maverick Spend KPI card: add accentColor prop dynamically — if maverick_spend_pct > 25 use 'risk', if > 10 use 'amber', else use 'green'
+- Update Total Spend KPI card: add accentColor='neutral'
+- Import DollarSign, Lightbulb, AlertTriangle from lucide-react. Import Link from react-router-dom.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/PRD.json
+   - Session: logs/sprints/2026-05-03T1828_DASHBOARD_UX_SPRINT_A/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Overview page — treemap, signal badges, enriched KPI cards`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+Build passes with zero TypeScript errors. The OverviewPage now has SpendTreemap replacing the pie chart, three signal badge links (WC Opportunity, Recommendations, Data Issues) between the KPI grid and area chart, and dynamic `accentColor` on the Maverick Spend and Total Spend KPI cards.
+
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 18:39:20] [OK] Story US-005 completed!
+[2026-05-03 18:39:21] [OK] Marked US-005 as passed
+[2026-05-03 18:39:21] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 18:39:21] [STEP] Committing changes...

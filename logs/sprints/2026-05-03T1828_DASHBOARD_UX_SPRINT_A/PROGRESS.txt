@@ -81,3 +81,18 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005 — Overview page: treemap, signal badges, enriched KPI cards
+- Replaced SpendPieChart with SpendTreemap in col-span-2 grid cell; data mapped with CHART_COLORS per entry
+- Added 3 useQuery hooks: payment-terms (WC opportunity), recommendations (404-safe), diagnostics (RED count)
+- Added signal badges row (WC Opportunity, Recommendations, Data Issues) between KPI grid and area chart, using Link from react-router-dom
+- Applied dynamic accentColor to Maverick Spend KPI card (risk/>25%, amber/>10%, green otherwise)
+- Applied accentColor='neutral' to Total Spend KPI card
+- Build: zero TypeScript errors, clean vite build
+
+---
+
+### [US-005] - 2026-05-03 18:39:21
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
