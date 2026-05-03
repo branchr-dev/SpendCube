@@ -289,3 +289,66 @@ STORY_COMPLETE: US-004
 [2026-05-03 22:15:15] [OK] Marked US-004 as passed
 [2026-05-03 22:15:15] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 22:15:15] [STEP] Committing changes...
+[2026-05-03 22:15:17] [INFO] Starting iteration 5
+[2026-05-03 22:15:17] [INFO] Processing story: US-005
+[2026-05-03 22:15:17] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Add PgvectorEmbeddingStore to supplier embeddings — replace pickle in production
+
+## Project Context
+**Project:** Data Model Hardening — Incremental Ingestion & pgvector
+**Project ID:** DATA-MODEL-HARDENING-2026-05
+**PRD:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Edit src/suppliers/embeddings.py to add a PgvectorEmbeddingStore class that uses the supplier_embeddings Postgres table as a persistent embedding cache. Modify EmbeddingMatcher.encode() to use the pgvector store when a Postgres engine is available, falling back to the existing pickle cache when running against SQLite. The external interface of EmbeddingMatcher is unchanged.
+
+## Acceptance Criteria
+- Edit file: src/suppliers/embeddings.py
+- Add class PgvectorEmbeddingStore at the top of the file (before EmbeddingMatcher) with: __init__(self, engine, engagement_id: str), is_available(self) -> bool (returns True only if engine is Postgres and pgvector extension is present — check with try/except SELECT 1::vector), get(self, names: list[str]) -> dict[str, np.ndarray] (queries supplier_embeddings WHERE normalised_name IN (...) AND engagement_id = ..., returns dict of name -> numpy array), store(self, name_vector_pairs: list[tuple[str, np.ndarray]]) -> None (upserts to supplier_embeddings using INSERT ... ON CONFLICT (engagement_id, normalised_name) DO NOTHING; inserts in chunks of 500)
+- Add optional parameter pgvector_store: PgvectorEmbeddingStore = None to EmbeddingMatcher.__init__()
+- Modify EmbeddingMatcher.encode() to: if self._pgvector_store is not None and self._pgvector_store.is_available(), check pgvector store first for cached names; encode only uncached names in batch; store new name-vector pairs to pgvector store; still update the in-memory dict cache as before
+- When pgvector_store is None (default), behaviour is identical to the current implementation — pickle cache only
+- Verify: python -m pytest tests/ -v -k supplier -- all existing supplier tests pass
+- Verify: python -c "from src.suppliers.embeddings import PgvectorEmbeddingStore, EmbeddingMatcher; print('import OK')"
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/PRD.json
+   - Session: logs/sprints/2026-05-03T2159_DATA_MODEL_HARDENING/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Add PgvectorEmbeddingStore to supplier embeddings — replace pickle in production`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 22:17:14] [OK] Story US-005 completed!
+[2026-05-03 22:17:14] [OK] Marked US-005 as passed
+[2026-05-03 22:17:14] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 22:17:14] [STEP] Committing changes...

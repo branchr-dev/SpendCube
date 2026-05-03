@@ -56,3 +56,24 @@ Key design decisions:
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+---
+
+## US-005 COMPLETE — 2026-05-03
+Added PgvectorEmbeddingStore class to src/suppliers/embeddings.py and wired it into EmbeddingMatcher.encode().
+
+Key design decisions:
+- PgvectorEmbeddingStore.is_available() caches result in self._available after first probe — avoids repeated DB round-trips per encode() call.
+- get() uses parameterised IN clause (n0, n1, ...) to avoid SQL injection; fetches from supplier_embeddings filtered by both engagement_id and normalised_name.
+- store() inserts in chunks of 500; uses ON CONFLICT (engagement_id, normalised_name) DO NOTHING — safe to re-run.
+- encode() pgvector path: load pg hits → encode remaining → store new to pgvector → save pickle cache. The pickle is still updated so it stays warm for SQLite/offline sessions.
+- When pgvector_store=None (default), encode() behaviour is byte-for-byte identical to the original implementation.
+- All 51 supplier tests pass unchanged ✓; import OK ✓
+
+
+---
+
+### [US-005] - 2026-05-03 22:17:14
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

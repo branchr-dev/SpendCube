@@ -139,7 +139,8 @@
         "Verify: python -m pytest tests/ -v -k supplier -- all existing supplier tests pass",
         "Verify: python -c \"from src.suppliers.embeddings import PgvectorEmbeddingStore, EmbeddingMatcher; print('import OK')\""
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T21:17:14Z"
     },
     {
       "id": "US-006",
