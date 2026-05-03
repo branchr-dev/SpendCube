@@ -107,7 +107,8 @@
         "Edit file: frontend/src/types/filters.ts — update defaultFilters() to initialise new array fields as empty arrays and min_confidence as undefined",
         "Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T14:46:54Z"
     },
     {
       "id": "US-004",

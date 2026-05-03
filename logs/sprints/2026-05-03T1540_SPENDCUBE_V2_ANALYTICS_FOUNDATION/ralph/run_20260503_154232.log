@@ -151,3 +151,73 @@ STORY_COMPLETE: US-002
 [2026-05-03 15:45:51] [OK] Marked US-002 as passed
 [2026-05-03 15:45:51] [INFO] Logged progress for US-002: PASSED
 [2026-05-03 15:45:51] [STEP] Committing changes...
+[2026-05-03 15:45:53] [INFO] Starting iteration 3
+[2026-05-03 15:45:53] [INFO] Processing story: US-003
+[2026-05-03 15:45:53] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: TypeScript — flexible Category type, extended FilterState, and new interfaces
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Extend the TypeScript type system with a flexible Category tree interface (not hardcoded to L1/L2/L3), expand FilterState with analytics-critical dimensions (legal entity, currency, country, categorisation status, ABC segment, confidence threshold), and add interfaces for all new response types from the US-002 endpoints. All existing interfaces are preserved.
+
+## Acceptance Criteria
+- Edit file: frontend/src/types/index.ts — add new interfaces WITHOUT removing any existing ones
+- Add interface Category: { id?: string; category_id: string; parent_category_id?: string | null; category_level: number; category_name: string; taxonomy_version?: string; is_active?: boolean; mapping_confidence?: number; mapping_source?: string; children?: Category[] }
+- Add interface LegalEntity: { id?: string; legal_entity_code: string; legal_entity_name: string; country?: string; currency?: string }
+- Add interface PaymentTermMapping: { id?: string; raw_payment_term: string; harmonised_payment_term?: string; payment_term_days?: number; discount_percent?: number; discount_days?: number; has_early_payment_discount?: boolean; confidence_score?: number }
+- Add type ABCSegment = 'A' | 'B' | 'C'
+- Add interface ABCRow: { canonical_supplier_id: string; canonical_supplier_name?: string; total_spend: number; transaction_count: number; cumulative_spend_pct: number; abc_segment: ABCSegment }
+- Add interface LegalEntityRow: { legal_entity: string; transaction_count: number; total_spend: number; supplier_count: number; category_count: number }
+- Add interface CurrencyRow: { currency: string; transaction_count: number; total_spend_base: number; total_spend_original: number; supplier_count: number }
+- Add interface CountryRow: { country: string; country_type: string; transaction_count: number; total_spend: number; supplier_count: number }
+- Add interface CategoryQualityReport: { total_transactions: number; categorised_count: number; uncategorised_count: number; categorised_pct: number; by_method: {method: string; count: number; spend: number; avg_confidence: number}[]; by_confidence_band: {band: string; count: number; spend: number}[]; low_confidence_backlog: {transaction_id: string; raw_supplier_name?: string; base_amount: number; category_l1?: string; category_confidence?: number}[] }
+- Edit file: frontend/src/types/filters.ts — expand FilterState interface to add: legal_entities: string[]; currencies: string[]; countries: string[]; categorisation_statuses: string[]; abc_segments: ABCSegment[]; min_confidence?: number. Import ABCSegment from types/index.ts
+- Edit file: frontend/src/types/filters.ts — expand FilterOptions interface to add: legal_entities: string[]; currencies: string[]; countries: string[]
+- Edit file: frontend/src/types/filters.ts — update defaultFilters() to initialise new array fields as empty arrays and min_confidence as undefined
+- Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - TypeScript — flexible Category type, extended FilterState, and new interfaces`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-03 15:46:54] [OK] Story US-003 completed!
+[2026-05-03 15:46:54] [OK] Marked US-003 as passed
+[2026-05-03 15:46:54] [INFO] Logged progress for US-003: PASSED
+[2026-05-03 15:46:54] [STEP] Committing changes...
