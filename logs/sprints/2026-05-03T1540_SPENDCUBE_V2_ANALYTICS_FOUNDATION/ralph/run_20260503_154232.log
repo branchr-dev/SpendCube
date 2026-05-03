@@ -1,0 +1,88 @@
+[2026-05-03 15:42:32] [INFO] Ralph loop starting
+[2026-05-03 15:42:32] [INFO] Created progress file: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Sun  3 May 2026 15:42:32 BST
+PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-03 15:42:32] [INFO] Starting iteration 1
+[2026-05-03 15:42:32] [INFO] Processing story: US-001
+[2026-05-03 15:42:32] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: SQL schema extension — analytics fields, reference tables, and new views
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add the 12 analytics-critical columns missing from the transactions table, create three new reference tables (categories, legal_entities, payment_term_mappings), and add four new aggregation views (v_by_legal_entity, v_by_currency, v_by_country, v_abc_analysis). This migration is purely additive — all new columns are nullable and the existing 001 migration is not modified.
+
+## Acceptance Criteria
+- Create file: supabase/migrations/002_analytics_extensions.sql
+- Migration adds to transactions table (all nullable): ALTER TABLE transactions ADD COLUMN IF NOT EXISTS legal_entity TEXT; ADD COLUMN IF NOT EXISTS vendor_country TEXT; ADD COLUMN IF NOT EXISTS plant_country TEXT; ADD COLUMN IF NOT EXISTS categorisation_status TEXT DEFAULT 'uncategorised'; ADD COLUMN IF NOT EXISTS manual_override_flag INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS ai_classification_flag INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS harmonised_payment_term TEXT; ADD COLUMN IF NOT EXISTS discount_percent DOUBLE PRECISION DEFAULT 0; ADD COLUMN IF NOT EXISTS discount_days INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS has_early_payment_discount INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS payment_term_confidence DOUBLE PRECISION; ADD COLUMN IF NOT EXISTS abc_segment TEXT
+- Migration creates table categories: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, category_id TEXT NOT NULL, parent_category_id TEXT, category_level INTEGER NOT NULL DEFAULT 1, category_name TEXT NOT NULL, taxonomy_version TEXT NOT NULL DEFAULT 'v1', is_active BOOLEAN NOT NULL DEFAULT true, mapping_confidence DOUBLE PRECISION, mapping_source TEXT, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, category_id, taxonomy_version).
+- Migration creates table legal_entities: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, legal_entity_code TEXT NOT NULL, legal_entity_name TEXT NOT NULL, country TEXT, currency TEXT, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, legal_entity_code).
+- Migration creates table payment_term_mappings: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, raw_payment_term TEXT NOT NULL, harmonised_payment_term TEXT, payment_term_days INTEGER, discount_percent DOUBLE PRECISION DEFAULT 0, discount_days INTEGER DEFAULT 0, has_early_payment_discount BOOLEAN DEFAULT false, confidence_score DOUBLE PRECISION, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, raw_payment_term).
+- Migration creates indexes: CREATE INDEX IF NOT EXISTS idx_transactions_legal_entity ON transactions(engagement_id, legal_entity); CREATE INDEX IF NOT EXISTS idx_transactions_vendor_country ON transactions(engagement_id, vendor_country); CREATE INDEX IF NOT EXISTS idx_transactions_abc_segment ON transactions(engagement_id, abc_segment); CREATE INDEX IF NOT EXISTS idx_transactions_cat_status ON transactions(engagement_id, categorisation_status)
+- Migration creates view v_by_legal_entity: SELECT engagement_id, legal_entity, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count, COUNT(DISTINCT category_l1) AS category_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 AND legal_entity IS NOT NULL GROUP BY engagement_id, legal_entity
+- Migration creates view v_by_currency: SELECT engagement_id, original_currency AS currency, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend_base, SUM(original_amount) AS total_spend_original, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, original_currency
+- Migration creates view v_by_country: SELECT engagement_id, vendor_country AS country, 'vendor' AS country_type, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 AND vendor_country IS NOT NULL GROUP BY engagement_id, vendor_country
+- Migration creates view v_abc_analysis: SELECT engagement_id, canonical_supplier_id, canonical_supplier_name, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count, SUM(SUM(base_amount)) OVER (PARTITION BY engagement_id ORDER BY SUM(base_amount) DESC) AS cumulative_spend, SUM(SUM(base_amount)) OVER (PARTITION BY engagement_id) AS grand_total FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, canonical_supplier_id, canonical_supplier_name
+- Migration enables RLS on new tables: ALTER TABLE categories ENABLE ROW LEVEL SECURITY; ALTER TABLE legal_entities ENABLE ROW LEVEL SECURITY; ALTER TABLE payment_term_mappings ENABLE ROW LEVEL SECURITY
+- Migration creates RLS SELECT/INSERT/UPDATE/DELETE policies on categories, legal_entities, payment_term_mappings using same pattern as 001: engagement_id IN (SELECT id FROM engagements WHERE owner_email = auth.jwt()->>'email')
+- Verify: SQL file is valid (no syntax errors detectable by review). File must be self-contained with IF NOT EXISTS guards so it is safe to re-run.
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - SQL schema extension — analytics fields, reference tables, and new views`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+Committed. The migration file `supabase/migrations/002_analytics_extensions.sql` is complete with all required elements:
+
+- **12 new nullable columns** on `transactions` via `ALTER TABLE … ADD COLUMN IF NOT EXISTS`
+- **3 new reference tables**: `categories`, `legal_entities`, `payment_term_mappings` with `CREATE TABLE IF NOT EXISTS`, proper FK references, and `UNIQUE` constraints
+- **4 composite indexes** on the new transaction columns
+- **4 new views**: `v_by_legal_entity`, `v_by_currency`, `v_by_country`, `v_abc_analysis` using `CREATE OR REPLACE VIEW`
+- **RLS enabled** on all three new tables with 4 policies each (SELECT/INSERT/UPDATE/DELETE) matching the 001 pattern
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-03 15:43:18] [OK] Story US-001 completed!
+[2026-05-03 15:43:18] [OK] Marked US-001 as passed
+[2026-05-03 15:43:18] [INFO] Logged progress for US-001: PASSED
+[2026-05-03 15:43:18] [STEP] Committing changes...

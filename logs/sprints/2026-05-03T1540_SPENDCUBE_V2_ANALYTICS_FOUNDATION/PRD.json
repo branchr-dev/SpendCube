@@ -1,0 +1,205 @@
+{
+  "project": {
+    "id": "SPENDCUBE-ANALYTICS-FOUNDATION-2026-05",
+    "name": "SpendCube v2 — Analytics Foundation",
+    "created": "2026-05-03",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION",
+    "track": "code"
+  },
+  "summary": "Low-disruption structural additions that make the SpendCube v2 codebase capable of supporting full procurement analytics across direct and indirect spend. Six targeted stories: (1) SQL schema extension with analytics-critical fields and new reference tables; (2) new analytical query endpoints on the FastAPI backend; (3) extended TypeScript types with a flexible Category tree and expanded FilterState; (4) global filter context and shared aggregation utilities; (5) expanded FilterBar and drilldown navigation pattern; (6) Python pipeline updates to populate new fields. No existing pages or APIs are removed or broken. All changes are purely additive.",
+  "decisions": {
+    "additive_only": "All changes are additive. No existing columns, endpoints, pages, or tests are removed or modified. The goal is to unblock future analytics work without rework.",
+    "category_type_dual_approach": "CategoryRow (the existing l1/l2/l3 flat type) is kept for backward compatibility with existing pages. A new flexible Category interface (category_id, parent_category_id, category_level, category_name) is added alongside it. Existing pages continue using CategoryRow. New pages will use Category.",
+    "filter_context_migration": "FilterState moves from local useState in each page to a React Context (FilterContext.tsx). The existing useFilters hook is refactored to be a thin wrapper over useContext(FilterContext) so existing pages require no changes — they call useFilters() exactly as before.",
+    "abc_segmentation": "ABC segmentation follows the Pareto convention: A = suppliers contributing to top 80% of spend; B = next 15%; C = bottom 5%. Computed server-side in the /cube/abc-analysis endpoint from the transactions view. The abc_segment TEXT column on transactions is populated by the cube builder pipeline step.",
+    "new_tables_nullable_fk": "The new reference tables (categories, legal_entities, payment_term_mappings) use nullable foreign keys — transactions.legal_entity is a TEXT code that may or may not match a legal_entities row. This avoids migration complexity and lets the tables be populated incrementally.",
+    "python_fields_nullable": "New fields added to CanonicalTransaction (legal_entity, vendor_country, plant_country, categorisation_status, abc_segment, manual_override_flag, ai_classification_flag) are all Optional with None defaults. Existing ingestion logic is unchanged; fields are populated where source data provides them."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "45-column table. MISSING: legal_entity, vendor_country, plant_country, categorisation_status, manual_override_flag, ai_classification_flag, harmonised_payment_term, discount_percent, discount_days, has_early_payment_discount, payment_term_confidence, abc_segment. All 12 will be added as nullable TEXT/INTEGER/DOUBLE PRECISION columns in migration 002.",
+      "supplier_master": "Existing 8 columns + engagement_id. No changes needed — harmonisation_status and harmonisation_method are already captured in supplier_match_log.match_method and review_status.",
+      "categories_new": "NEW table: flexible taxonomy tree. id UUID, engagement_id UUID, category_id TEXT, parent_category_id TEXT, category_level INTEGER, category_name TEXT, taxonomy_version TEXT DEFAULT 'v1', is_active BOOLEAN DEFAULT true, created_at TIMESTAMPTZ. Supports arbitrary depth (L1–L5+).",
+      "legal_entities_new": "NEW table: id UUID, engagement_id UUID, legal_entity_code TEXT, legal_entity_name TEXT, country TEXT, currency TEXT, created_at TIMESTAMPTZ.",
+      "payment_term_mappings_new": "NEW table: id UUID, engagement_id UUID, raw_payment_term TEXT, harmonised_payment_term TEXT, payment_term_days INTEGER, discount_percent DOUBLE PRECISION DEFAULT 0, discount_days INTEGER DEFAULT 0, has_early_payment_discount BOOLEAN DEFAULT false, confidence_score DOUBLE PRECISION, created_at TIMESTAMPTZ."
+    },
+    "key_files": [
+      "supabase/migrations/001_initial_schema.sql — existing schema; do NOT modify. New migration goes in 002_analytics_extensions.sql",
+      "backend/app/routers/cube.py — add 5 new endpoints: /by-legal-entity, /by-currency, /by-country, /abc-analysis, /categorisation-quality",
+      "frontend/src/types/filters.ts — FilterState and FilterOptions interfaces to expand",
+      "frontend/src/hooks/useFilters.ts — refactor to use FilterContext instead of local useState",
+      "frontend/src/types/index.ts — add Category (flexible tree), LegalEntity, PaymentTermMapping, ABCRow, CategoryQualityRow interfaces",
+      "frontend/src/components/dashboard/FilterBar.tsx — add legal entity, currency, country, categorisation_status filters",
+      "src/models/schema.py — CanonicalTransaction Pydantic model to extend with new Optional fields",
+      "src/models/database.py — transactions_table SQLAlchemy definition to extend with new nullable columns",
+      "src/cube/pipeline.py — add abc_segment and categorisation_status population step",
+      "src/categorisation/categoriser.py — populate categorisation_status field after 6-pass pipeline"
+    ],
+    "patterns_to_follow": [
+      "All new columns in database.py added as Column('name', Type, nullable=True) at the END of the table definition — keeps backwards compat with existing SQLite test fixtures",
+      "FilterContext follows the React Context + useReducer pattern: FilterContext.tsx exports FilterProvider and useFilterContext(); useFilters.ts becomes a wrapper calling useFilterContext()",
+      "New backend endpoints follow exact same pattern as cube.py existing endpoints: verify_engagement_ownership check, SQLAlchemy text() query, return typed dict",
+      "New TypeScript interfaces added to frontend/src/types/index.ts — do not create new type files",
+      "aggregations.ts pure functions only — no React imports, no API calls, just data transformation functions",
+      "DrilldownBreadcrumb renders nothing if drilldown level is 'overview' (the root state)"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "SQL schema extension — analytics fields, reference tables, and new views",
+      "description": "Add the 12 analytics-critical columns missing from the transactions table, create three new reference tables (categories, legal_entities, payment_term_mappings), and add four new aggregation views (v_by_legal_entity, v_by_currency, v_by_country, v_abc_analysis). This migration is purely additive — all new columns are nullable and the existing 001 migration is not modified.",
+      "acceptanceCriteria": [
+        "Create file: supabase/migrations/002_analytics_extensions.sql",
+        "Migration adds to transactions table (all nullable): ALTER TABLE transactions ADD COLUMN IF NOT EXISTS legal_entity TEXT; ADD COLUMN IF NOT EXISTS vendor_country TEXT; ADD COLUMN IF NOT EXISTS plant_country TEXT; ADD COLUMN IF NOT EXISTS categorisation_status TEXT DEFAULT 'uncategorised'; ADD COLUMN IF NOT EXISTS manual_override_flag INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS ai_classification_flag INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS harmonised_payment_term TEXT; ADD COLUMN IF NOT EXISTS discount_percent DOUBLE PRECISION DEFAULT 0; ADD COLUMN IF NOT EXISTS discount_days INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS has_early_payment_discount INTEGER DEFAULT 0; ADD COLUMN IF NOT EXISTS payment_term_confidence DOUBLE PRECISION; ADD COLUMN IF NOT EXISTS abc_segment TEXT",
+        "Migration creates table categories: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, category_id TEXT NOT NULL, parent_category_id TEXT, category_level INTEGER NOT NULL DEFAULT 1, category_name TEXT NOT NULL, taxonomy_version TEXT NOT NULL DEFAULT 'v1', is_active BOOLEAN NOT NULL DEFAULT true, mapping_confidence DOUBLE PRECISION, mapping_source TEXT, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, category_id, taxonomy_version).",
+        "Migration creates table legal_entities: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, legal_entity_code TEXT NOT NULL, legal_entity_name TEXT NOT NULL, country TEXT, currency TEXT, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, legal_entity_code).",
+        "Migration creates table payment_term_mappings: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), engagement_id UUID NOT NULL REFERENCES engagements(id) ON DELETE CASCADE, raw_payment_term TEXT NOT NULL, harmonised_payment_term TEXT, payment_term_days INTEGER, discount_percent DOUBLE PRECISION DEFAULT 0, discount_days INTEGER DEFAULT 0, has_early_payment_discount BOOLEAN DEFAULT false, confidence_score DOUBLE PRECISION, created_at TIMESTAMPTZ DEFAULT now(). UNIQUE(engagement_id, raw_payment_term).",
+        "Migration creates indexes: CREATE INDEX IF NOT EXISTS idx_transactions_legal_entity ON transactions(engagement_id, legal_entity); CREATE INDEX IF NOT EXISTS idx_transactions_vendor_country ON transactions(engagement_id, vendor_country); CREATE INDEX IF NOT EXISTS idx_transactions_abc_segment ON transactions(engagement_id, abc_segment); CREATE INDEX IF NOT EXISTS idx_transactions_cat_status ON transactions(engagement_id, categorisation_status)",
+        "Migration creates view v_by_legal_entity: SELECT engagement_id, legal_entity, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count, COUNT(DISTINCT category_l1) AS category_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 AND legal_entity IS NOT NULL GROUP BY engagement_id, legal_entity",
+        "Migration creates view v_by_currency: SELECT engagement_id, original_currency AS currency, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend_base, SUM(original_amount) AS total_spend_original, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, original_currency",
+        "Migration creates view v_by_country: SELECT engagement_id, vendor_country AS country, 'vendor' AS country_type, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, COUNT(DISTINCT canonical_supplier_id) AS supplier_count FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 AND vendor_country IS NOT NULL GROUP BY engagement_id, vendor_country",
+        "Migration creates view v_abc_analysis: SELECT engagement_id, canonical_supplier_id, canonical_supplier_name, SUM(base_amount) AS total_spend, COUNT(*) AS transaction_count, SUM(SUM(base_amount)) OVER (PARTITION BY engagement_id ORDER BY SUM(base_amount) DESC) AS cumulative_spend, SUM(SUM(base_amount)) OVER (PARTITION BY engagement_id) AS grand_total FROM transactions WHERE COALESCE(is_intercompany,0)=0 AND COALESCE(is_tax_line,0)=0 GROUP BY engagement_id, canonical_supplier_id, canonical_supplier_name",
+        "Migration enables RLS on new tables: ALTER TABLE categories ENABLE ROW LEVEL SECURITY; ALTER TABLE legal_entities ENABLE ROW LEVEL SECURITY; ALTER TABLE payment_term_mappings ENABLE ROW LEVEL SECURITY",
+        "Migration creates RLS SELECT/INSERT/UPDATE/DELETE policies on categories, legal_entities, payment_term_mappings using same pattern as 001: engagement_id IN (SELECT id FROM engagements WHERE owner_email = auth.jwt()->>'email')",
+        "Verify: SQL file is valid (no syntax errors detectable by review). File must be self-contained with IF NOT EXISTS guards so it is safe to re-run."
+      ],
+      "passes": true,
+      "completed_at": "2026-05-03T14:43:18Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Backend — five new analytical cube endpoints",
+      "description": "Add five new GET endpoints to backend/app/routers/cube.py that query the new views and compute analytics not available in the existing endpoints. All endpoints follow the exact same pattern as existing cube endpoints (engagement ownership check, SQLAlchemy text query, typed response). No existing endpoints are modified.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/cube.py — add 5 new endpoint functions at the bottom of the file",
+        "GET /api/engagements/{engagement_id}/cube/by-legal-entity — SELECT from v_by_legal_entity WHERE engagement_id=? ORDER BY total_spend DESC; returns list of {legal_entity, transaction_count, total_spend, supplier_count, category_count}",
+        "GET /api/engagements/{engagement_id}/cube/by-currency — SELECT from v_by_currency WHERE engagement_id=? ORDER BY total_spend_base DESC; returns list of {currency, transaction_count, total_spend_base, total_spend_original, supplier_count}",
+        "GET /api/engagements/{engagement_id}/cube/by-country — SELECT from v_by_country WHERE engagement_id=? ORDER BY total_spend DESC; returns list of {country, country_type, transaction_count, total_spend, supplier_count}",
+        "GET /api/engagements/{engagement_id}/cube/abc-analysis — SELECT from v_abc_analysis WHERE engagement_id=? ORDER BY total_spend DESC; computes abc_segment in Python: A if cumulative_spend/grand_total <= 0.80 else B if <= 0.95 else C; returns list of {canonical_supplier_id, canonical_supplier_name, total_spend, transaction_count, cumulative_spend_pct, abc_segment}",
+        "GET /api/engagements/{engagement_id}/cube/categorisation-quality — queries transactions directly: returns {total_transactions, categorised_count, uncategorised_count, categorised_pct, by_method: [{method, count, spend, avg_confidence}], by_confidence_band: [{band, count, spend}], low_confidence_backlog: [{transaction_id, raw_supplier_name, base_amount, category_l1, category_confidence}] (top 50 by abs(base_amount))}",
+        "All 5 endpoints enforce engagement ownership via verify_engagement_ownership() imported from backend/app/dependencies.py",
+        "All 5 endpoints support the standard filter query params: date_from, date_to (passed as WHERE invoice_date BETWEEN filters)",
+        "Verify: python -c \"from backend.app.routers.cube import router; print(len(router.routes))\" shows 12 routes (7 existing + 5 new)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "TypeScript — flexible Category type, extended FilterState, and new interfaces",
+      "description": "Extend the TypeScript type system with a flexible Category tree interface (not hardcoded to L1/L2/L3), expand FilterState with analytics-critical dimensions (legal entity, currency, country, categorisation status, ABC segment, confidence threshold), and add interfaces for all new response types from the US-002 endpoints. All existing interfaces are preserved.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/types/index.ts — add new interfaces WITHOUT removing any existing ones",
+        "Add interface Category: { id?: string; category_id: string; parent_category_id?: string | null; category_level: number; category_name: string; taxonomy_version?: string; is_active?: boolean; mapping_confidence?: number; mapping_source?: string; children?: Category[] }",
+        "Add interface LegalEntity: { id?: string; legal_entity_code: string; legal_entity_name: string; country?: string; currency?: string }",
+        "Add interface PaymentTermMapping: { id?: string; raw_payment_term: string; harmonised_payment_term?: string; payment_term_days?: number; discount_percent?: number; discount_days?: number; has_early_payment_discount?: boolean; confidence_score?: number }",
+        "Add type ABCSegment = 'A' | 'B' | 'C'",
+        "Add interface ABCRow: { canonical_supplier_id: string; canonical_supplier_name?: string; total_spend: number; transaction_count: number; cumulative_spend_pct: number; abc_segment: ABCSegment }",
+        "Add interface LegalEntityRow: { legal_entity: string; transaction_count: number; total_spend: number; supplier_count: number; category_count: number }",
+        "Add interface CurrencyRow: { currency: string; transaction_count: number; total_spend_base: number; total_spend_original: number; supplier_count: number }",
+        "Add interface CountryRow: { country: string; country_type: string; transaction_count: number; total_spend: number; supplier_count: number }",
+        "Add interface CategoryQualityReport: { total_transactions: number; categorised_count: number; uncategorised_count: number; categorised_pct: number; by_method: {method: string; count: number; spend: number; avg_confidence: number}[]; by_confidence_band: {band: string; count: number; spend: number}[]; low_confidence_backlog: {transaction_id: string; raw_supplier_name?: string; base_amount: number; category_l1?: string; category_confidence?: number}[] }",
+        "Edit file: frontend/src/types/filters.ts — expand FilterState interface to add: legal_entities: string[]; currencies: string[]; countries: string[]; categorisation_statuses: string[]; abc_segments: ABCSegment[]; min_confidence?: number. Import ABCSegment from types/index.ts",
+        "Edit file: frontend/src/types/filters.ts — expand FilterOptions interface to add: legal_entities: string[]; currencies: string[]; countries: string[]",
+        "Edit file: frontend/src/types/filters.ts — update defaultFilters() to initialise new array fields as empty arrays and min_confidence as undefined",
+        "Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Global filter context, shared aggregation utilities, and drilldown hook",
+      "description": "Three pure-addition files that provide the architectural foundation for all future analytics pages: (1) FilterContext.tsx moves filter state to React Context so it persists across page navigation; (2) aggregations.ts provides reusable metric calculations (ABC, concentration, tail spend, top-N) that pages import instead of reinventing; (3) useDrilldown.ts manages the overview→category→supplier→transaction navigation pattern with a DrilldownBreadcrumb component. The existing useFilters hook is refactored to delegate to FilterContext so existing pages need no changes.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/contexts/FilterContext.tsx — exports: FilterContextValue interface {filters: FilterState, updateFilter: (key: keyof FilterState, value: any) => void, clearFilters: () => void, toQueryParams: () => Record<string,string>}; FilterProvider component (wraps children, uses useReducer with FilterState); useFilterContext() hook that throws if used outside provider",
+        "FilterContext reducer handles actions: SET_FILTER (updates single key), CLEAR_ALL (resets to defaultFilters()). State is initialised from URL search params if present (reads ?date_from=&date_to=&legal_entities=& etc.) so filters survive page refresh.",
+        "Edit file: frontend/src/hooks/useFilters.ts — replace useState with useFilterContext(). The hook's return signature {filters, updateFilter, clearFilters, toQueryParams} must remain IDENTICAL so all existing pages (OverviewPage, CategoryPage, SupplierPage, etc.) continue to work without changes.",
+        "Edit file: frontend/src/main.tsx — wrap the App component in <FilterProvider> inside the existing QueryClientProvider wrapper",
+        "Create file: frontend/src/lib/aggregations.ts — pure TypeScript functions (no React imports): calculateABCSegments(rows: {id: string, name: string, spend: number}[]): (row & {abc_segment: ABCSegment, cumulative_pct: number})[]; calculateSpendConcentration(rows: {spend: number}[], topN: number): {top_n_spend: number, top_n_pct: number, total_spend: number}; getTopN<T extends {spend?: number, total_spend?: number}>(rows: T[], n: number): T[]; calculateTailSpendMetrics(rows: {id: string, spend: number}[]): {tail_supplier_count: number, tail_spend: number, tail_pct: number, core_supplier_count: number}; formatSpendSummary(totalSpend: number, currency: string): {formatted: string, millions: number, billions: number, scale: 'K'|'M'|'B'}",
+        "Create file: frontend/src/hooks/useDrilldown.ts — exports: type DrilldownLevel = 'overview' | 'category_l1' | 'category_l2' | 'supplier' | 'transaction'; interface DrilldownState {level: DrilldownLevel, category_l1?: string, category_l2?: string, supplier_id?: string, supplier_name?: string}; function useDrilldown(): {state: DrilldownState, drillTo: (level: DrilldownLevel, context: Partial<DrilldownState>) => void, drillUp: () => void, reset: () => void, isFiltered: boolean}. History stack allows drillUp() to navigate back.",
+        "Create file: frontend/src/components/DrilldownBreadcrumb.tsx — renders nothing when state.level === 'overview'; renders a breadcrumb trail with clickable segments (Overview > {category_l1} > {category_l2} > {supplier_name}) based on DrilldownState; each segment calls drillUp() to the appropriate level. Uses shadcn/ui styling.",
+        "Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors after all new files and edits"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Expanded FilterBar with analytics dimensions and DrilldownBreadcrumb integration",
+      "description": "Extend the existing FilterBar component to support the new filter dimensions added in US-003 (legal entity, currency, country, categorisation status, ABC segment, confidence threshold). Add the DrilldownBreadcrumb to CategoryPage and SupplierPage. The FilterBar changes are backwards-compatible — new filter fields only render if the corresponding options array is non-empty, so existing pages that don't supply legal_entity options see no visual change.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/FilterBar.tsx — add new filter sections below the existing supplier search. All new sections only render if the corresponding options array in FilterOptions has length > 0 (so existing pages are unaffected if they don't pass the new options).",
+        "Add legal entity filter: multi-select using shadcn Select or a custom multi-select pattern, bound to filters.legal_entities. Only renders if options.legal_entities.length > 0.",
+        "Add currency filter: multi-select bound to filters.currencies. Only renders if options.currencies.length > 0.",
+        "Add country filter: multi-select bound to filters.countries. Only renders if options.countries.length > 0.",
+        "Add ABC segment filter: checkbox group (A / B / C) bound to filters.abc_segments. Only renders if options includes abc support (add abc_segments?: ABCSegment[] to FilterOptions).",
+        "Add categorisation status filter: radio group (All / Categorised / Uncategorised) bound to filters.categorisation_statuses[0]. Only renders if options includes categorisation_statuses?: string[].",
+        "Add confidence threshold slider: range input 0–1 step 0.05, bound to filters.min_confidence. Label shows current value as percentage. Only renders if showConfidenceFilter prop is true (defaults false).",
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — add <DrilldownBreadcrumb> component imported from frontend/src/components/DrilldownBreadcrumb.tsx below the FilterBar. Pass in a DrilldownState derived from the page's existing selectedL1/selectedL2 local state. When breadcrumb segments are clicked, reset selectedL1/selectedL2 accordingly.",
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — add <DrilldownBreadcrumb> below the FilterBar showing supplier-level context when a supplier is selected.",
+        "Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Python pipeline — new fields on CanonicalTransaction, categorisation_status population, and CLAUDE.md update",
+      "description": "Add the 12 new analytics fields to the Python-side schema (CanonicalTransaction Pydantic model and SQLAlchemy transactions_table). Populate categorisation_status automatically in the categorisation pipeline (CATEGORISED / UNCATEGORISED based on confidence >= 0.60). Populate abc_segment in the cube pipeline. All new fields are Optional with None defaults so existing tests are unaffected. Update CLAUDE.md with the analytics foundation documentation.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/schema.py — add to CanonicalTransaction (all Optional with default None unless noted): legal_entity: Optional[str] = None; vendor_country: Optional[str] = None; plant_country: Optional[str] = None; categorisation_status: Optional[str] = 'uncategorised'; manual_override_flag: Optional[int] = 0; ai_classification_flag: Optional[int] = 0; harmonised_payment_term: Optional[str] = None; discount_percent: Optional[float] = 0.0; discount_days: Optional[int] = 0; has_early_payment_discount: Optional[int] = 0; payment_term_confidence: Optional[float] = None; abc_segment: Optional[str] = None",
+        "Edit file: src/models/database.py — add 12 new columns to transactions_table at the END of the column list (after the existing raw_data column): Column('legal_entity', Text, nullable=True), Column('vendor_country', Text, nullable=True), Column('plant_country', Text, nullable=True), Column('categorisation_status', Text, nullable=True), Column('manual_override_flag', Integer, nullable=True), Column('ai_classification_flag', Integer, nullable=True), Column('harmonised_payment_term', Text, nullable=True), Column('discount_percent', Float, nullable=True), Column('discount_days', Integer, nullable=True), Column('has_early_payment_discount', Integer, nullable=True), Column('payment_term_confidence', Float, nullable=True), Column('abc_segment', Text, nullable=True)",
+        "Edit file: src/categorisation/categoriser.py — after the 6-pass pipeline completes for each transaction, set categorisation_status = 'categorised' if category_confidence >= 0.60 else 'uncategorised'. Also set ai_classification_flag = 1 if category_method == 'LLM' else 0; manual_override_flag = 1 if category_method == 'MANUAL' else 0. This update should happen in the existing result-writing logic.",
+        "Edit file: src/cube/pipeline.py — add an ABC segment computation step after the supplier aggregation step. Compute abc_segment per supplier per engagement using the Pareto convention (A: top 80% of spend, B: next 15%, C: bottom 5%) based on cumulative SUM(base_amount). Write abc_segment back to the transactions table for each transaction belonging to that supplier via UPDATE transactions SET abc_segment = ? WHERE canonical_supplier_id = ? AND engagement_id = ?.",
+        "Verify: pytest tests/ -v --tb=short — all tests pass (new fields are nullable/have defaults, so existing test fixtures are unaffected). Report exact pass/fail count.",
+        "Edit file: CLAUDE.md — append a new section '## Analytics Foundation' documenting: the 12 new transaction fields and their purpose; the three new reference tables (categories, legal_entities, payment_term_mappings); the five new cube endpoints; the FilterContext architecture; the aggregations.ts utility functions; the DrilldownState pattern; and the ABC segmentation convention (A=top 80%, B=next 15%, C=bottom 5%)."
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "new_columns_exist": "SELECT column_name FROM information_schema.columns WHERE table_name='transactions' AND column_name IN ('legal_entity','vendor_country','plant_country','abc_segment','categorisation_status') — should return 5 rows",
+      "new_tables_exist": "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('categories','legal_entities','payment_term_mappings') — should return 3 rows",
+      "new_views_exist": "SELECT table_name FROM information_schema.views WHERE table_schema='public' AND table_name IN ('v_by_legal_entity','v_by_currency','v_by_country','v_abc_analysis') — should return 4 rows",
+      "new_endpoints": "grep -c '@router.get' backend/app/routers/cube.py — should return 12",
+      "python_tests": "pytest tests/ -v --tb=short — all 160+ existing tests pass",
+      "frontend_build": "cd frontend && npm run build — exits 0, zero TypeScript errors",
+      "filter_context": "grep -r 'FilterProvider' frontend/src/main.tsx — should find the provider wrapper",
+      "aggregations_file": "test -f frontend/src/lib/aggregations.ts && echo exists",
+      "drilldown_hook": "test -f frontend/src/hooks/useDrilldown.ts && echo exists"
+    },
+    "expected_counts": {
+      "new_transaction_columns": 12,
+      "new_reference_tables": 3,
+      "new_db_views": 4,
+      "new_api_endpoints": 5,
+      "new_ts_interfaces": 9,
+      "new_frontend_files": 4
+    },
+    "checks": [
+      "pytest tests/ passes with same 160 tests — no regressions from new nullable columns",
+      "npm run build in frontend/ succeeds with zero TypeScript errors",
+      "Existing dashboard pages (OverviewPage, CategoryPage, SupplierPage) still work — useFilters() call signature unchanged",
+      "FilterBar renders identically on existing pages where new FilterOptions fields are not provided",
+      "CLAUDE.md Analytics Foundation section documents all new patterns"
+    ]
+  },
+  "risks": [
+    "categoriser.py edit (US-006): The categorisation_status update must happen after the final category is written to the transactions table, not before. Check the write order in categoriser.py — if it uses batch inserts, add a post-insert UPDATE step rather than modifying the insert.",
+    "cube/pipeline.py ABC computation (US-006): The ABC UPDATE loop touches every transaction row for the engagement. For large datasets this can be slow. Use a single UPDATE transactions SET abc_segment = CASE ... with a subquery rather than a Python loop over individual rows.",
+    "FilterContext URL init (US-004): Reading filter state from URL search params on init can cause hydration issues in Vite dev mode if the URL params include arrays (e.g. legal_entities=A&legal_entities=B). Use URLSearchParams.getAll() not .get() for array fields.",
+    "v_abc_analysis window function (US-001): The SUM(...) OVER (PARTITION BY engagement_id ORDER BY ...) window function requires Postgres 8.4+. Supabase uses Postgres 15+ so this is safe, but verify the view definition doesn't reference engagement_id in both the GROUP BY and window function ambiguously."
+  ],
+  "outOfScope": [
+    "Competitor/comparator cockpit — not building now",
+    "Tags and focus topics table — can be added when a client requires it",
+    "Multi-taxonomy versioning UI — the schema supports taxonomy_version but no UI to switch between versions",
+    "Purchase orders as a separate entity — PO number exists on transactions; a separate POs table is future work",
+    "Source systems table — source_system column on transactions is sufficient for now",
+    "Geography map visualisation — the data fields and endpoints are being added; the actual map component (Leaflet/Mapbox) is out of scope",
+    "Vendor vs vendor comparison UI — out of scope; the data model supports it",
+    "Payment term harmonisation UI page — the table and mappings are created but no UI page for managing them",
+    "Populating legal_entity / vendor_country from ingestion — these fields require client-specific mapping logic; the columns exist and can be populated via column mapping wizard or post-ingestion enrichment"
+  ]
+}
