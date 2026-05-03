@@ -287,3 +287,69 @@ STORY_COMPLETE: US-004
 [2026-05-03 15:50:16] [OK] Marked US-004 as passed
 [2026-05-03 15:50:16] [INFO] Logged progress for US-004: PASSED
 [2026-05-03 15:50:16] [STEP] Committing changes...
+[2026-05-03 15:50:18] [INFO] Starting iteration 5
+[2026-05-03 15:50:18] [INFO] Processing story: US-005
+[2026-05-03 15:50:18] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Expanded FilterBar with analytics dimensions and DrilldownBreadcrumb integration
+
+## Project Context
+**Project:** SpendCube v2 — Analytics Foundation
+**Project ID:** SPENDCUBE-ANALYTICS-FOUNDATION-2026-05
+**PRD:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Extend the existing FilterBar component to support the new filter dimensions added in US-003 (legal entity, currency, country, categorisation status, ABC segment, confidence threshold). Add the DrilldownBreadcrumb to CategoryPage and SupplierPage. The FilterBar changes are backwards-compatible — new filter fields only render if the corresponding options array is non-empty, so existing pages that don't supply legal_entity options see no visual change.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/dashboard/FilterBar.tsx — add new filter sections below the existing supplier search. All new sections only render if the corresponding options array in FilterOptions has length > 0 (so existing pages are unaffected if they don't pass the new options).
+- Add legal entity filter: multi-select using shadcn Select or a custom multi-select pattern, bound to filters.legal_entities. Only renders if options.legal_entities.length > 0.
+- Add currency filter: multi-select bound to filters.currencies. Only renders if options.currencies.length > 0.
+- Add country filter: multi-select bound to filters.countries. Only renders if options.countries.length > 0.
+- Add ABC segment filter: checkbox group (A / B / C) bound to filters.abc_segments. Only renders if options includes abc support (add abc_segments?: ABCSegment[] to FilterOptions).
+- Add categorisation status filter: radio group (All / Categorised / Uncategorised) bound to filters.categorisation_statuses[0]. Only renders if options includes categorisation_statuses?: string[].
+- Add confidence threshold slider: range input 0–1 step 0.05, bound to filters.min_confidence. Label shows current value as percentage. Only renders if showConfidenceFilter prop is true (defaults false).
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — add <DrilldownBreadcrumb> component imported from frontend/src/components/DrilldownBreadcrumb.tsx below the FilterBar. Pass in a DrilldownState derived from the page's existing selectedL1/selectedL2 local state. When breadcrumb segments are clicked, reset selectedL1/selectedL2 accordingly.
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — add <DrilldownBreadcrumb> below the FilterBar showing supplier-level context when a supplier is selected.
+- Verify: cd frontend && npm run build — exits 0 with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/PRD.json
+   - Session: logs/sprints/2026-05-03T1540_SPENDCUBE_V2_ANALYTICS_FOUNDATION/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Expanded FilterBar with analytics dimensions and DrilldownBreadcrumb integration`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-03 15:52:52] [OK] Story US-005 completed!
+[2026-05-03 15:52:52] [OK] Marked US-005 as passed
+[2026-05-03 15:52:52] [INFO] Logged progress for US-005: PASSED
+[2026-05-03 15:52:52] [STEP] Committing changes...

@@ -91,3 +91,43 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+## US-005 COMPLETE — 2026-05-03
+Expanded FilterBar with 6 new filter dimensions and added DrilldownBreadcrumb to CategoryPage and SupplierPage:
+
+frontend/src/types/filters.ts:
+- Added abc_segments?: ABCSegment[] and categorisation_statuses?: string[] to FilterOptions
+
+frontend/src/components/dashboard/FilterBar.tsx:
+- Added showConfidenceFilter?: boolean prop (defaults false)
+- Legal entity multi-select (renders only if options.legal_entities.length > 0)
+- Currency multi-select (renders only if options.currencies.length > 0)
+- Country multi-select (renders only if options.countries.length > 0)
+- ABC segment checkbox group A/B/C (renders only if options.abc_segments?.length > 0)
+- Categorisation status radio group (All/Categorised/Uncategorised) bound to categorisation_statuses[0]
+- Confidence threshold range slider 0–1 step 0.05 with % label (renders only if showConfidenceFilter=true)
+
+frontend/src/pages/dashboard/CategoryPage.tsx:
+- Derives DrilldownState from selectedL1/selectedL2 local state
+- handleBreadcrumbDrillTo resets L1/L2 from context; handleBreadcrumbReset clears both
+- DrilldownBreadcrumb rendered below FilterBar
+
+frontend/src/pages/dashboard/SupplierPage.tsx:
+- Derives DrilldownState from selectedSupplierId/selectedSupplier
+- handleBreadcrumbReset clears selectedSupplierId
+- DrilldownBreadcrumb rendered below h1 heading (SupplierPage has no FilterBar)
+
+Build: npm run build exits 0 with zero TypeScript errors
+
+---
+
+### [US-005] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-005] - 2026-05-03 15:52:52
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
