@@ -105,3 +105,30 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+## US-007 Complete — 2026-05-03
+
+### RecommendationCard impact share bar and lever colour accent
+
+- Added `portfolioTotal?: number` and `leverIndex?: number` props to RecommendationCard
+- Imported CHART_COLORS from '@/components/charts/constants'
+- Added inline lever accent style: borderLeft 4px solid CHART_COLORS[leverIndex % length] on Card when leverIndex provided
+- Added impact share bar below action text: flex label row + formatPct(sharePct) + h-1.5 bg-muted track + bg-green-500 fill bar at Math.min(sharePct, 100)%
+- RecommendationsPage: computed portfolioTotal from portfolio.total_identified_savings; computed leverIndex via findIndex on leverSummaries; passed both props to each RecommendationCard
+- Build: zero TypeScript errors ✓
+- Committed: b44c432
+
+
+---
+
+### [US-007] - 2026-05-03
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+
+
+---
+
+### [US-007] - 2026-05-03 19:36:25
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+

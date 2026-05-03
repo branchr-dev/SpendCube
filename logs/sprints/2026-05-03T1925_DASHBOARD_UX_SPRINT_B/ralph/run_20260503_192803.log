@@ -404,3 +404,66 @@ STORY_COMPLETE: US-006
 [2026-05-03 19:35:15] [OK] Marked US-006 as passed
 [2026-05-03 19:35:15] [INFO] Logged progress for US-006: PASSED
 [2026-05-03 19:35:15] [STEP] Committing changes...
+[2026-05-03 19:35:17] [INFO] Starting iteration 7
+[2026-05-03 19:35:17] [INFO] Processing story: US-007
+[2026-05-03 19:35:17] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Recommendation card — impact share bar and lever colour accent
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Enhance RecommendationCard with a thin horizontal bar showing this recommendation's impact as a share of the total portfolio savings. Add a coloured left-border accent keyed to lever type, so scanning the card list gives instant visual grouping without reading labels.
+
+## Acceptance Criteria
+- Edit file: frontend/src/components/dashboard/RecommendationCard.tsx
+- Add props: portfolioTotal?: number (total portfolio savings for computing share bar), leverIndex?: number (0-based index of lever in the lever order, used for colour accent).
+- Import CHART_COLORS from '@/components/charts/constants'.
+- Add a lever colour accent: when leverIndex is provided, add a border-l-4 style to the Card using an inline style or a dynamic className. Use CHART_COLORS[leverIndex % CHART_COLORS.length] as the border-left-color via inline style: style={{ borderLeftWidth: '4px', borderLeftStyle: 'solid', borderLeftColor: CHART_COLORS[leverIndex % CHART_COLORS.length] }}.
+- When portfolioTotal is provided and portfolioTotal > 0, add an impact share bar below the action text: a div with className='mt-2'. Inside: a div flex justify-between text-xs text-muted-foreground mb-1 showing 'Share of portfolio savings' and formatPct((estimated_impact_aud / portfolioTotal) * 100). Below that a div with className='h-1.5 rounded-full bg-muted overflow-hidden'. Inside that div a div with className='h-full rounded-full bg-green-500' and style={{ width: `${Math.min((estimated_impact_aud / portfolioTotal) * 100, 100)}%` }}.
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — compute portfolioTotal = portfolio?.total_identified_savings ?? 0. Pass portfolioTotal={portfolioTotal} to each RecommendationCard. Compute leverIndex for each rec: the index of rec.lever in the leverSummaries array (from US-002). Pass leverIndex={leverIndex}.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Recommendation card — impact share bar and lever colour accent`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-03 19:36:25] [OK] Story US-007 completed!
+[2026-05-03 19:36:25] [OK] Marked US-007 as passed
+[2026-05-03 19:36:25] [INFO] Logged progress for US-007: PASSED
+[2026-05-03 19:36:25] [STEP] Committing changes...

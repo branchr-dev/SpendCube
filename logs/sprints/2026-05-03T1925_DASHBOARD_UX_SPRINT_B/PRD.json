@@ -167,7 +167,8 @@
         "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — compute portfolioTotal = portfolio?.total_identified_savings ?? 0. Pass portfolioTotal={portfolioTotal} to each RecommendationCard. Compute leverIndex for each rec: the index of rec.lever in the leverSummaries array (from US-002). Pass leverIndex={leverIndex}.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T18:36:25Z"
     },
     {
       "id": "US-008",
