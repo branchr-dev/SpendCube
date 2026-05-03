@@ -59,3 +59,25 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+
+## US-004 — SpendBarChart: label support, click affordance hint, empty state
+- Added showLabel prop: LabelList with position='right' (horizontal) or 'top' (vertical), fontSize 11, fill '#64748b'.
+- Added clickHint prop: renders 'Click a bar to explore' italic hint only when onBarClick is also provided.
+- Title and hint rendered in a flex justify-between row (hint replaces standalone h3 margin).
+- Empty state guards data === undefined or data.length === 0 — renders h-64 centered placeholder.
+- LabelList formatter uses valueFormatter when provided, else String(v).
+- Build: zero TS errors.
+
+---
+
+### [US-004] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-004] - 2026-05-03 18:37:44
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+

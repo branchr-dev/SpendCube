@@ -116,7 +116,8 @@
         "All new props are optional — existing callers work unchanged.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:37:44Z"
     },
     {
       "id": "US-005",
