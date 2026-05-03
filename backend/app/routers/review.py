@@ -251,8 +251,9 @@ async def get_category_queue(
     with engine.connect() as conn:
         rows = conn.execute(
             text(
-                "SELECT transaction_id, raw_supplier_name, raw_line_description,"
-                " base_amount, category_l1, category_l2, category_l3, category_confidence"
+                "SELECT transaction_id, raw_supplier_name, canonical_supplier_id,"
+                " raw_line_description, base_amount,"
+                " category_l1, category_l2, category_l3, category_confidence"
                 " FROM transactions"
                 " WHERE engagement_id = :eid AND category_confidence < 0.60"
                 " ORDER BY ABS(base_amount) DESC"

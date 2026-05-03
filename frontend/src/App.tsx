@@ -11,10 +11,7 @@ import SupplierPage from '@/pages/dashboard/SupplierPage'
 import PaymentTermsPage from '@/pages/dashboard/PaymentTermsPage'
 import DataQualityPage from '@/pages/dashboard/DataQualityPage'
 import RecommendationsPage from '@/pages/dashboard/RecommendationsPage'
-
-function PlaceholderPage({ title }: { title: string }) {
-  return <div className="p-6 text-muted-foreground">{title}</div>
-}
+import ReviewWorkstationPage from '@/pages/admin/ReviewWorkstationPage'
 
 export default function App() {
   return (
@@ -34,7 +31,7 @@ export default function App() {
           <Route path="quality" element={<DataQualityPage />} />
           <Route path="recommendations" element={<RecommendationsPage />} />
           <Route path="upload" element={<UploadPage />} />
-          <Route path="admin/review" element={<PlaceholderPage title="Review Workstation" />} />
+          <Route path="admin/review" element={<ReviewWorkstationPage />} />
         </Route>
       </Route>
     </Routes>

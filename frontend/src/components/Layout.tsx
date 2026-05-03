@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   BarChart3,
   Tag,
@@ -11,11 +12,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
+import { api } from '@/lib/api'
 import type { Engagement } from '@/types'
-
-interface LayoutProps {
-  engagement?: Engagement
-}
 
 const navItems = [
   { to: 'overview', label: 'Overview', icon: BarChart3 },
@@ -26,10 +24,16 @@ const navItems = [
   { to: 'recommendations', label: 'Recommendations', icon: Lightbulb },
 ]
 
-export default function Layout({ engagement }: LayoutProps) {
+export default function Layout() {
   const { user, signOut } = useAuth()
   const { id } = useParams()
   const base = `/engagements/${id}`
+
+  const { data: engagement } = useQuery<Engagement>({
+    queryKey: ['engagement', id],
+    queryFn: () => api.get(`/api/engagements/${id}`).then(r => r.data),
+    enabled: !!id,
+  })
 
   return (
     <div className="flex h-screen bg-background">
