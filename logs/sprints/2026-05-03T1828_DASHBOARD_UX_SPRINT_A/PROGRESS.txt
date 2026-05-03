@@ -132,3 +132,20 @@ Story completed successfully
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+## US-008 — Payment Terms opportunity waterfall + adjustable assumptions
+- Replaced const WACC/TARGET_DAYS with useState (waccPct, targetDays)
+- computeSupplierWc moved inside component to close over state
+- Assumptions panel added (Target Days + WACC % inputs) above charts
+- supplierWcData: top-15 suppliers by WC opportunity rendered as horizontal SpendBarChart
+- Bucket bar chart retained below, wrapped in mt-4 div
+- suppliersSorted re-sorted descending by WC opportunity
+- accentColor='opportunity' applied to Total WC Opportunity KpiCard
+- Build: zero TypeScript errors
+
+---
+
+### [US-008] - 2026-05-03 18:44:26
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
