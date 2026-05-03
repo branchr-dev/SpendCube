@@ -2,13 +2,23 @@ import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
+import {
+  ScatterChart,
+  Scatter,
+  XAxis as RScatterXAxis,
+  YAxis as RScatterYAxis,
+  ZAxis,
+  Tooltip as RScatterTooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import KpiCard from '@/components/dashboard/KpiCard'
 import RecommendationCard from '@/components/dashboard/RecommendationCard'
 import { SpendBarChart } from '@/components/charts'
-import { SEMANTIC_COLORS } from '@/components/charts/constants'
+import { CHART_COLORS, SEMANTIC_COLORS } from '@/components/charts/constants'
 import { formatCurrency } from '@/lib/formatters'
 import { api } from '@/lib/api'
 import type { Recommendation, PortfolioSummary, Engagement } from '@/types'
@@ -24,6 +34,87 @@ interface LeverSummary {
   lever: string
   totalImpact: number
   count: number
+}
+
+interface ScatterPoint {
+  x: number
+  y: number
+  z: number
+  label: string
+  type: string
+  impact: number
+  lever: string
+}
+
+function PriorityMatrix({ recommendations }: { recommendations: Recommendation[] }) {
+  const pointsByLever = useMemo(() => {
+    const allPoints: ScatterPoint[] = recommendations.map(r => ({
+      x: r.confidence === 'HIGH' ? 0.9 : r.confidence === 'MEDIUM' ? 0.6 : 0.3,
+      y: r.estimated_impact_aud ?? 0,
+      z: Math.max((r.addressable_baseline ?? 0) / 1000, 100),
+      label: r.context ?? '',
+      type: r.type ?? '',
+      impact: r.estimated_impact_aud ?? 0,
+      lever: r.lever ?? 'OTHER',
+    }))
+    const uniqueLevers = [...new Set(allPoints.map(p => p.lever))]
+    return uniqueLevers.map((lever, leverIndex) => ({
+      lever,
+      leverIndex,
+      points: allPoints.filter(p => p.lever === lever),
+    }))
+  }, [recommendations])
+
+  if (recommendations.length === 0) return null
+
+  return (
+    <div className="border rounded-xl p-5 bg-card shadow-sm">
+      <h3 className="section-header">Priority Matrix — Impact vs. Confidence</h3>
+      <ResponsiveContainer width="100%" height={280}>
+        <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 60 }}>
+          <RScatterXAxis
+            type="number"
+            dataKey="x"
+            domain={[0.2, 1.0]}
+            ticks={[0.3, 0.6, 0.9]}
+            tickFormatter={(v: number) => v === 0.3 ? 'Low' : v === 0.6 ? 'Medium' : 'High'}
+            label={{ value: 'Confidence', position: 'insideBottom', offset: -5, fontSize: 11 }}
+          />
+          <RScatterYAxis
+            type="number"
+            dataKey="y"
+            tickFormatter={(v: number) => formatCurrency(v)}
+            label={{ value: 'Est. Savings', angle: -90, position: 'insideLeft', fontSize: 11 }}
+          />
+          <ZAxis type="number" dataKey="z" range={[40, 400]} />
+          <RScatterTooltip
+            content={({ payload }) => {
+              if (!payload?.length) return null
+              const d = payload[0].payload as ScatterPoint
+              return (
+                <div className="bg-background border rounded shadow p-2 text-xs space-y-1">
+                  <div className="font-semibold">{d.label}</div>
+                  <div>{d.type.replace(/_/g, ' ')}</div>
+                  <div className="text-green-700 font-medium">{formatCurrency(d.impact)}</div>
+                </div>
+              )
+            }}
+          />
+          {pointsByLever.map(({ lever, leverIndex, points }) => (
+            <Scatter
+              key={lever}
+              name={lever.replace(/_/g, ' ')}
+              data={points}
+            >
+              {points.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[leverIndex % CHART_COLORS.length]} />
+              ))}
+            </Scatter>
+          ))}
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
+  )
 }
 
 export default function RecommendationsPage() {
@@ -203,6 +294,8 @@ export default function RecommendationsPage() {
           </button>
         ))}
       </div>
+
+      <PriorityMatrix recommendations={recommendations} />
 
       {leverSummaries.length > 0 && (
         <div className="border rounded-xl p-5 bg-card shadow-sm">
