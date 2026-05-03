@@ -35,3 +35,17 @@ Story completed successfully by Ralph loop iteration 2
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+
+---
+
+## US-004 COMPLETE — 2026-05-03
+Created src/ingestion/promoter.py with IncrementalPromoter class.
+
+Key design decisions:
+- _resolve_suppliers() normalises all raw_supplier_names, computes SHA256[:12] canonical_supplier_id for each, queries supplier_master in one batch, and only runs SupplierHarmoniser for names whose expected canonical_supplier_id is NOT already in the table.
+- Known names get confidence=0.95 (exact normalised name match); unknown names use the match_log confidence from harmoniser.
+- categorise() is called with a deep-copied config where llm.dry_run=True — guarantees no LLM API calls regardless of the original config.
+- _build_records() maps only columns in _TX_COLUMNS to avoid inserting transactions_raw-specific columns (id, batch_id, source_row_hash, pipeline_status) into the transactions table. Sets source_raw_id per acceptance criteria.
+- Promoted/review split is purely by confidence >= 0.60 (MANUAL/DETERMINISTIC methods always score >= 0.60, so no special-case needed).
+- Verifications: ls src/ingestion/promoter.py ✓; python3 -c "from src.ingestion.promoter import IncrementalPromoter; print('import OK')" ✓
+
