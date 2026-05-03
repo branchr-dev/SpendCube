@@ -467,3 +467,66 @@ STORY_COMPLETE: US-007
 [2026-05-03 19:36:25] [OK] Marked US-007 as passed
 [2026-05-03 19:36:25] [INFO] Logged progress for US-007: PASSED
 [2026-05-03 19:36:25] [STEP] Committing changes...
+[2026-05-03 19:36:27] [INFO] Starting iteration 8
+[2026-05-03 19:36:27] [INFO] Processing story: US-008
+[2026-05-03 19:36:27] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Category scorecard — avg invoice size and spend density columns
+
+## Project Context
+**Project:** Dashboard UX Sprint B — Advanced Visualisations & Analytical Depth
+**Project ID:** DASHBOARD-UX-B-2026-05
+**PRD:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add two analytical columns to the Category Fragmentation Scorecard table: Avg Invoice Size (total_spend / transaction_count) and Spend Density (total_spend / supplier_count, i.e. average spend per supplier). These metrics help a category manager immediately assess whether a category is dominated by a few large invoices or fragmented across many small ones.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx
+- In the Fragmentation Scorecard table (the Table rendered when selectedL1Entry is null), add two new TableHead columns after 'Suppliers': 'Avg Invoice' and 'Spend / Supplier'.
+- For each row in the scorecard, compute: avgInvoice = entry.total_spend / Math.max(entry.transaction_count, 1), spendPerSupplier = entry.total_spend / Math.max(entry.supplier_count, 1).
+- Render both as text-right TableCell using formatCurrency(). For avgInvoice: if > 50000 add className='text-right font-medium text-amber-600' (large average invoice — worth noting). For spendPerSupplier: no special colouring.
+- Add TableHead for both columns with className='text-right'.
+- Ensure the existing columns (L1 Category, Total Spend, % of Total, Suppliers, Status) remain in the same order — new columns appear after Suppliers.
+- Run: cd frontend && npm run build — should succeed with zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/PRD.json
+   - Session: logs/sprints/2026-05-03T1925_DASHBOARD_UX_SPRINT_B/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Category scorecard — avg invoice size and spend density columns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-03 19:37:13] [OK] Story US-008 completed!
+[2026-05-03 19:37:13] [OK] Marked US-008 as passed
+[2026-05-03 19:37:13] [INFO] Logged progress for US-008: PASSED
+[2026-05-03 19:37:13] [STEP] Committing changes...

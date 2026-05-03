@@ -183,7 +183,8 @@
         "Ensure the existing columns (L1 Category, Total Spend, % of Total, Suppliers, Status) remain in the same order — new columns appear after Suppliers.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T18:37:13Z"
     },
     {
       "id": "US-009",

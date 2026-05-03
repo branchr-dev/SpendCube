@@ -132,3 +132,17 @@ Story completed successfully by Ralph loop iteration 7
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+## US-008 — Category scorecard avg invoice size and spend density columns
+- Avg Invoice column already existed but lacked amber coloring for > 50000 values
+- Added Spend / Supplier column (total_spend / max(supplier_count,1)) as new TableHead + TableCell
+- Applied text-amber-600 font-medium coloring to Avg Invoice when value > 50000
+- Build: zero TypeScript errors, succeeded in 1.92s
+
+
+---
+
+### [US-008] - 2026-05-03 19:37:13
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+
