@@ -95,7 +95,8 @@
         "Add the confidence filter buttons back immediately above the displayedRecs section (before the space-y-3 div): a div className='flex items-center gap-2 flex-wrap pt-2 border-t': span text 'Filter by confidence:' text-sm text-muted-foreground, then the ALL/HIGH/MEDIUM/LOW buttons as before.",
         "Run: cd frontend && npm run build — zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T20:05:23Z"
     },
     {
       "id": "US-004",

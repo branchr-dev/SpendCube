@@ -135,3 +135,73 @@ STORY_COMPLETE: US-002
 [2026-05-03 21:04:15] [OK] Marked US-002 as passed
 [2026-05-03 21:04:15] [INFO] Logged progress for US-002: PASSED
 [2026-05-03 21:04:15] [STEP] Committing changes...
+[2026-05-03 21:04:17] [INFO] Starting iteration 3
+[2026-05-03 21:04:17] [INFO] Processing story: US-003
+[2026-05-03 21:04:17] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Recommendations — hero savings, matrix legend, repositioned confidence filter, fixed sanity check
+
+## Project Context
+**Project:** Dashboard UX Sprint C — Insight Completeness & Opportunity Assessment Quality
+**Project ID:** DASHBOARD-UX-C-2026-05
+**PRD:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+**Progress Log:** logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Four fixes to the Recommendations page: (1) make Total Identified Savings the hero number; (2) add a colour legend to the priority matrix; (3) move the confidence filter buttons to sit directly above the recommendation cards section; (4) replace the inconsistent Sanity Check badge with a proper KpiCard.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx
+- Hero number: above the 4-card KPI grid, add a div className='text-center py-4 border rounded-xl bg-card shadow-sm': inside render <p className='text-xs text-muted-foreground uppercase tracking-wide mb-1'>Total Identified Savings</p> and <p className='text-5xl font-bold text-green-700'>{formatCurrency(portfolio?.total_identified_savings ?? 0)}</p>. Only render this div when portfolio is defined.
+- Replace the 4th KPI card (the Sanity Check div) with a proper KpiCard: <KpiCard label='Sanity Check' value={portfolio?.sanity_check_passed ? 'Passed' : 'Review'} valueType='text' accentColor={portfolio?.sanity_check_passed ? 'green' : 'risk'} />
+- Remove the current confidence filter buttons section (the div with flex items-center gap-2 flex-wrap containing the ALL/HIGH/MEDIUM/LOW buttons). These will be added back in a different position below.
+- Add a legend below PriorityMatrix and above the savings bar chart: a div className='flex flex-wrap gap-x-4 gap-y-1 px-1': for each entry in leverSummaries (index i), render a span className='flex items-center gap-1.5 text-xs text-muted-foreground': a span className='inline-block w-3 h-3 rounded-full flex-shrink-0' style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}, and the lever name humanized (replace(/_/g,' ')). Only render the legend div when leverSummaries.length > 0.
+- Add the confidence filter buttons back immediately above the displayedRecs section (before the space-y-3 div): a div className='flex items-center gap-2 flex-wrap pt-2 border-t': span text 'Filter by confidence:' text-sm text-muted-foreground, then the ALL/HIGH/MEDIUM/LOW buttons as before.
+- Run: cd frontend && npm run build — zero TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/PRD.json
+   - Session: logs/sprints/2026-05-03T2056_DASHBOARD_UX_SPRINT_C/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Recommendations — hero savings, matrix legend, repositioned confidence filter, fixed sanity check`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+All four changes are complete and committed with zero TypeScript errors:
+
+1. **Hero number**: A centred `text-5xl font-bold text-green-700` total savings banner renders above the KPI grid when `portfolio` is defined.
+2. **Sanity Check KpiCard**: Replaced the ad-hoc badge div with `<KpiCard label='Sanity Check' value='Passed'/'Review' valueType='text' accentColor='green'/'risk' />`.
+3. **Confidence filter repositioned**: Removed from above PriorityMatrix; added back with `pt-2 border-t` label "Filter by confidence:" directly above the `space-y-3` recommendation cards section.
+4. **Matrix legend**: A flex row of colour dot + lever name spans renders between PriorityMatrix and the savings bar chart when `leverSummaries.length > 0`.
+
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-03 21:05:23] [OK] Story US-003 completed!
+[2026-05-03 21:05:23] [OK] Marked US-003 as passed
+[2026-05-03 21:05:23] [INFO] Logged progress for US-003: PASSED
+[2026-05-03 21:05:23] [STEP] Committing changes...
