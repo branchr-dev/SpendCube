@@ -174,7 +174,8 @@
         "Update table row click: clicking a row that is already selected should close the drawer (setSelectedSupplierId(null)) — existing toggle logic should already handle this.",
         "Run: cd frontend && npm run build — should succeed with zero TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-03T17:43:24Z"
     },
     {
       "id": "US-008",

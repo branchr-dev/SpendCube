@@ -108,3 +108,27 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+## US-007 — Supplier cockpit: side drawer, fixed chart data, ABC badge, spend share
+- Replaced below-table conditional div with Sheet (side='right', 500/560px) using SheetContent/SheetHeader/SheetTitle
+- Fixed monthData and categoryData queries: added selectedSupplierId to queryKey and supplier_id to params — ensures refetch per supplier and supplier-specific data (backend may return empty array if not supported)
+- Added abc_segment?: string to SupplierRow interface in frontend/src/types/index.ts
+- Added AbcBadge component: A=emerald, B=blue, C=slate, renders null if no segment
+- Extended columns array to include non-sortable 'abc' and 'share' columns; isSortKey() type guard controls header rendering
+- Added totalSupplierSpend computed from supplierData for spend share denominator
+- colSpan updated from 5→7 for empty-state row
+- Build: zero TypeScript errors
+
+---
+
+### [US-007] - 2026-05-03
+**Status:** PASSED
+Story completed successfully
+
+
+---
+
+### [US-007] - 2026-05-03 18:43:24
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+
