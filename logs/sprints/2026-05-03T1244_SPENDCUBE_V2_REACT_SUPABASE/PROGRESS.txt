@@ -32,3 +32,23 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+---
+
+## US-002 — Supabase SQL schema migration — all tables with engagement_id and Postgres views
+**Status:** COMPLETE (2026-05-03)
+
+**What was created:**
+- supabase/migrations/001_initial_schema.sql — full Postgres schema migration
+- supabase/README.md — deployment instructions
+
+**Schema summary:**
+- 7 tables: engagements, pipeline_jobs, transactions (45 cols + engagement_id), supplier_master, supplier_match_log, category_overrides, audit_log
+- 6 indexes on transactions and pipeline_jobs for engagement-scoped queries
+- 5 views: v_by_supplier, v_by_category, v_by_month, v_by_bu, v_by_payment_terms
+- RLS enabled on all 7 tables with SELECT/INSERT/UPDATE/DELETE policies scoped to auth.jwt()->>'email'
+
+**Learnings:**
+- invoice_date is stored as TEXT; v_by_month casts ::date — this is intentional and matches the v1 pattern. Will require valid date strings in the source data.
+- RLS policy on engagements uses owner_email = auth.jwt()->>'email' directly; all other tables subquery engagements for the same check.
+- Policy names (select_own_engagement etc.) are consistent across all tables for readability; Postgres scopes policy names per-table so there is no conflict.
+
