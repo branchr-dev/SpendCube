@@ -19,10 +19,13 @@ from src.recommendations.deduplicator import SpendAllocator
 from src.recommendations.engine import RecommendationEngine
 from src.recommendations.narratives import NarrativeGenerator
 from src.recommendations.rules import (
+    BEST_PRICE_EXTRAPOLATION,
     CONTRACT_COMPLIANCE,
     CONTRACT_COVERAGE_GAP,
     COMPETITIVE_TENDER,
+    EARLY_PAYMENT_DISCOUNT_CAPTURE,
     PAYMENT_TERM_EXTENSION,
+    SPEND_CONCENTRATION_RISK,
     SUPPLIER_CONSOLIDATION,
     TAIL_SPEND_RATIONALISATION,
     RecommendationRules,
@@ -238,6 +241,97 @@ class TestRecommendationRules:
         rules = RecommendationRules({"transactions": pd.DataFrame()}, _metrics(), config)
         recs = rules.generate_all()
         assert recs == []
+
+    def test_spend_concentration_risk_fires(self, config):
+        """SPEND_CONCENTRATION_RISK fires when top supplier > 80% in a multi-supplier category."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP_A", "SUP_B"],
+            "canonical_supplier_name": ["Supplier A", "Supplier B"],
+            "base_amount": [90_000.0, 10_000.0],
+            "category_l2": ["IT Software", "IT Software"],
+            "is_intercompany": [0, 0],
+            "is_tax_line": [0, 0],
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=100_000.0), config)
+        result = rules.rule_spend_concentration_risk()
+        assert len(result) == 1
+        assert result[0]["type"] == SPEND_CONCENTRATION_RISK
+
+    def test_spend_concentration_risk_no_fire_single_supplier(self, config):
+        """SPEND_CONCENTRATION_RISK must not fire when only one supplier exists in a category."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP_A", "SUP_A"],
+            "canonical_supplier_name": ["Supplier A", "Supplier A"],
+            "base_amount": [90_000.0, 10_000.0],
+            "category_l2": ["IT Software", "IT Software"],
+            "is_intercompany": [0, 0],
+            "is_tax_line": [0, 0],
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=100_000.0), config)
+        result = rules.rule_spend_concentration_risk()
+        assert result == []
+
+    def test_early_payment_discount_fires(self, config):
+        """EARLY_PAYMENT_DISCOUNT_CAPTURE fires when addressable discount > min_discount_opportunity."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP1"],
+            "canonical_supplier_name": ["Acme"],
+            "base_amount": [100_000.0],
+            "has_early_payment_discount": [1],
+            "discount_percent": [2.5],
+            "is_intercompany": [0],
+            "is_tax_line": [0],
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=100_000.0), config)
+        result = rules.rule_early_payment_discount_capture()
+        assert len(result) == 1
+        assert result[0]["type"] == EARLY_PAYMENT_DISCOUNT_CAPTURE
+        assert result[0]["estimated_impact_aud"] > 0
+
+    def test_early_payment_discount_no_fire_below_min(self, config):
+        """EARLY_PAYMENT_DISCOUNT_CAPTURE does not fire when opportunity is below minimum threshold."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP1"],
+            "canonical_supplier_name": ["Acme"],
+            "base_amount": [100.0],
+            "has_early_payment_discount": [1],
+            "discount_percent": [2.5],
+            "is_intercompany": [0],
+            "is_tax_line": [0],
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=100.0), config)
+        result = rules.rule_early_payment_discount_capture()
+        assert result == []
+
+    def test_best_price_no_fire_when_no_unit_price(self, config):
+        """BEST_PRICE_EXTRAPOLATION returns [] immediately when unit_price column is absent."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP_A", "SUP_B"],
+            "base_amount": [1_000.0, 1_000.0],
+            "category_l2": ["Office Supplies", "Office Supplies"],
+            "is_intercompany": [0, 0],
+            "is_tax_line": [0, 0],
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=2_000.0), config)
+        result = rules.rule_best_price_extrapolation()
+        assert result == []
+
+    def test_best_price_fires(self, config):
+        """BEST_PRICE_EXTRAPOLATION fires when avg unit price exceeds best observed across suppliers."""
+        txn = pd.DataFrame({
+            "canonical_supplier_id": ["SUP_A"] * 6 + ["SUP_B"] * 6,
+            "canonical_supplier_name": ["Supplier A"] * 6 + ["Supplier B"] * 6,
+            "base_amount": [1_000.0] * 12,
+            "category_l3": ["Office Supplies"] * 12,
+            "unit_price": [10.0] * 6 + [15.0] * 6,
+            "is_intercompany": [0] * 12,
+            "is_tax_line": [0] * 12,
+        })
+        rules = RecommendationRules({"transactions": txn}, _metrics(total_spend=12_000.0), config)
+        result = rules.rule_best_price_extrapolation()
+        assert len(result) == 1
+        assert result[0]["type"] == BEST_PRICE_EXTRAPOLATION
+        assert result[0]["estimated_impact_aud"] > 0
 
 
 # ---------------------------------------------------------------------------
