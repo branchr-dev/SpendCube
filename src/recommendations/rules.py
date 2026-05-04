@@ -43,6 +43,7 @@ COMPETITIVE_TENDER = "COMPETITIVE_TENDER"
 CONTRACT_COVERAGE_GAP = "CONTRACT_COVERAGE_GAP"
 SPEND_CONCENTRATION_RISK = "SPEND_CONCENTRATION_RISK"
 EARLY_PAYMENT_DISCOUNT_CAPTURE = "EARLY_PAYMENT_DISCOUNT_CAPTURE"
+BEST_PRICE_EXTRAPOLATION = "BEST_PRICE_EXTRAPOLATION"
 
 
 class RecommendationRules:
@@ -79,6 +80,7 @@ class RecommendationRules:
             self.rule_contract_coverage_gap,
             self.rule_spend_concentration_risk,
             self.rule_early_payment_discount_capture,
+            self.rule_best_price_extrapolation,
         ]
 
         for rule_method in rule_methods:
@@ -610,6 +612,86 @@ class RecommendationRules:
                 "addressability_pct": addressability_pct,
                 "saving_pct": None,
                 "addressable_baseline": round(disc_opp_sum, 2),
+            })
+
+        return recs
+
+    def rule_best_price_extrapolation(self) -> list[dict]:
+        """BEST_PRICE_EXTRAPOLATION — Categories where avg unit price exceeds best observed.
+
+        Groups by category_l3 (falls back to category_l2) where unit_price is non-null.
+        estimated_saving = price_gap_pct * addressable_baseline.
+        Returns [] immediately if unit_price column is absent or all null.
+        """
+        txn = self.cube.get("transactions", pd.DataFrame())
+        if txn.empty:
+            return []
+        if "unit_price" not in txn.columns:
+            return []
+
+        addr = self._addressable(txn)
+        priced = addr[addr["unit_price"].notna() & (addr["unit_price"] > 0)]
+        if priced.empty:
+            return []
+
+        group_col = (
+            "category_l3"
+            if ("category_l3" in priced.columns and priced["category_l3"].notna().any())
+            else "category_l2"
+        )
+        priced_cat = priced.dropna(subset=[group_col])
+        if priced_cat.empty:
+            return []
+
+        cfg = self._rec_cfg
+        recs: list[dict] = []
+
+        for category, group in priced_cat.groupby(group_col):
+            if len(group) < cfg.min_price_benchmark_transactions:
+                continue
+
+            n_suppliers = int(group["canonical_supplier_id"].nunique())
+            if n_suppliers < 2:
+                continue
+
+            best_price = float(group["unit_price"].min())
+            avg_price = float(group["unit_price"].mean())
+            if avg_price <= best_price:
+                continue
+
+            price_gap_pct = (avg_price - best_price) / avg_price
+
+            category_spend = float(addr[addr[group_col] == category]["base_amount"].sum())
+            if category_spend <= 0:
+                continue
+
+            rates_row = self._rates.get(BEST_PRICE_EXTRAPOLATION, str(category))
+            addressability_pct = rates_row["addressability_pct"]
+            addressable_baseline = category_spend * addressability_pct
+            estimated_impact = price_gap_pct * addressable_baseline
+
+            confidence = "HIGH" if len(group) >= 20 else "MEDIUM"
+
+            recs.append({
+                "type": BEST_PRICE_EXTRAPOLATION,
+                "context": str(category),
+                "evidence": (
+                    f"Best unit price: {best_price:.2f}; "
+                    f"avg unit price: {avg_price:.2f}; "
+                    f"gap: {price_gap_pct:.1%} across {n_suppliers} suppliers "
+                    f"({len(group)} transactions)"
+                ),
+                "estimated_impact_aud": round(estimated_impact, 2),
+                "confidence": confidence,
+                "action": (
+                    f"Standardise sourcing for {category} to best-price supplier "
+                    "or negotiate to best observed rate"
+                ),
+                "lever": "Best Price Extrapolation",
+                "baseline_spend": round(category_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": None,
+                "addressable_baseline": round(addressable_baseline, 2),
             })
 
         return recs
