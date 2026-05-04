@@ -567,3 +567,73 @@ STORY_COMPLETE: US-009
 [2026-05-04 22:14:41] [OK] Marked US-009 as passed
 [2026-05-04 22:14:41] [INFO] Logged progress for US-009: PASSED
 [2026-05-04 22:14:41] [STEP] Committing changes...
+[2026-05-04 22:14:43] [INFO] Starting iteration 10
+[2026-05-04 22:14:43] [INFO] Processing story: US-010
+[2026-05-04 22:14:43] [STEP] Spawning Claude with prompt for US-010
+--- PROMPT FOR US-010 ---
+You are working on story US-010: Add config settings panel to RecommendationsPage and unit_price to UploadPage
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Two frontend changes. (1) Add a collapsible settings panel to RecommendationsPage: a 'Configure' button (Settings icon) in the page header toggles a form with 9 threshold inputs. Saving calls saveConfig (converting displayed pct values back to fractions where needed) then triggers runMutation to regenerate recommendations. (2) Add unit_price and unit_of_measure to CANONICAL_FIELDS in UploadPage so users can optionally map these columns during upload.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — add to imports: Settings from 'lucide-react'; useRecommendationConfig from '@/hooks/useRecommendationConfig'; Input from '@/components/ui/input'; Label from '@/components/ui/label'
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — add inside component: const [showConfig, setShowConfig] = useState(false); const { config: recConfig, saveConfig, isSaving } = useRecommendationConfig(engagementId); local state vars for all 9 fields using useState<number> initialised to 0; add useEffect that syncs local state from recConfig when it loads (target_payment_days, wacc*100 for display, consolidation_threshold, tail_spend_alert_pct*100, maverick_alert_pct*100, competitive_tender_min_spend, contract_coverage_gap_min_spend, concentration_threshold_pct*100, min_discount_opportunity)
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — in the page header div with 'flex items-center justify-between', add a Configure Button with variant='outline' and Settings icon before the Export button: <Button variant='outline' onClick={() => setShowConfig(p => !p)}><Settings className='h-4 w-4 mr-2' />{showConfig ? 'Close Settings' : 'Configure'}</Button>
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — after the portfolio KPIs grid, render {showConfig && ( <div className='border rounded-xl p-5 bg-muted/30 space-y-4'> <h3 className='text-sm font-semibold'>Recommendation Thresholds</h3> <div className='grid grid-cols-3 gap-4'> — 9 labeled Input fields for each threshold — </div> <div className='flex gap-2 justify-end'> <Button variant='outline' onClick={() => setShowConfig(false)}>Cancel</Button> <Button onClick={handleSaveConfig} disabled={isSaving}>{isSaving ? 'Saving…' : 'Save & Regenerate'}</Button> </div> </div> )} and add handleSaveConfig async function that calls saveConfig with the 9 field values (dividing pct display values by 100 for fractional fields: wacc, tail_spend_alert_pct, maverick_alert_pct, concentration_threshold_pct) then calls runMutation.mutate()
+- Edit file: frontend/src/pages/ingest/UploadPage.tsx — in CANONICAL_FIELDS array, add two new entries after cost_centre: { key: 'unit_price', label: 'Unit Price', keyword: 'unit_price' } and { key: 'unit_of_measure', label: 'Unit of Measure', keyword: 'uom' }
+- Run: cd frontend && npm run build — should succeed with no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-010
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-010: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-010 - Add config settings panel to RecommendationsPage and unit_price to UploadPage`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-010 ---
+Both changes are complete and committed. The build passes with zero TypeScript errors.
+
+**Summary of changes:**
+
+1. **`RecommendationsPage.tsx`** — Added `useEffect` import; `Settings`, `useRecommendationConfig`, `Input`, `Label` imports; `showConfig` toggle state; 9 threshold `useState` vars; `useEffect` syncing from `recConfig` (with `*100` conversions for fractional fields); `handleSaveConfig` async function that patches config (dividing display % back to fractions) then triggers `runMutation`; a Configure button in the header; and a collapsible 3-column settings panel with all 9 labeled inputs.
+
+2. **`UploadPage.tsx`** — Added `unit_price` and `unit_of_measure` entries to `CANONICAL_FIELDS` after `cost_centre`.
+
+STORY_COMPLETE: US-010
+--- END OUTPUT ---
+[2026-05-04 22:16:16] [OK] Story US-010 completed!
+[2026-05-04 22:16:16] [OK] Marked US-010 as passed
+[2026-05-04 22:16:16] [INFO] Logged progress for US-010: PASSED
+[2026-05-04 22:16:16] [STEP] Committing changes...

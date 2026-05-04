@@ -190,7 +190,8 @@
         "Edit file: frontend/src/pages/ingest/UploadPage.tsx — in CANONICAL_FIELDS array, add two new entries after cost_centre: { key: 'unit_price', label: 'Unit Price', keyword: 'unit_price' } and { key: 'unit_of_measure', label: 'Unit of Measure', keyword: 'uom' }",
         "Run: cd frontend && npm run build — should succeed with no TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:16:16Z"
     },
     {
       "id": "US-011",
