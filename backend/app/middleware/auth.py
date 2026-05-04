@@ -1,9 +1,9 @@
 import logging
 import os
 
-import httpx
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
@@ -21,34 +21,22 @@ class SupabaseAuthMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=401, content={"detail": "Missing or invalid Authorization header"})
 
         token = auth_header[len("Bearer "):]
-        supabase_url = os.getenv("SUPABASE_URL", "")
-        anon_key = os.getenv("SUPABASE_ANON_KEY", "")
+        secret = os.getenv("SUPABASE_JWT_SECRET", "")
 
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(
-                    f"{supabase_url}/auth/v1/user",
-                    headers={
-                        "Authorization": f"Bearer {token}",
-                        "apikey": anon_key,
-                    },
-                )
-            if resp.status_code != 200:
-                logger.warning("Supabase token rejected: %s", resp.text)
-                return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
-
-            user_data = resp.json()
-            email = user_data.get("email", "")
+            payload = jwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
+            email = payload.get("email") or payload.get("sub", "")
             if not email:
-                return JSONResponse(status_code=401, content={"detail": "Token missing email"})
-
+                logger.warning("JWT payload missing email/sub: %s", list(payload.keys()))
+                return JSONResponse(status_code=401, content={"detail": "Token missing email claim"})
             request.state.user_email = email
-
-        except httpx.TimeoutException:
-            logger.error("Supabase auth check timed out")
-            return JSONResponse(status_code=503, content={"detail": "Auth service timeout"})
-        except Exception as exc:
-            logger.error("Auth check failed: %s", exc)
-            return JSONResponse(status_code=401, content={"detail": "Auth check failed"})
+        except JWTError as exc:
+            logger.warning("JWT validation failed: %s", exc)
+            return JSONResponse(status_code=401, content={"detail": f"JWT error: {exc}"})
 
         return await call_next(request)
