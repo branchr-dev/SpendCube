@@ -43,6 +43,7 @@ _DB_COLUMNS = {
     "managed_status", "is_credit_note", "is_intercompany", "is_tax_line",
     "is_duplicate", "review_status", "reviewer", "review_notes",
     "review_date", "raw_data",
+    "unit_price", "unit_of_measure",
 }
 
 

@@ -170,6 +170,8 @@ class CanonicalTransaction(BaseModel):
     has_early_payment_discount: Optional[int] = 0
     payment_term_confidence: Optional[float] = None
     abc_segment: Optional[str] = None
+    unit_price: Optional[float] = None
+    unit_of_measure: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

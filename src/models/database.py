@@ -93,6 +93,8 @@ transactions_table = Table(
     Column("payment_term_confidence", Float, nullable=True),
     Column("abc_segment", Text, nullable=True),
     Column("source_raw_id", Text, nullable=True),
+    Column("unit_price", Float, nullable=True),
+    Column("unit_of_measure", Text, nullable=True),
 )
 
 supplier_master_table = Table(
