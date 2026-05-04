@@ -150,7 +150,8 @@
         "Edit file: src/recommendations/rules.py — add self.rule_best_price_extrapolation to rule_methods list in generate_all()",
         "Run: python -c \"from src.recommendations.rules import BEST_PRICE_EXTRAPOLATION; print(BEST_PRICE_EXTRAPOLATION)\" — should print BEST_PRICE_EXTRAPOLATION"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:13:14Z"
     },
     {
       "id": "US-008",
