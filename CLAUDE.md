@@ -348,6 +348,34 @@ All DB mutations call `st.cache_data.clear()` + `st.rerun()` to keep the UI cons
 
 Each phase is a separate Ralph sprint. All 6 Phases Complete.
 
+## Evaluation Harness
+
+`scripts/evaluate_pipeline.py` is a standalone quality-gate script for validating pipeline output before client delivery. It runs the full 6-phase pipeline against a temporary SQLite DB and prints a structured 5-section report with PASS/WARN/FAIL verdicts. No side effects on production data.
+
+**How to run:**
+
+```bash
+python3 scripts/evaluate_pipeline.py               # 200-row synthetic data (default)
+python3 scripts/evaluate_pipeline.py --csv path/to/file.csv   # use a specific CSV
+python3 scripts/evaluate_pipeline.py --csv file.csv --db custom.db  # keep the DB after run
+```
+
+**Report sections:**
+
+| Section | What it reports |
+|---------|----------------|
+| 1. Ingestion | row_count, credit_notes detected, intercompany rows filtered |
+| 2. Supplier Harmonisation | canonical_suppliers, high/medium/low confidence %, unmatched count |
+| 3. Spend Categorisation | coverage_pct, confidence band breakdown, uncategorised count |
+| 4. Recommendations | count, types list, total_savings_aud, sanity_check_passed |
+| 5. Data Quality | per-check name, GREEN/AMBER/RED status, pct value |
+
+**Target thresholds (for PASS verdict):**
+
+- Categorisation coverage ≥ 70% of transactions at confidence ≥ 0.60
+- Recommendation count ≥ 3 distinct recommendation types
+- `sanity_check_passed = True` (total savings ≤ 20% of spend)
+
 ## End-to-End Pipeline
 
 Full pipeline from raw data to recommendations and dashboard:
@@ -460,7 +488,8 @@ SpendCube/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml              # GitHub Actions: python-tests + frontend-build
-└── DEPLOYMENT.md               # Step-by-step deploy guide (Supabase + Railway + Vercel)
+├── DEPLOYMENT.md               # Step-by-step deploy guide (Supabase + Railway + Vercel)
+└── HANDOVER.md                 # Primary client-facing setup document — architecture, local dev, migrations, first engagement walkthrough
 ```
 
 ### Tech Stack
