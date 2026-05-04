@@ -1,0 +1,250 @@
+{
+  "project": {
+    "id": "REC-ENGINE-V2-2026-05",
+    "name": "Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price",
+    "created": "2026-05-04",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-04T2202_REC_ENGINE_V2",
+    "track": "code"
+  },
+  "summary": "Extends the SpendCube recommendation engine with three new rule types and per-engagement configurable thresholds. (1) SPEND_CONCENTRATION_RISK fires when a single supplier holds >80% of a multi-supplier category — a risk signal complementary to COMPETITIVE_TENDER (which fires on single-source only). (2) EARLY_PAYMENT_DISCOUNT_CAPTURE uses the existing has_early_payment_discount/discount_percent fields already on the transactions table to quantify untapped early-pay discount value. (3) BEST_PRICE_EXTRAPOLATION benchmarks unit prices across suppliers in the same L3 category — gracefully no-ops when unit_price is absent, which requires adding unit_price and unit_of_measure as optional nullable transaction columns. All rule thresholds (payment days target, WACC, consolidation threshold, etc.) become per-engagement overrides stored in a new recommendation_config_json column on the engagements table, editable via GET/PATCH /recommendations/config endpoints and a frontend settings panel on the Recommendations page. The frontend column_mapping-to-ingestor bug (mapping sent but not used by ingest_to_raw) is noted in risks but out of scope.",
+  "decisions": {
+    "threshold_storage": "Per-engagement overrides stored as a JSON blob in engagements.recommendation_config_json. Engine loads and merges at run time via setattr on config.recommendations. Keeps config.yaml as the global default — no new tables needed.",
+    "config_api_location": "GET/PATCH /recommendations/config added to the existing recommendations router (backend/app/routers/recommendations.py) — follows existing patterns and prefix /api/engagements/{engagement_id}/recommendations, avoids a new router file.",
+    "new_rule_exclusive_groups": "SPEND_CONCENTRATION_RISK goes into SOURCING_CONCENTRATION (separate from SOURCING where SUPPLIER_CONSOLIDATION and COMPETITIVE_TENDER live — they fire on different conditions so do not double-count). EARLY_PAYMENT_DISCOUNT_CAPTURE goes into EARLY_PAYMENT. BEST_PRICE_EXTRAPOLATION goes into PRICE_BENCHMARK.",
+    "best_price_savings_formula": "estimated_saving = price_gap_pct * category_spend * addressability_pct, where price_gap_pct = (avg_unit_price - best_unit_price) / avg_unit_price. Avoids needing a quantity column and works from unit price plus spend data only.",
+    "savings_rates_passthrough": "EARLY_PAYMENT_DISCOUNT_CAPTURE and BEST_PRICE_EXTRAPOLATION set saving_pct: 1.0 in savings_rates.yaml. These rules compute the impact directly (discount_amount and price_gap respectively) — a rates saving_pct of 1.0 passes through the computed value unchanged. addressability_pct still applies.",
+    "concentration_risk_threshold": "Default 80% top-supplier share. Only fires when n_suppliers > 1 (no overlap with COMPETITIVE_TENDER). Category spend must exceed competitive_tender_min_spend (reuses existing config value to avoid a new threshold).",
+    "column_mapping_bug_out_of_scope": "frontend UploadPage sends column_mapping to the backend but _run_pipeline in ingestion.py does not pass it to ingest_to_raw(). Fixing this is out of scope. unit_price will only populate if the CSV column is literally named unit_price."
+  },
+  "context": {
+    "existing_tables": {
+      "engagements": "Has recommendations_json TEXT and llm_dry_run BOOLEAN. Sprint adds recommendation_config_json TEXT (nullable) for per-engagement threshold overrides.",
+      "transactions": "Has has_early_payment_discount INTEGER, discount_percent FLOAT, discount_days INTEGER already in both src/models/database.py transactions_table and CanonicalTransaction in src/models/schema.py. Sprint adds unit_price DOUBLE PRECISION and unit_of_measure TEXT as nullable columns.",
+      "pipeline_jobs": "No changes in this sprint.",
+      "supplier_master": "No changes in this sprint."
+    },
+    "key_files": [
+      "src/recommendations/rules.py — 6 existing rule methods on RecommendationRules; 3 new rule methods and 3 new constants added here",
+      "src/recommendations/engine.py — RecommendationEngine orchestrator; add engagement_id param + _apply_engagement_overrides() method",
+      "src/recommendations/deduplicator.py — EXCLUSIVE_GROUPS dict maps rule type → exclusive group string; add 3 new entries",
+      "src/recommendations/savings_rates.py — reads data/reference/savings_rates.yaml; no code changes needed",
+      "data/reference/savings_rates.yaml — add default rates for 3 new rule types under defaults: section",
+      "src/config.py — RecommendationsConfig Pydantic BaseModel; add 3 new threshold fields with defaults",
+      "config.yaml — recommendations: section; add 3 new threshold keys matching RecommendationsConfig field names",
+      "src/models/schema.py — CanonicalTransaction; add unit_price and unit_of_measure as Optional fields after abc_segment",
+      "src/models/database.py — transactions_table Table definition; add 2 new Column entries after source_raw_id Column",
+      "src/ingestion/ingest.py — _DB_COLUMNS set at module level; add 'unit_price' and 'unit_of_measure'",
+      "backend/app/routers/recommendations.py — existing file with POST /run and GET /; add GET /config and PATCH /config",
+      "backend/app/routers/ingestion.py — _run_pipeline function; change RecommendationEngine constructor call to pass engagement_id",
+      "frontend/src/types/index.ts — add RecommendationConfig interface",
+      "frontend/src/hooks/useRecommendationConfig.ts — new file, useQuery + useMutation wrapper",
+      "frontend/src/pages/dashboard/RecommendationsPage.tsx — add collapsible settings panel",
+      "frontend/src/pages/ingest/UploadPage.tsx — add unit_price and unit_of_measure to CANONICAL_FIELDS",
+      "supabase/migrations/004_recommendation_engine_v2.sql — new migration: 3 ALTER TABLE ADD COLUMN IF NOT EXISTS statements"
+    ],
+    "patterns_to_follow": [
+      "New rules: method named rule_X() on RecommendationRules; check required columns; call self._addressable(txn); iterate groupby; call self._rates.get(TYPE, category); return list[dict] with all 8 standard fields (type, context, evidence, estimated_impact_aud, confidence, action, lever) plus 4 audit trail fields (baseline_spend, addressability_pct, saving_pct, addressable_baseline).",
+      "Engine override: self._apply_engagement_overrides() queries SELECT recommendation_config_json FROM engagements WHERE id = :eid using self.engine.connect(); parses JSON; calls setattr(self.config.recommendations, key, value) for each key where hasattr(self.config.recommendations, key) is True.",
+      "Backend config endpoints: call verify_engagement_ownership first; load config defaults via load_config(config_path); query engagements for recommendation_config_json; merge and return. PATCH updates the JSON column.",
+      "Frontend settings panel: useRecommendationConfig(engagementId) hook for data; useState for each field initialised from config in useEffect; Save calls saveConfig with local state values (dividing displayed percentages by 100 for fractional fields like wacc, tail_spend_alert_pct, maverick_alert_pct, concentration_threshold_pct) then runMutation.mutate().",
+      "EXCLUSIVE_GROUPS in deduplicator.py: pool_key for per-category rules is (context, exclusive_group); for PORTFOLIO_* rules it is ('PORTFOLIO', exclusive_group). New rules are per-category so use (context, exclusive_group) pattern.",
+      "Migration: ALTER TABLE ... ADD COLUMN IF NOT EXISTS pattern — no DROP, no DEFAULT constraints needed for nullable columns."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create Supabase migration for new DB columns",
+      "description": "Create supabase/migrations/004_recommendation_engine_v2.sql with three ALTER TABLE ADD COLUMN IF NOT EXISTS statements: recommendation_config_json TEXT on engagements, unit_price DOUBLE PRECISION and unit_of_measure TEXT on transactions. All three use IF NOT EXISTS to be safe on re-run.",
+      "acceptanceCriteria": [
+        "Create file: supabase/migrations/004_recommendation_engine_v2.sql with content: ALTER TABLE engagements ADD COLUMN IF NOT EXISTS recommendation_config_json TEXT; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS unit_of_measure TEXT;",
+        "Verify: supabase/migrations/004_recommendation_engine_v2.sql contains no DROP, TRUNCATE, or DELETE statements",
+        "Verify: the file has exactly 3 ALTER TABLE statements each ending with a semicolon"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Add unit_price and unit_of_measure to CanonicalTransaction, SQLAlchemy table, and ingestor allowlist",
+      "description": "Three additive changes so unit_price flows from ingestion through to the rules engine. (1) Add unit_price: Optional[float] = None and unit_of_measure: Optional[str] = None to CanonicalTransaction in src/models/schema.py after the abc_segment field. (2) Add Column('unit_price', Float, nullable=True) and Column('unit_of_measure', Text, nullable=True) to transactions_table in src/models/database.py after the existing source_raw_id column. (3) Add 'unit_price' and 'unit_of_measure' to the _DB_COLUMNS set in src/ingestion/ingest.py so these columns pass through the _df_to_records filter.",
+      "acceptanceCriteria": [
+        "Edit file: src/models/schema.py — in CanonicalTransaction class, after the line 'abc_segment: Optional[str] = None', add two new lines: 'unit_price: Optional[float] = None' and 'unit_of_measure: Optional[str] = None'",
+        "Edit file: src/models/database.py — in transactions_table Table definition, after the line \"Column('source_raw_id', Text, nullable=True),\", add: \"Column('unit_price', Float, nullable=True),\" and \"Column('unit_of_measure', Text, nullable=True),\"",
+        "Edit file: src/ingestion/ingest.py — in the _DB_COLUMNS set definition (lines starting with the set literal), add 'unit_price' and 'unit_of_measure' to the set",
+        "Run: python -c \"from src.models.schema import CanonicalTransaction; t = CanonicalTransaction(source_system='T', source_row_number=1, invoice_number='I', original_amount=1, original_currency='AUD', base_amount=1, base_currency='AUD', raw_data={}); print(t.unit_price, t.unit_of_measure)\" — should print None None without error",
+        "Run: python -c \"from src.models.database import transactions_table; cols = [c.name for c in transactions_table.columns]; assert 'unit_price' in cols and 'unit_of_measure' in cols; print('OK')\" — should print OK"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Add GET /config and PATCH /config endpoints to recommendations router",
+      "description": "Add two endpoints to backend/app/routers/recommendations.py. GET /config returns the current per-engagement recommendation thresholds as a flat dict (config.yaml defaults merged with any recommendation_config_json overrides stored on the engagement row). PATCH /config accepts a partial RecommendationConfigUpdate Pydantic body, merges the non-None fields into the existing stored JSON, and persists to engagements.recommendation_config_json. Both endpoints call verify_engagement_ownership and load_config() using the SPENDCUBE_CONFIG_PATH env var.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/recommendations.py — add import os at the top if not present; add 'from src.config import load_config' import inside the endpoint functions (following existing lazy-import pattern in this file)",
+        "Edit file: backend/app/routers/recommendations.py — add Pydantic model RecommendationConfigUpdate(BaseModel) with all Optional fields: consolidation_threshold: Optional[int] = None; target_payment_days: Optional[int] = None; wacc: Optional[float] = None; min_wc_opportunity: Optional[int] = None; tail_spend_alert_pct: Optional[float] = None; maverick_alert_pct: Optional[float] = None; competitive_tender_min_spend: Optional[float] = None; contract_coverage_gap_min_spend: Optional[float] = None; concentration_threshold_pct: Optional[float] = None; min_discount_opportunity: Optional[float] = None",
+        "Edit file: backend/app/routers/recommendations.py — add GET /config endpoint decorated with @router.get('/config'): verify_engagement_ownership; load config defaults; query SELECT recommendation_config_json FROM engagements WHERE id = :eid; build defaults_dict from config.recommendations model_dump(); if stored JSON exists, merge into defaults_dict; return merged dict",
+        "Edit file: backend/app/routers/recommendations.py — add PATCH /config endpoint decorated with @router.patch('/config'): verify_engagement_ownership; query existing recommendation_config_json; parse existing JSON or start with {}; update with body.model_dump(exclude_none=True); persist json.dumps(merged) back to engagements.recommendation_config_json; return merged dict",
+        "Run: cd backend && python -c \"from app.routers.recommendations import router; paths = [r.path for r in router.routes]; print(paths)\" — output list must contain strings ending in '/config'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Add new RecommendationsConfig fields and per-engagement override mechanism to RecommendationEngine",
+      "description": "Two changes. First, add three new threshold fields to RecommendationsConfig in src/config.py and matching keys to config.yaml: concentration_threshold_pct (default 0.80), min_discount_opportunity (default 1000.0), min_price_benchmark_transactions (default 5). Second, add engagement_id: str | None = None parameter to RecommendationEngine.__init__ and implement _apply_engagement_overrides() which queries recommendation_config_json from the engagements table and applies overrides via setattr. Call _apply_engagement_overrides() at the start of run(). Also update the two callers to pass engagement_id.",
+      "acceptanceCriteria": [
+        "Edit file: src/config.py — in RecommendationsConfig class, add three new fields after contract_coverage_gap_min_spend: concentration_threshold_pct: float = 0.80; min_discount_opportunity: float = 1000.0; min_price_benchmark_transactions: int = 5",
+        "Edit file: config.yaml — in recommendations: section, add three new keys: concentration_threshold_pct: 0.80; min_discount_opportunity: 1000.0; min_price_benchmark_transactions: 5",
+        "Edit file: src/recommendations/engine.py — change __init__ signature to: def __init__(self, config, engine, engagement_id: str | None = None) -> None; add self.engagement_id = engagement_id",
+        "Edit file: src/recommendations/engine.py — add method _apply_engagement_overrides(self) -> None immediately before run(). Implementation: if self.engagement_id is None: return; wrap entire body in try/except Exception as e: self.logger.warning('Could not load engagement config overrides: %s', e); return. Inside try: with self.engine.connect() as conn: row = conn.execute(text('SELECT recommendation_config_json FROM engagements WHERE id = :eid'), {'eid': self.engagement_id}).mappings().first(); if row is None or row['recommendation_config_json'] is None: return; overrides = json.loads(row['recommendation_config_json']); for key, value in overrides.items(): if hasattr(self.config.recommendations, key): setattr(self.config.recommendations, key, value); self.logger.info('Applied %d engagement config overrides', len(overrides))",
+        "Edit file: src/recommendations/engine.py — in run() method, add self._apply_engagement_overrides() call as the very first line after self.logger.info('Starting recommendation engine')",
+        "Edit file: backend/app/routers/ingestion.py — change 'rec_engine = RecommendationEngine(config, src_engine)' to 'rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)'",
+        "Edit file: backend/app/routers/recommendations.py — in run_recommendations function, change 'rec_engine = RecommendationEngine(config, src_engine)' to 'rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)'",
+        "Run: python -c \"from src.config import load_config; c = load_config('config.yaml'); print(c.recommendations.concentration_threshold_pct, c.recommendations.min_discount_opportunity, c.recommendations.min_price_benchmark_transactions)\" — should print 0.8 1000.0 5"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add SPEND_CONCENTRATION_RISK rule",
+      "description": "Add rule method rule_spend_concentration_risk() to RecommendationRules in src/recommendations/rules.py. Fires when a L2 category has more than one supplier AND the top supplier holds more than cfg.concentration_threshold_pct (default 0.80) of category spend AND category_spend > cfg.competitive_tender_min_spend. The saving represents the risk mitigation cost of establishing a second source. n_suppliers must be > 1 to avoid overlap with COMPETITIVE_TENDER (which fires on exactly 1 supplier).",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/rules.py — add constant at the top with other constants: SPEND_CONCENTRATION_RISK = 'SPEND_CONCENTRATION_RISK'",
+        "Edit file: src/recommendations/rules.py — add rule_spend_concentration_risk() method to RecommendationRules class with this logic: (1) get txn from self.cube.get('transactions', pd.DataFrame()); check required columns {'category_l2', 'canonical_supplier_id', 'base_amount'} are all in txn.columns; (2) addr = self._addressable(txn); addr_cat = addr.dropna(subset=['category_l2']); (3) for category, group in addr_cat.groupby('category_l2'): n_suppliers = int(group['canonical_supplier_id'].nunique()); skip if n_suppliers <= 1; category_spend = float(group['base_amount'].sum()); skip if category_spend <= cfg.competitive_tender_min_spend; supplier_spend = group.groupby('canonical_supplier_id')['base_amount'].sum(); top_supplier_pct = float(supplier_spend.max() / category_spend); skip if top_supplier_pct <= cfg.concentration_threshold_pct; get top_supplier_id = supplier_spend.idxmax(); get top_supplier_name from group where canonical_supplier_id == top_supplier_id using canonical_supplier_name column if present; rates_row = self._rates.get(SPEND_CONCENTRATION_RISK, str(category)); saving_pct = rates_row['saving_pct']; addressability_pct = rates_row['addressability_pct']; addressable_baseline = category_spend * addressability_pct; estimated_impact = addressable_baseline * saving_pct; append dict with all required fields",
+        "Edit file: src/recommendations/rules.py — the recommendation dict for SPEND_CONCENTRATION_RISK must include: type=SPEND_CONCENTRATION_RISK, context=str(category), evidence=f'{top_supplier_pct:.0%} of {category} spend concentrated in {top_supplier_name}; {n_suppliers} total suppliers; {addressability_pct:.0%} addressable', confidence='MEDIUM', action=f'Introduce second-source competition in {category} — {top_supplier_name} holds {top_supplier_pct:.0%} of spend', lever='Supply Risk Management', baseline_spend=round(category_spend, 2), addressability_pct=addressability_pct, saving_pct=saving_pct, addressable_baseline=round(addressable_baseline, 2)",
+        "Edit file: src/recommendations/rules.py — add self.rule_spend_concentration_risk to rule_methods list in generate_all()",
+        "Run: python -c \"from src.recommendations.rules import SPEND_CONCENTRATION_RISK; print(SPEND_CONCENTRATION_RISK)\" — should print SPEND_CONCENTRATION_RISK without error"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Add EARLY_PAYMENT_DISCOUNT_CAPTURE rule",
+      "description": "Add rule_early_payment_discount_capture() to RecommendationRules in src/recommendations/rules.py. Uses the existing has_early_payment_discount (INTEGER, 1=yes) and discount_percent (FLOAT, e.g. 2.5 means 2.5%) columns already on the transactions table. For each supplier with eligible transactions, annual_discount_opportunity = SUM(base_amount * discount_percent / 100). Apply addressability_pct from rates. Only fire when addressable_opportunity > cfg.min_discount_opportunity (default $1,000). Since saving_pct in savings_rates.yaml is 1.0 for this rule type, estimated_impact = annual_discount_opportunity * addressability_pct * 1.0.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/rules.py — add constant: EARLY_PAYMENT_DISCOUNT_CAPTURE = 'EARLY_PAYMENT_DISCOUNT_CAPTURE'",
+        "Edit file: src/recommendations/rules.py — add rule_early_payment_discount_capture() method with this logic: (1) required = {'has_early_payment_discount', 'discount_percent', 'base_amount', 'canonical_supplier_id'}; if not required.issubset(txn.columns): return []; (2) addr = self._addressable(txn); (3) eligible = addr[(addr['has_early_payment_discount'] == 1) & (addr['discount_percent'].notna()) & (addr['discount_percent'] > 0)]; if eligible.empty: return []; (4) agg_kwargs = {'annual_spend': ('base_amount', 'sum'), 'avg_discount_pct': ('discount_percent', 'mean'), 'discount_opportunity': (pd.Series(eligible['base_amount'] * eligible['discount_percent'] / 100).rename('disc_opp'), 'sum')}; NOTE: compute discount_opportunity as separate series operation: eligible['disc_opp'] = eligible['base_amount'] * eligible['discount_percent'] / 100; then groupby canonical_supplier_id and aggregate disc_opp sum and base_amount sum; (5) rates_row = self._rates.get(EARLY_PAYMENT_DISCOUNT_CAPTURE); addressability_pct = rates_row['addressability_pct']; for each supplier row: addressable_opportunity = disc_opp_sum * addressability_pct; skip if addressable_opportunity <= cfg.min_discount_opportunity; append rec dict with confidence='HIGH', lever='Early Payment Discount', saving_pct=None, estimated_impact_aud=round(addressable_opportunity, 2)",
+        "Edit file: src/recommendations/rules.py — the recommendation dict for EARLY_PAYMENT_DISCOUNT_CAPTURE must include: type=EARLY_PAYMENT_DISCOUNT_CAPTURE, context=supplier_name, evidence=f'Avg discount: {avg_discount_pct:.1f}%; annual spend with discount terms: {formatcurrency}; capturing discount saves {formatcurrency}/yr', action=f'Capture early payment discount with {supplier_name} — pay within discount window', baseline_spend=round(annual_spend, 2), addressability_pct=addressability_pct, saving_pct=None, addressable_baseline=round(disc_opp_sum, 2)",
+        "Edit file: src/recommendations/rules.py — add self.rule_early_payment_discount_capture to rule_methods list in generate_all()",
+        "Run: python -c \"from src.recommendations.rules import EARLY_PAYMENT_DISCOUNT_CAPTURE; print(EARLY_PAYMENT_DISCOUNT_CAPTURE)\" — should print EARLY_PAYMENT_DISCOUNT_CAPTURE"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Add BEST_PRICE_EXTRAPOLATION rule",
+      "description": "Add rule_best_price_extrapolation() to RecommendationRules in src/recommendations/rules.py. Groups transactions by category_l3 (falls back to category_l2 if l3 absent) where unit_price is non-null and > 0. For each group with >= cfg.min_price_benchmark_transactions rows AND >= 2 distinct suppliers: compute price_gap_pct = (avg_unit_price - best_unit_price) / avg_unit_price; estimated_saving = price_gap_pct * category_spend * addressability_pct. Returns [] immediately if unit_price column is absent or all null — this is the no-op graceful fallback.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/rules.py — add constant: BEST_PRICE_EXTRAPOLATION = 'BEST_PRICE_EXTRAPOLATION'",
+        "Edit file: src/recommendations/rules.py — add rule_best_price_extrapolation() method: (1) if 'unit_price' not in txn.columns: return []; (2) addr = self._addressable(txn); priced = addr[addr['unit_price'].notna() & (addr['unit_price'] > 0)]; if priced.empty: return []; (3) group_col = 'category_l3' if ('category_l3' in priced.columns and priced['category_l3'].notna().any()) else 'category_l2'; priced_cat = priced.dropna(subset=[group_col]); if priced_cat.empty: return []; (4) cfg = self._rec_cfg; recs = []; for category, group in priced_cat.groupby(group_col): if len(group) < cfg.min_price_benchmark_transactions: continue; n_suppliers = int(group['canonical_supplier_id'].nunique()); if n_suppliers < 2: continue; best_price = float(group['unit_price'].min()); avg_price = float(group['unit_price'].mean()); if avg_price <= best_price: continue; price_gap_pct = (avg_price - best_price) / avg_price; category_spend = float(addr[addr[group_col] == category]['base_amount'].sum()); if category_spend <= 0: continue; rates_row = self._rates.get(BEST_PRICE_EXTRAPOLATION, str(category)); addressability_pct = rates_row['addressability_pct']; addressable_baseline = category_spend * addressability_pct; estimated_impact = price_gap_pct * addressable_baseline; confidence = 'HIGH' if len(group) >= 20 else 'MEDIUM'; append rec dict",
+        "Edit file: src/recommendations/rules.py — the recommendation dict for BEST_PRICE_EXTRAPOLATION must include: type=BEST_PRICE_EXTRAPOLATION, context=str(category), evidence=f'Best unit price: {best_price:.2f}; avg unit price: {avg_price:.2f}; gap: {price_gap_pct:.1%} across {n_suppliers} suppliers ({len(group)} transactions)', action=f'Standardise sourcing for {category} to best-price supplier or negotiate to best observed rate', lever='Best Price Extrapolation', confidence=confidence, baseline_spend=round(category_spend, 2), addressability_pct=addressability_pct, saving_pct=None, addressable_baseline=round(addressable_baseline, 2)",
+        "Edit file: src/recommendations/rules.py — add self.rule_best_price_extrapolation to rule_methods list in generate_all()",
+        "Run: python -c \"from src.recommendations.rules import BEST_PRICE_EXTRAPOLATION; print(BEST_PRICE_EXTRAPOLATION)\" — should print BEST_PRICE_EXTRAPOLATION"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Register new rules in SpendAllocator and savings_rates.yaml",
+      "description": "Add the three new rule type constants to EXCLUSIVE_GROUPS in src/recommendations/deduplicator.py so they participate correctly in spend pool deduplication. Add default saving rates for all three new rule types to data/reference/savings_rates.yaml under the defaults: section. For EARLY_PAYMENT_DISCOUNT_CAPTURE and BEST_PRICE_EXTRAPOLATION the saving_pct is 1.0 because the rules compute impact directly — the rates multiplier must not double-discount.",
+      "acceptanceCriteria": [
+        "Edit file: src/recommendations/deduplicator.py — add to EXCLUSIVE_GROUPS dict (after existing entries): 'SPEND_CONCENTRATION_RISK': 'SOURCING_CONCENTRATION', 'EARLY_PAYMENT_DISCOUNT_CAPTURE': 'EARLY_PAYMENT', 'BEST_PRICE_EXTRAPOLATION': 'PRICE_BENCHMARK'",
+        "Edit file: data/reference/savings_rates.yaml — under defaults: section, add three new entries with correct YAML indentation (2 spaces): SPEND_CONCENTRATION_RISK: with sub-keys saving_pct: 0.04 and addressability_pct: 0.70; EARLY_PAYMENT_DISCOUNT_CAPTURE: with sub-keys saving_pct: 1.0 and addressability_pct: 0.85; BEST_PRICE_EXTRAPOLATION: with sub-keys saving_pct: 1.0 and addressability_pct: 0.75",
+        "Run: python -c \"from src.recommendations.deduplicator import EXCLUSIVE_GROUPS; assert 'SPEND_CONCENTRATION_RISK' in EXCLUSIVE_GROUPS; assert 'EARLY_PAYMENT_DISCOUNT_CAPTURE' in EXCLUSIVE_GROUPS; assert 'BEST_PRICE_EXTRAPOLATION' in EXCLUSIVE_GROUPS; print('OK')\" — should print OK",
+        "Run: python -c \"from src.recommendations.savings_rates import SavingsRates; r = SavingsRates(); s1=r.get('SPEND_CONCENTRATION_RISK'); s2=r.get('EARLY_PAYMENT_DISCOUNT_CAPTURE'); s3=r.get('BEST_PRICE_EXTRAPOLATION'); assert s1['saving_pct']==0.04; assert s2['saving_pct']==1.0; assert s3['saving_pct']==1.0; print('OK')\" — should print OK"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "Add RecommendationConfig TypeScript type and useRecommendationConfig hook",
+      "description": "Add a RecommendationConfig interface to frontend/src/types/index.ts, then create frontend/src/hooks/useRecommendationConfig.ts as a new hook that wraps the GET and PATCH /recommendations/config API calls using TanStack Query patterns already used in this codebase.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/types/index.ts — add interface RecommendationConfig { consolidation_threshold?: number; target_payment_days?: number; wacc?: number; min_wc_opportunity?: number; tail_spend_alert_pct?: number; maverick_alert_pct?: number; competitive_tender_min_spend?: number; contract_coverage_gap_min_spend?: number; concentration_threshold_pct?: number; min_discount_opportunity?: number; }",
+        "Create file: frontend/src/hooks/useRecommendationConfig.ts — imports: useQuery, useMutation, useQueryClient from '@tanstack/react-query'; api from '@/lib/api'; RecommendationConfig from '@/types'. Exports default function useRecommendationConfig(engagementId: string | undefined). Inside: const queryClient = useQueryClient(); const { data: config, isLoading } = useQuery<RecommendationConfig>({ queryKey: ['rec-config', engagementId], queryFn: () => api.get(`/api/engagements/${engagementId}/recommendations/config`).then(r => r.data), enabled: !!engagementId, retry: false }); const { mutateAsync: patchConfig, isPending: isSaving } = useMutation({ mutationFn: (updates: Partial<RecommendationConfig>) => api.patch(`/api/engagements/${engagementId}/recommendations/config`, updates).then(r => r.data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rec-config', engagementId] }) }); const saveConfig = async (updates: Partial<RecommendationConfig>) => { await patchConfig(updates) }; return { config, isLoading, saveConfig, isSaving }",
+        "Run: cd frontend && npm run build — should succeed with no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "Add config settings panel to RecommendationsPage and unit_price to UploadPage",
+      "description": "Two frontend changes. (1) Add a collapsible settings panel to RecommendationsPage: a 'Configure' button (Settings icon) in the page header toggles a form with 9 threshold inputs. Saving calls saveConfig (converting displayed pct values back to fractions where needed) then triggers runMutation to regenerate recommendations. (2) Add unit_price and unit_of_measure to CANONICAL_FIELDS in UploadPage so users can optionally map these columns during upload.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — add to imports: Settings from 'lucide-react'; useRecommendationConfig from '@/hooks/useRecommendationConfig'; Input from '@/components/ui/input'; Label from '@/components/ui/label'",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — add inside component: const [showConfig, setShowConfig] = useState(false); const { config: recConfig, saveConfig, isSaving } = useRecommendationConfig(engagementId); local state vars for all 9 fields using useState<number> initialised to 0; add useEffect that syncs local state from recConfig when it loads (target_payment_days, wacc*100 for display, consolidation_threshold, tail_spend_alert_pct*100, maverick_alert_pct*100, competitive_tender_min_spend, contract_coverage_gap_min_spend, concentration_threshold_pct*100, min_discount_opportunity)",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — in the page header div with 'flex items-center justify-between', add a Configure Button with variant='outline' and Settings icon before the Export button: <Button variant='outline' onClick={() => setShowConfig(p => !p)}><Settings className='h-4 w-4 mr-2' />{showConfig ? 'Close Settings' : 'Configure'}</Button>",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — after the portfolio KPIs grid, render {showConfig && ( <div className='border rounded-xl p-5 bg-muted/30 space-y-4'> <h3 className='text-sm font-semibold'>Recommendation Thresholds</h3> <div className='grid grid-cols-3 gap-4'> — 9 labeled Input fields for each threshold — </div> <div className='flex gap-2 justify-end'> <Button variant='outline' onClick={() => setShowConfig(false)}>Cancel</Button> <Button onClick={handleSaveConfig} disabled={isSaving}>{isSaving ? 'Saving…' : 'Save & Regenerate'}</Button> </div> </div> )} and add handleSaveConfig async function that calls saveConfig with the 9 field values (dividing pct display values by 100 for fractional fields: wacc, tail_spend_alert_pct, maverick_alert_pct, concentration_threshold_pct) then calls runMutation.mutate()",
+        "Edit file: frontend/src/pages/ingest/UploadPage.tsx — in CANONICAL_FIELDS array, add two new entries after cost_centre: { key: 'unit_price', label: 'Unit Price', keyword: 'unit_price' } and { key: 'unit_of_measure', label: 'Unit of Measure', keyword: 'uom' }",
+        "Run: cd frontend && npm run build — should succeed with no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "Add tests for the three new rules and the config override mechanism",
+      "description": "Add six test functions to tests/test_recommendations.py covering the three new rules and the engine config override. Each test constructs a minimal DataFrame matching the rule's required columns and calls the rule method directly. The config override test verifies that setattr changes on config.recommendations are reflected in rule thresholds.",
+      "acceptanceCriteria": [
+        "Edit file: tests/test_recommendations.py — add test_spend_concentration_risk_fires(): create a DataFrame with category_l2='IT Software', canonical_supplier_id column with 2 distinct values where supplier_A has 90% of base_amount and supplier_B has 10%, total base_amount=100000 (>competitive_tender_min_spend default 50000); instantiate RecommendationRules with a default config; call rule_spend_concentration_risk(); assert len(result)==1 and result[0]['type']=='SPEND_CONCENTRATION_RISK'",
+        "Edit file: tests/test_recommendations.py — add test_spend_concentration_risk_no_fire_single_supplier(): same DataFrame but only 1 distinct canonical_supplier_id; assert rule_spend_concentration_risk() returns []",
+        "Edit file: tests/test_recommendations.py — add test_early_payment_discount_fires(): create DataFrame with has_early_payment_discount=1, discount_percent=2.5, base_amount=100000, canonical_supplier_id='SUP1', canonical_supplier_name='Acme'; assert rule_early_payment_discount_capture() returns 1 recommendation with estimated_impact_aud > 0 and type=='EARLY_PAYMENT_DISCOUNT_CAPTURE'",
+        "Edit file: tests/test_recommendations.py — add test_early_payment_discount_no_fire_below_min(): same DataFrame but base_amount=100 (making opportunity=2.5 << min_discount_opportunity=1000); assert returns []",
+        "Edit file: tests/test_recommendations.py — add test_best_price_no_fire_when_no_unit_price(): create DataFrame without unit_price column; assert rule_best_price_extrapolation() returns []",
+        "Edit file: tests/test_recommendations.py — add test_best_price_fires(): create DataFrame with category_l3='Office Supplies', 2 suppliers (SUP_A and SUP_B), 6 rows each (total 12 >= min_price_benchmark_transactions=5), SUP_A unit_price=10.0 for all rows, SUP_B unit_price=15.0 for all rows, base_amount=1000 each row; assert rule_best_price_extrapolation() returns 1 rec with type=='BEST_PRICE_EXTRAPOLATION' and estimated_impact_aud > 0",
+        "Run: pytest tests/test_recommendations.py -v — all tests pass with no errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-012",
+      "title": "Update CLAUDE.md with recommendation engine v2 documentation",
+      "description": "Document the three new rule types, the per-engagement config override mechanism, and the unit price fields in CLAUDE.md. Future sessions need this to understand why _apply_engagement_overrides() exists, what the new rules fire on, and the column_mapping limitation for unit_price.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — in the 'Rule types implemented' table under Phase 6, add three new rows: SPEND_CONCENTRATION_RISK (top supplier > concentration_threshold_pct of multi-supplier L2 category), EARLY_PAYMENT_DISCOUNT_CAPTURE (suppliers with has_early_payment_discount=1; captures contractually available discounts), BEST_PRICE_EXTRAPOLATION (benchmarks unit_price across suppliers in same L3 category; no-ops when unit_price absent)",
+        "Edit file: CLAUDE.md — add new subsection '### Per-Engagement Recommendation Config' under Phase 6 documenting: overrides stored in engagements.recommendation_config_json as JSON; GET/PATCH /recommendations/config endpoints in recommendations router; RecommendationEngine accepts engagement_id param; _apply_engagement_overrides() uses setattr on config.recommendations; new RecommendationsConfig fields: concentration_threshold_pct (default 0.80), min_discount_opportunity (default 1000.0), min_price_benchmark_transactions (default 5); frontend settings panel on RecommendationsPage",
+        "Edit file: CLAUDE.md — add note about unit_price: unit_price (Float) and unit_of_measure (Text) added as nullable columns to transactions table and CanonicalTransaction; BEST_PRICE_EXTRAPOLATION rule no-ops when absent; note the column_mapping bug: frontend UploadPage sends column_mapping but ingest_to_raw() does not use it — unit_price only populates if CSV column is already named unit_price"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "new_rule_constants_importable": "python -c \"from src.recommendations.rules import SPEND_CONCENTRATION_RISK, EARLY_PAYMENT_DISCOUNT_CAPTURE, BEST_PRICE_EXTRAPOLATION; print('OK')\"",
+      "new_config_fields": "python -c \"from src.config import load_config; c = load_config('config.yaml'); print(c.recommendations.concentration_threshold_pct, c.recommendations.min_discount_opportunity, c.recommendations.min_price_benchmark_transactions)\"",
+      "deduplicator_groups": "python -c \"from src.recommendations.deduplicator import EXCLUSIVE_GROUPS; print(len(EXCLUSIVE_GROUPS))\"",
+      "schema_columns": "python -c \"from src.models.database import transactions_table; cols = [c.name for c in transactions_table.columns]; print('unit_price' in cols, 'unit_of_measure' in cols)\""
+    },
+    "expected_counts": {
+      "rule_constants": "9 total rule type constants in rules.py (was 6) — SUPPLIER_CONSOLIDATION, PAYMENT_TERM_EXTENSION, TAIL_SPEND_RATIONALISATION, CONTRACT_COMPLIANCE, COMPETITIVE_TENDER, CONTRACT_COVERAGE_GAP, SPEND_CONCENTRATION_RISK, EARLY_PAYMENT_DISCOUNT_CAPTURE, BEST_PRICE_EXTRAPOLATION",
+      "exclusive_groups": "9 total entries in EXCLUSIVE_GROUPS in deduplicator.py (was 6)"
+    },
+    "checks": [
+      "cd frontend && npm run build — zero TypeScript errors",
+      "pytest tests/test_recommendations.py -v — all tests pass",
+      "supabase/migrations/004_recommendation_engine_v2.sql exists and contains exactly 3 ALTER TABLE statements",
+      "GET /recommendations/config returns a flat dict containing concentration_threshold_pct key",
+      "PATCH /recommendations/config with {target_payment_days: 60} persists and is reflected in subsequent GET",
+      "Recommendations page shows a Configure button that toggles a settings form with labeled inputs"
+    ]
+  },
+  "risks": [
+    "column_mapping bug: frontend UploadPage column_mapping dict is sent to backend but _run_pipeline in ingestion.py does not pass it to ingest_to_raw(). unit_price mapping from the UI will be silently ignored — BEST_PRICE rule only fires if the CSV column is literally named unit_price. Fixing this bug is out of scope for this sprint.",
+    "EARLY_PAYMENT_DISCOUNT_CAPTURE and BEST_PRICE_EXTRAPOLATION saving_pct must be 1.0 in savings_rates.yaml. These rules compute impact directly — if saving_pct were 0.08, the already-computed discount amount would be multiplied again, causing a 92% underestimate. Ralph must not use a non-1.0 saving_pct for these two rule types.",
+    "concentration_threshold_pct must be added to BOTH src/config.py RecommendationsConfig class AND config.yaml in US-004. If only one is updated, load_config() Pydantic validation will fail with a missing field error.",
+    "_apply_engagement_overrides() must wrap its DB query in try/except. In test environments with SQLite in-memory DBs that have no engagements table, the query will raise an OperationalError and should log a warning and return rather than crashing the engine.",
+    "setattr on Pydantic v2 model fields: RecommendationsConfig does not have model_config=ConfigDict(frozen=True), so setattr should work directly. If future Pydantic upgrades make models immutable by default, the pattern would need to change to model_copy(update={...}).",
+    "SPEND_CONCENTRATION_RISK reuses cfg.competitive_tender_min_spend as its spend threshold to avoid adding yet another config parameter. This means lowering the competitive tender threshold also lowers the concentration risk threshold — document this coupling."
+  ],
+  "outOfScope": [
+    "Fixing the column_mapping bug where frontend UploadPage mapping is not passed to ingest_to_raw() — separate sprint",
+    "Per-engagement saving rates (custom saving_pct per lever per engagement) — global savings_rates.yaml defaults are sufficient for now",
+    "LLM-powered narrative generation for new rule types — NarrativeGenerator runs on all recommendations automatically",
+    "Market price benchmarking via external data feeds — BEST_PRICE uses internal transaction data only",
+    "Quantity-weighted price benchmarking — requires quantity field and UoM normalisation; deferred",
+    "Admin UI for managing savings_rates.yaml — referenced file only",
+    "Multi-currency unit price benchmarking — assumes all base_amounts are already in base currency AUD"
+  ]
+}
