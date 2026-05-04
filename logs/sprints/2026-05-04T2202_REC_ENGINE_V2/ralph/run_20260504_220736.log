@@ -263,3 +263,64 @@ STORY_COMPLETE: US-004
 [2026-05-04 22:10:11] [OK] Marked US-004 as passed
 [2026-05-04 22:10:11] [INFO] Logged progress for US-004: PASSED
 [2026-05-04 22:10:11] [STEP] Committing changes...
+[2026-05-04 22:10:13] [INFO] Starting iteration 5
+[2026-05-04 22:10:13] [INFO] Processing story: US-005
+[2026-05-04 22:10:13] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Add SPEND_CONCENTRATION_RISK rule
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add rule method rule_spend_concentration_risk() to RecommendationRules in src/recommendations/rules.py. Fires when a L2 category has more than one supplier AND the top supplier holds more than cfg.concentration_threshold_pct (default 0.80) of category spend AND category_spend > cfg.competitive_tender_min_spend. The saving represents the risk mitigation cost of establishing a second source. n_suppliers must be > 1 to avoid overlap with COMPETITIVE_TENDER (which fires on exactly 1 supplier).
+
+## Acceptance Criteria
+- Edit file: src/recommendations/rules.py — add constant at the top with other constants: SPEND_CONCENTRATION_RISK = 'SPEND_CONCENTRATION_RISK'
+- Edit file: src/recommendations/rules.py — add rule_spend_concentration_risk() method to RecommendationRules class with this logic: (1) get txn from self.cube.get('transactions', pd.DataFrame()); check required columns {'category_l2', 'canonical_supplier_id', 'base_amount'} are all in txn.columns; (2) addr = self._addressable(txn); addr_cat = addr.dropna(subset=['category_l2']); (3) for category, group in addr_cat.groupby('category_l2'): n_suppliers = int(group['canonical_supplier_id'].nunique()); skip if n_suppliers <= 1; category_spend = float(group['base_amount'].sum()); skip if category_spend <= cfg.competitive_tender_min_spend; supplier_spend = group.groupby('canonical_supplier_id')['base_amount'].sum(); top_supplier_pct = float(supplier_spend.max() / category_spend); skip if top_supplier_pct <= cfg.concentration_threshold_pct; get top_supplier_id = supplier_spend.idxmax(); get top_supplier_name from group where canonical_supplier_id == top_supplier_id using canonical_supplier_name column if present; rates_row = self._rates.get(SPEND_CONCENTRATION_RISK, str(category)); saving_pct = rates_row['saving_pct']; addressability_pct = rates_row['addressability_pct']; addressable_baseline = category_spend * addressability_pct; estimated_impact = addressable_baseline * saving_pct; append dict with all required fields
+- Edit file: src/recommendations/rules.py — the recommendation dict for SPEND_CONCENTRATION_RISK must include: type=SPEND_CONCENTRATION_RISK, context=str(category), evidence=f'{top_supplier_pct:.0%} of {category} spend concentrated in {top_supplier_name}; {n_suppliers} total suppliers; {addressability_pct:.0%} addressable', confidence='MEDIUM', action=f'Introduce second-source competition in {category} — {top_supplier_name} holds {top_supplier_pct:.0%} of spend', lever='Supply Risk Management', baseline_spend=round(category_spend, 2), addressability_pct=addressability_pct, saving_pct=saving_pct, addressable_baseline=round(addressable_baseline, 2)
+- Edit file: src/recommendations/rules.py — add self.rule_spend_concentration_risk to rule_methods list in generate_all()
+- Run: python -c "from src.recommendations.rules import SPEND_CONCENTRATION_RISK; print(SPEND_CONCENTRATION_RISK)" — should print SPEND_CONCENTRATION_RISK without error
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Add SPEND_CONCENTRATION_RISK rule`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-04 22:11:26] [OK] Story US-005 completed!
+[2026-05-04 22:11:26] [OK] Marked US-005 as passed
+[2026-05-04 22:11:26] [INFO] Logged progress for US-005: PASSED
+[2026-05-04 22:11:26] [STEP] Committing changes...

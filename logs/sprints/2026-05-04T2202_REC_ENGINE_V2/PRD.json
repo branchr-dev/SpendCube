@@ -122,7 +122,8 @@
         "Edit file: src/recommendations/rules.py — add self.rule_spend_concentration_risk to rule_methods list in generate_all()",
         "Run: python -c \"from src.recommendations.rules import SPEND_CONCENTRATION_RISK; print(SPEND_CONCENTRATION_RISK)\" — should print SPEND_CONCENTRATION_RISK without error"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:11:26Z"
     },
     {
       "id": "US-006",
