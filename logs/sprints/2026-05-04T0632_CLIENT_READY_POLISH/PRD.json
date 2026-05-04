@@ -161,7 +161,8 @@
         "Edit file: CLAUDE.md — add reference to HANDOVER.md near the DEPLOYMENT.md mention, noting it is the primary client-facing setup document",
         "Run: grep -c 'evaluate_pipeline\\|HANDOVER' CLAUDE.md — must output >= 3"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:23:34Z"
     }
   ],
   "verification": {

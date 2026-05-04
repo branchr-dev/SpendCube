@@ -83,3 +83,27 @@ Story completed successfully by Ralph loop iteration 6
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 7
 
+
+## US-008 — Full test suite green check and CLAUDE.md update
+- 168 pipeline tests pass (0 failed), 30 backend tests pass (0 failed)
+- Frontend build succeeds (✓ built in ~2s; chunk size warning is out-of-scope per PRD)
+- Evaluation harness runs clean: 5 PASS/WARN/FAIL verdict lines in output
+- Note: `grep -E 'PASS|WARN|FAIL'` only works when run from project root — the acceptance criteria command must be run from /SpendCube, not a subdirectory
+- CLAUDE.md: added '## Evaluation Harness' section after Phase Status table (purpose, run commands, 5-section table, thresholds)
+- CLAUDE.md: added HANDOVER.md reference in directory layout near DEPLOYMENT.md line
+- grep -c 'evaluate_pipeline|HANDOVER' CLAUDE.md = 5 (>= 3 ✓)
+- Committed: 0d4c0d0
+
+---
+
+### [US-008] - 2026-05-04
+**Status:** PASSED
+Story completed — full test suite green (168 + 30 tests), frontend build clean, evaluation harness verified, CLAUDE.md updated with Evaluation Harness section and HANDOVER.md reference.
+
+
+---
+
+### [US-008] - 2026-05-04 07:23:34
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 8
+

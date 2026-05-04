@@ -452,3 +452,76 @@ STORY_COMPLETE: US-007
 [2026-05-04 07:18:55] [OK] Marked US-007 as passed
 [2026-05-04 07:18:55] [INFO] Logged progress for US-007: PASSED
 [2026-05-04 07:18:55] [STEP] Committing changes...
+[2026-05-04 07:18:57] [INFO] Starting iteration 8
+[2026-05-04 07:18:57] [INFO] Processing story: US-008
+[2026-05-04 07:18:57] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Full test suite green check and CLAUDE.md update
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Run the complete test suite after all previous stories are implemented to confirm a clean build. Then update CLAUDE.md at the project root to document the evaluation harness, the HANDOVER.md, and the corrected test suite count. If any test is still failing, investigate and fix before marking this story passed.
+
+## Acceptance Criteria
+- Run: python3 -m pytest tests/ -v 2>&1 | tail -3 — must show '0 failed'
+- Run: python3 -m pytest backend/tests/ -v 2>&1 | tail -3 — must show '0 failed'
+- Run: cd frontend && npm run build 2>&1 | tail -3 — must show successful build
+- Run: python3 scripts/evaluate_pipeline.py 2>&1 | grep -E 'PASS|WARN|FAIL' — must show at least 3 lines with verdict
+- Edit file: CLAUDE.md — add a new '## Evaluation Harness' section after the Phase Status table documenting: purpose, how to run (python3 scripts/evaluate_pipeline.py or with --csv flag), what it reports (5 sections), target thresholds (categorisation >= 70%, >= 3 recommendation types)
+- Edit file: CLAUDE.md — add reference to HANDOVER.md near the DEPLOYMENT.md mention, noting it is the primary client-facing setup document
+- Run: grep -c 'evaluate_pipeline\|HANDOVER' CLAUDE.md — must output >= 3
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Full test suite green check and CLAUDE.md update`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+All acceptance criteria met:
+
+- `tests/`: **168 passed, 0 failed**
+- `backend/tests/`: **30 passed, 0 failed**
+- Frontend build: **✓ built successfully**
+- Evaluation harness: **5 PASS/WARN/FAIL verdict lines**
+- CLAUDE.md: `## Evaluation Harness` section added after Phase Status table with purpose, run commands, 5-section table, and thresholds
+- CLAUDE.md: HANDOVER.md reference added in the directory layout near DEPLOYMENT.md
+- `grep -c 'evaluate_pipeline\|HANDOVER' CLAUDE.md` = **5** (≥ 3)
+
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-04 07:23:34] [OK] Story US-008 completed!
+[2026-05-04 07:23:34] [OK] Marked US-008 as passed
+[2026-05-04 07:23:34] [INFO] Logged progress for US-008: PASSED
+[2026-05-04 07:23:34] [STEP] Committing changes...
