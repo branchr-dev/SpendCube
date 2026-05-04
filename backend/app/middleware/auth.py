@@ -10,7 +10,7 @@ _SKIP_PATHS = {"/health"}
 
 class SupabaseAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in _SKIP_PATHS:
+        if request.url.path in _SKIP_PATHS or request.method == "OPTIONS":
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
