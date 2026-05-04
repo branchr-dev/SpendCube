@@ -23,7 +23,7 @@ export default function NewEngagementPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await api.post('/api/engagements', form)
+      const response = await api.post('/api/engagements', { ...form, name: form.client_name })
       if (response.status === 201 && response.data?.id) {
         navigate(`/engagements/${response.data.id}/upload`)
       }
