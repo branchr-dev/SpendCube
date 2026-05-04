@@ -1,12 +1,14 @@
 import json
 import os
 import sys
+from typing import Optional
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
@@ -100,3 +102,88 @@ async def get_recommendations(
         )
 
     return json.loads(row["recommendations_json"])
+
+
+# ---------------------------------------------------------------------------
+# Config models
+# ---------------------------------------------------------------------------
+
+class RecommendationConfigUpdate(BaseModel):
+    consolidation_threshold: Optional[int] = None
+    target_payment_days: Optional[int] = None
+    wacc: Optional[float] = None
+    min_wc_opportunity: Optional[int] = None
+    tail_spend_alert_pct: Optional[float] = None
+    maverick_alert_pct: Optional[float] = None
+    competitive_tender_min_spend: Optional[float] = None
+    contract_coverage_gap_min_spend: Optional[float] = None
+    concentration_threshold_pct: Optional[float] = None
+    min_discount_opportunity: Optional[float] = None
+
+
+# ---------------------------------------------------------------------------
+# GET /config
+# ---------------------------------------------------------------------------
+
+@router.get("/config")
+async def get_recommendation_config(
+    engagement_id: str,
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    from src.config import load_config
+
+    config_path = os.getenv("SPENDCUBE_CONFIG_PATH", "config.yaml")
+    config = load_config(config_path)
+
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT recommendation_config_json FROM engagements WHERE id = :eid"),
+            {"eid": engagement_id},
+        ).mappings().first()
+
+    defaults_dict = config.recommendations.model_dump()
+
+    if row is not None and row["recommendation_config_json"]:
+        overrides = json.loads(row["recommendation_config_json"])
+        defaults_dict.update(overrides)
+
+    return defaults_dict
+
+
+# ---------------------------------------------------------------------------
+# PATCH /config
+# ---------------------------------------------------------------------------
+
+@router.patch("/config")
+async def patch_recommendation_config(
+    engagement_id: str,
+    body: RecommendationConfigUpdate,
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT recommendation_config_json FROM engagements WHERE id = :eid"),
+            {"eid": engagement_id},
+        ).mappings().first()
+
+    existing = {}
+    if row is not None and row["recommendation_config_json"]:
+        existing = json.loads(row["recommendation_config_json"])
+
+    existing.update(body.model_dump(exclude_none=True))
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "UPDATE engagements SET recommendation_config_json = :cfg WHERE id = :eid"
+            ),
+            {"cfg": json.dumps(existing), "eid": engagement_id},
+        )
+
+    return existing
