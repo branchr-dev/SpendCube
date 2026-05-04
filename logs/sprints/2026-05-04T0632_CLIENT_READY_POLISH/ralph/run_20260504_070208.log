@@ -382,3 +382,73 @@ STORY_COMPLETE: US-006
 [2026-05-04 07:16:24] [OK] Marked US-006 as passed
 [2026-05-04 07:16:24] [INFO] Logged progress for US-006: PASSED
 [2026-05-04 07:16:24] [STEP] Committing changes...
+[2026-05-04 07:16:26] [INFO] Starting iteration 7
+[2026-05-04 07:16:26] [INFO] Processing story: US-007
+[2026-05-04 07:16:26] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Write comprehensive HANDOVER.md
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create HANDOVER.md at the SpendCube project root — the primary document for a consultant taking over SpendCube to run it for a client. It is separate from DEPLOYMENT.md (which covers only deployment steps). HANDOVER.md is written for a non-developer with basic command-line skills. It must cover: what SpendCube does, the full stack architecture in plain English, prerequisites checklist, local development (3 commands to get running), Supabase setup including the pgvector extension and the exact order of the 3 migrations (001_initial_schema.sql then 002_analytics_extensions.sql then 003_data_model_hardening.sql), Railway and Vercel deployment, a complete environment variables reference table for both services, a step-by-step first engagement walkthrough, how to run the evaluation harness (scripts/evaluate_pipeline.py), and a troubleshooting section.
+
+## Acceptance Criteria
+- Create file: HANDOVER.md at the project root (same level as CLAUDE.md, DEPLOYMENT.md)
+- Document contains these top-level sections (in order): ## Overview, ## Architecture, ## Prerequisites, ## Local Development, ## Supabase Setup, ## Backend Deployment (Railway), ## Frontend Deployment (Vercel), ## Environment Variables Reference, ## First Engagement Walkthrough, ## Running the Evaluation Harness, ## Troubleshooting
+- Supabase Setup section includes: enable pgvector extension SQL (CREATE EXTENSION IF NOT EXISTS vector;), and applies migrations in order 001 → 002 → 003 with the npx supabase db push command or manual SQL editor instructions
+- Environment Variables Reference section is a markdown table with columns: Variable | Service | Required | Description — covering all variables from DEPLOYMENT.md plus ANTHROPIC_API_KEY, DRY_RUN
+- First Engagement Walkthrough has 5 numbered steps: 1 Create engagement via UI, 2 Upload CSV on Upload page, 3 Wait for pipeline completion (poll /ingest/status), 4 View Overview dashboard, 5 Review Recommendations page
+- Troubleshooting section covers at least these 5 issues: pgvector extension missing, CORS error on API calls, JWT validation failure, pipeline job stuck in 'queued', empty dashboard after successful upload
+- Verify: wc -l HANDOVER.md — output must be >= 150
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Write comprehensive HANDOVER.md`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+HANDOVER.md is created (499 lines), committed, and all acceptance criteria are met:
+- All 11 sections in the required order
+- pgvector extension SQL and migrations 001→002→003 in Supabase Setup
+- Environment Variables Reference table with Variable | Service | Required | Description columns
+- 5-step First Engagement Walkthrough
+- Troubleshooting covers all 5 required issues
+
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-04 07:18:55] [OK] Story US-007 completed!
+[2026-05-04 07:18:55] [OK] Marked US-007 as passed
+[2026-05-04 07:18:55] [INFO] Logged progress for US-007: PASSED
+[2026-05-04 07:18:55] [STEP] Committing changes...

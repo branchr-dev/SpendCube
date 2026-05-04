@@ -145,7 +145,8 @@
         "Troubleshooting section covers at least these 5 issues: pgvector extension missing, CORS error on API calls, JWT validation failure, pipeline job stuck in 'queued', empty dashboard after successful upload",
         "Verify: wc -l HANDOVER.md — output must be >= 150"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:18:55Z"
     },
     {
       "id": "US-008",
