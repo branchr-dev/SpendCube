@@ -220,7 +220,7 @@ def _run_pipeline(
         # Stage 4: recommendations
         _update_job(bg_engine, job_id, stage="recommendations")
         from src.recommendations.engine import RecommendationEngine
-        rec_engine = RecommendationEngine(config, src_engine)
+        rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)
         recs = rec_engine.run()
         payload = {"recommendations": recs, "portfolio_summary": rec_engine._portfolio_summary}
         with bg_engine.begin() as conn:

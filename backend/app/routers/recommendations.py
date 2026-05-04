@@ -53,7 +53,7 @@ async def run_recommendations(
     else:
         config.llm.dry_run = True
 
-    rec_engine = RecommendationEngine(config, src_engine)
+    rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)
     recommendations = rec_engine.run()
 
     payload = {

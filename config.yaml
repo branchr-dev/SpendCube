@@ -51,6 +51,9 @@ recommendations:
     CONTRACT_COVERAGE_GAP: 0.80
   competitive_tender_min_spend: 50000.0
   contract_coverage_gap_min_spend: 20000.0
+  concentration_threshold_pct: 0.80
+  min_discount_opportunity: 1000.0
+  min_price_benchmark_transactions: 5
 
 logging:
   level: INFO

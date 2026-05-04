@@ -21,6 +21,8 @@ import json
 import sys
 from pathlib import Path
 
+from sqlalchemy import text
+
 import pandas as pd
 
 # Ensure project root is on sys.path when run as a script.
@@ -57,14 +59,39 @@ class RecommendationEngine:
         engine: SQLAlchemy engine connected to the SpendCube database.
     """
 
-    def __init__(self, config, engine) -> None:
+    def __init__(self, config, engine, engagement_id: str | None = None) -> None:
         self.config = config
         self.engine = engine
+        self.engagement_id = engagement_id
         self.logger = get_logger_from_config(__name__, config)
 
         self._cube_builder = SpendCubeBuilder(config, engine)
         self._narrative_generator = NarrativeGenerator(config)
         self._portfolio_summary: dict = {}
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _apply_engagement_overrides(self) -> None:
+        if self.engagement_id is None:
+            return
+        try:
+            with self.engine.connect() as conn:
+                row = conn.execute(
+                    text("SELECT recommendation_config_json FROM engagements WHERE id = :eid"),
+                    {"eid": self.engagement_id},
+                ).mappings().first()
+                if row is None or row["recommendation_config_json"] is None:
+                    return
+                overrides = json.loads(row["recommendation_config_json"])
+                for key, value in overrides.items():
+                    if hasattr(self.config.recommendations, key):
+                        setattr(self.config.recommendations, key, value)
+                self.logger.info("Applied %d engagement config overrides", len(overrides))
+        except Exception as e:
+            self.logger.warning("Could not load engagement config overrides: %s", e)
+            return
 
     # ------------------------------------------------------------------
     # Public interface
@@ -83,6 +110,7 @@ class RecommendationEngine:
             List of recommendation dicts sorted by estimated_impact_aud descending.
         """
         self.logger.info("Starting recommendation engine")
+        self._apply_engagement_overrides()
 
         cube = self._cube_builder.build()
         self.logger.info("Cube built — %d transaction rows", len(cube.get("transactions", pd.DataFrame())))

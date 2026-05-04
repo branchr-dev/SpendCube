@@ -72,6 +72,9 @@ class RecommendationsConfig(BaseModel):
     addressability_defaults: Dict[str, float]
     competitive_tender_min_spend: float
     contract_coverage_gap_min_spend: float
+    concentration_threshold_pct: float = 0.80
+    min_discount_opportunity: float = 1000.0
+    min_price_benchmark_transactions: int = 5
 
 
 class LoggingConfig(BaseModel):
