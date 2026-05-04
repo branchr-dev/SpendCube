@@ -1,11 +1,11 @@
 VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE
 Officeworks Business Supplies,V-001,INV-2024-001,15/03/2024,Office supplies - toner cartridges HP,340.50,AUD,6421,CC-ADM-01,Net 30,PO-9001,Corporate,Sydney
-Sodexo Australia Pty Ltd,V-002,INV-2024-002,01/04/2024,Catering - Q1 events,3200.00,AUD,6512,CC-OPS-01,Net 30,PO-9002,Operations,Melbourne
+Sodexo Australia Pty Ltd,V-002,CN-2024-001,15/04/2024,Credit note - catering overcharge,-850.00,AUD,6512,CC-OPS-01,Net 30,,Operations,Melbourne
 Compass Group Pty Ltd,V-003,INV-2024-003,03/04/2024,Staff canteen March,1100.00,AUD,6512,CC-OPS-02,Net 30,PO-9003,Operations,Brisbane
-DHL Express Pty Ltd,V-004,INV-2024-004,12/02/2024,International freight - Shanghai to Melb,8750.00,USD,6301,CC-LOG-01,Net 14,PO-9004,Operations,Sydney
 Telstra Business Systems,V-005,INV-2024-005,28/02/2024,Mobile fleet - Feb 2024,4200.00,AUD,6441,CC-IT-01,Net 30,PO-9005,Corporate,Melbourne
-Creative Display Solutions,V-006,INV-2024-006,20/03/2024,Ad hoc signage for conference,2500.00,AUD,5600,CC-MKT-01,Net 30,PO-9006,Corporate,Sydney
-INTERCOMPANY - LEGAL,V-999,INV-2024-007,12/02/2024,Legal services - internal,5000.00,AUD,7800100,CC-LEG-01,Net 45,,Corporate,Sydney
+Creative Display Solutions,V-006,INV-2024-004,20/03/2024,Ad hoc signage for conference,2500.00,AUD,5600,CC-MKT-01,Net 30,PO-9006,Corporate,Sydney
+INTERCOMPANY - LEGAL,V-999,INV-2024-006,12/02/2024,Legal services - internal,5000.00,AUD,7800100,CC-LEG-01,Net 45,,Corporate,Sydney
+DHL Express Pty Ltd,V-004,INV-2024-007,12/02/2024,International freight - Shanghai to Melb,8750.00,USD,6301,CC-LOG-01,Net 14,PO-9004,Operations,Sydney
 ,V-TAX,TAX-ADJ-001,31/03/2024,Tax adjustment - GST,-125.00,AUD,2100100,,N/A,,Corporate,Sydney
 Microsoft Pty Ltd,V-007,INV-2024-008,01/03/2024,Azure cloud subscription,6800.00,AUD,6444,CC-IT-02,Net 30,PO-9007,Corporate,Melbourne
 KPMG Pty Ltd,V-008,INV-2024-009,15/03/2024,Audit fees Q1,15000.00,AUD,6602,CC-FIN-01,Net 30,PO-9008,Corporate,Sydney
