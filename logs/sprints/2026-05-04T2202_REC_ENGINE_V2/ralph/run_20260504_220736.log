@@ -197,3 +197,69 @@ STORY_COMPLETE: US-003
 [2026-05-04 22:09:17] [OK] Marked US-003 as passed
 [2026-05-04 22:09:17] [INFO] Logged progress for US-003: PASSED
 [2026-05-04 22:09:17] [STEP] Committing changes...
+[2026-05-04 22:09:19] [INFO] Starting iteration 4
+[2026-05-04 22:09:19] [INFO] Processing story: US-004
+[2026-05-04 22:09:20] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Add new RecommendationsConfig fields and per-engagement override mechanism to RecommendationEngine
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Two changes. First, add three new threshold fields to RecommendationsConfig in src/config.py and matching keys to config.yaml: concentration_threshold_pct (default 0.80), min_discount_opportunity (default 1000.0), min_price_benchmark_transactions (default 5). Second, add engagement_id: str | None = None parameter to RecommendationEngine.__init__ and implement _apply_engagement_overrides() which queries recommendation_config_json from the engagements table and applies overrides via setattr. Call _apply_engagement_overrides() at the start of run(). Also update the two callers to pass engagement_id.
+
+## Acceptance Criteria
+- Edit file: src/config.py — in RecommendationsConfig class, add three new fields after contract_coverage_gap_min_spend: concentration_threshold_pct: float = 0.80; min_discount_opportunity: float = 1000.0; min_price_benchmark_transactions: int = 5
+- Edit file: config.yaml — in recommendations: section, add three new keys: concentration_threshold_pct: 0.80; min_discount_opportunity: 1000.0; min_price_benchmark_transactions: 5
+- Edit file: src/recommendations/engine.py — change __init__ signature to: def __init__(self, config, engine, engagement_id: str | None = None) -> None; add self.engagement_id = engagement_id
+- Edit file: src/recommendations/engine.py — add method _apply_engagement_overrides(self) -> None immediately before run(). Implementation: if self.engagement_id is None: return; wrap entire body in try/except Exception as e: self.logger.warning('Could not load engagement config overrides: %s', e); return. Inside try: with self.engine.connect() as conn: row = conn.execute(text('SELECT recommendation_config_json FROM engagements WHERE id = :eid'), {'eid': self.engagement_id}).mappings().first(); if row is None or row['recommendation_config_json'] is None: return; overrides = json.loads(row['recommendation_config_json']); for key, value in overrides.items(): if hasattr(self.config.recommendations, key): setattr(self.config.recommendations, key, value); self.logger.info('Applied %d engagement config overrides', len(overrides))
+- Edit file: src/recommendations/engine.py — in run() method, add self._apply_engagement_overrides() call as the very first line after self.logger.info('Starting recommendation engine')
+- Edit file: backend/app/routers/ingestion.py — change 'rec_engine = RecommendationEngine(config, src_engine)' to 'rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)'
+- Edit file: backend/app/routers/recommendations.py — in run_recommendations function, change 'rec_engine = RecommendationEngine(config, src_engine)' to 'rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)'
+- Run: python -c "from src.config import load_config; c = load_config('config.yaml'); print(c.recommendations.concentration_threshold_pct, c.recommendations.min_discount_opportunity, c.recommendations.min_price_benchmark_transactions)" — should print 0.8 1000.0 5
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Add new RecommendationsConfig fields and per-engagement override mechanism to RecommendationEngine`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+All changes are committed. The story is complete.
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-04 22:10:10] [OK] Story US-004 completed!
+[2026-05-04 22:10:11] [OK] Marked US-004 as passed
+[2026-05-04 22:10:11] [INFO] Logged progress for US-004: PASSED
+[2026-05-04 22:10:11] [STEP] Committing changes...

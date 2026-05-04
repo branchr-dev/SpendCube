@@ -108,7 +108,8 @@
         "Edit file: backend/app/routers/recommendations.py — in run_recommendations function, change 'rec_engine = RecommendationEngine(config, src_engine)' to 'rec_engine = RecommendationEngine(config, src_engine, engagement_id=engagement_id)'",
         "Run: python -c \"from src.config import load_config; c = load_config('config.yaml'); print(c.recommendations.concentration_threshold_pct, c.recommendations.min_discount_opportunity, c.recommendations.min_price_benchmark_transactions)\" — should print 0.8 1000.0 5"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:10:10Z"
     },
     {
       "id": "US-005",
