@@ -15,11 +15,9 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      await supabase.auth.signOut()
-      window.location.href = '/login'
-    }
+  (error) => {
+    // Do not sign out or redirect here — ProtectedRoute handles session checks.
+    // Redirecting on 401 causes an infinite loop when the backend is misconfigured.
     return Promise.reject(error)
   }
 )

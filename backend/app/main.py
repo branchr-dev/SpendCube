@@ -51,3 +51,31 @@ async def _reset_stuck_jobs() -> None:
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "2.0.0"}
+
+
+@app.get("/debug")
+async def debug():
+    import httpx
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    anon_key = os.getenv("SUPABASE_ANON_KEY", "")
+    db_url = os.getenv("SUPABASE_DATABASE_URL", "")
+    allowed = os.getenv("ALLOWED_ORIGINS", "")
+
+    supabase_reachable = False
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(f"{supabase_url}/auth/v1/health", headers={"apikey": anon_key})
+            supabase_reachable = r.status_code == 200
+    except Exception as e:
+        supabase_reachable = str(e)
+
+    return {
+        "env_vars_set": {
+            "SUPABASE_URL": bool(supabase_url),
+            "SUPABASE_ANON_KEY": bool(anon_key),
+            "SUPABASE_DATABASE_URL": bool(db_url),
+            "ALLOWED_ORIGINS": allowed,
+        },
+        "supabase_url_value": supabase_url[:40] if supabase_url else "(not set)",
+        "supabase_auth_reachable": supabase_reachable,
+    }
