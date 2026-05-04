@@ -1,0 +1,72 @@
+[2026-05-04 22:07:36] [INFO] Ralph loop starting
+[2026-05-04 22:07:36] [INFO] Created progress file: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Mon  4 May 2026 22:07:36 BST
+PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-04 22:07:36] [INFO] Starting iteration 1
+[2026-05-04 22:07:36] [INFO] Processing story: US-001
+[2026-05-04 22:07:36] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Create Supabase migration for new DB columns
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create supabase/migrations/004_recommendation_engine_v2.sql with three ALTER TABLE ADD COLUMN IF NOT EXISTS statements: recommendation_config_json TEXT on engagements, unit_price DOUBLE PRECISION and unit_of_measure TEXT on transactions. All three use IF NOT EXISTS to be safe on re-run.
+
+## Acceptance Criteria
+- Create file: supabase/migrations/004_recommendation_engine_v2.sql with content: ALTER TABLE engagements ADD COLUMN IF NOT EXISTS recommendation_config_json TEXT; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS unit_of_measure TEXT;
+- Verify: supabase/migrations/004_recommendation_engine_v2.sql contains no DROP, TRUNCATE, or DELETE statements
+- Verify: the file has exactly 3 ALTER TABLE statements each ending with a semicolon
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Create Supabase migration for new DB columns`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+Migration created and committed. The file contains exactly 3 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements with no destructive operations.
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-04 22:07:53] [OK] Story US-001 completed!
+[2026-05-04 22:07:53] [OK] Marked US-001 as passed
+[2026-05-04 22:07:53] [INFO] Logged progress for US-001: PASSED
+[2026-05-04 22:07:53] [STEP] Committing changes...

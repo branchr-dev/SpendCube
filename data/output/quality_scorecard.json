@@ -1,7 +1,7 @@
 {
   "missing_supplier_name": {
-    "value": 1,
-    "pct": 0.02,
+    "value": 0,
+    "pct": 0.0,
     "status": "GREEN",
     "green_threshold": 1.0,
     "amber_threshold": 5.0,
@@ -9,8 +9,8 @@
     "remediation": "Enrich source data or add supplier name fallback from vendor ID."
   },
   "uncategorised_spend": {
-    "value": 28897007.72,
-    "pct": 22.55,
+    "value": 2747867.38,
+    "pct": 22.15,
     "status": "RED",
     "green_threshold": 5.0,
     "amber_threshold": 15.0,
@@ -27,8 +27,8 @@
     "remediation": "Review supplier match log (PENDING status); lower fuzzy threshold or add manual overrides."
   },
   "missing_payment_terms": {
-    "value": 31063853.36,
-    "pct": 24.24,
+    "value": 2645694.92,
+    "pct": 21.33,
     "status": "AMBER",
     "green_threshold": 10.0,
     "amber_threshold": 30.0,
@@ -36,17 +36,17 @@
     "remediation": "Parse raw_payment_terms field; enrich from supplier master or contract data."
   },
   "duplicate_invoice_risk": {
-    "value": 400,
-    "pct": 7.68,
-    "status": "RED",
+    "value": 0,
+    "pct": 0.0,
+    "status": "GREEN",
     "green_threshold": 0.5,
     "amber_threshold": 2.0,
     "description": "Rows sharing an (invoice_number, base_amount) key \u2014 potential duplicate payments",
     "remediation": "Review is_duplicate flag; investigate AP process for duplicate invoice controls."
   },
   "negative_reversal_lines": {
-    "value": 298,
-    "pct": 5.72,
+    "value": 26,
+    "pct": 5.2,
     "status": "WARN",
     "green_threshold": 3.0,
     "amber_threshold": 8.0,
@@ -54,8 +54,8 @@
     "remediation": "High reversal rates may indicate AP process issues or over-accruals; investigate with finance."
   },
   "weak_descriptions": {
-    "value": 5206,
-    "pct": 99.92,
+    "value": 500,
+    "pct": 100.0,
     "status": "RED",
     "green_threshold": 15.0,
     "amber_threshold": 30.0,
@@ -63,8 +63,8 @@
     "remediation": "Enrich descriptions from PO/contract data; add description enrichment rules."
   },
   "missing_contract_linkage": {
-    "value": 37027149.13,
-    "pct": 28.89,
+    "value": 1617843.29,
+    "pct": 13.04,
     "status": "GREEN",
     "green_threshold": 30.0,
     "amber_threshold": 60.0,
