@@ -201,6 +201,19 @@ export interface CountryRow {
   supplier_count: number
 }
 
+export interface RecommendationConfig {
+  consolidation_threshold?: number
+  target_payment_days?: number
+  wacc?: number
+  min_wc_opportunity?: number
+  tail_spend_alert_pct?: number
+  maverick_alert_pct?: number
+  competitive_tender_min_spend?: number
+  contract_coverage_gap_min_spend?: number
+  concentration_threshold_pct?: number
+  min_discount_opportunity?: number
+}
+
 export interface CategoryQualityReport {
   total_transactions: number
   categorised_count: number
