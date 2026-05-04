@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
-_SKIP_PATHS = {"/health"}
+_SKIP_PATHS = {"/health", "/debug"}
 
 
 class SupabaseAuthMiddleware(BaseHTTPMiddleware):
