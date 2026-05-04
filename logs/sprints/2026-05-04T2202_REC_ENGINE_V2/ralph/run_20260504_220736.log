@@ -637,3 +637,68 @@ STORY_COMPLETE: US-010
 [2026-05-04 22:16:16] [OK] Marked US-010 as passed
 [2026-05-04 22:16:16] [INFO] Logged progress for US-010: PASSED
 [2026-05-04 22:16:16] [STEP] Committing changes...
+[2026-05-04 22:16:18] [INFO] Starting iteration 11
+[2026-05-04 22:16:18] [INFO] Processing story: US-011
+[2026-05-04 22:16:18] [STEP] Spawning Claude with prompt for US-011
+--- PROMPT FOR US-011 ---
+You are working on story US-011: Add tests for the three new rules and the config override mechanism
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add six test functions to tests/test_recommendations.py covering the three new rules and the engine config override. Each test constructs a minimal DataFrame matching the rule's required columns and calls the rule method directly. The config override test verifies that setattr changes on config.recommendations are reflected in rule thresholds.
+
+## Acceptance Criteria
+- Edit file: tests/test_recommendations.py — add test_spend_concentration_risk_fires(): create a DataFrame with category_l2='IT Software', canonical_supplier_id column with 2 distinct values where supplier_A has 90% of base_amount and supplier_B has 10%, total base_amount=100000 (>competitive_tender_min_spend default 50000); instantiate RecommendationRules with a default config; call rule_spend_concentration_risk(); assert len(result)==1 and result[0]['type']=='SPEND_CONCENTRATION_RISK'
+- Edit file: tests/test_recommendations.py — add test_spend_concentration_risk_no_fire_single_supplier(): same DataFrame but only 1 distinct canonical_supplier_id; assert rule_spend_concentration_risk() returns []
+- Edit file: tests/test_recommendations.py — add test_early_payment_discount_fires(): create DataFrame with has_early_payment_discount=1, discount_percent=2.5, base_amount=100000, canonical_supplier_id='SUP1', canonical_supplier_name='Acme'; assert rule_early_payment_discount_capture() returns 1 recommendation with estimated_impact_aud > 0 and type=='EARLY_PAYMENT_DISCOUNT_CAPTURE'
+- Edit file: tests/test_recommendations.py — add test_early_payment_discount_no_fire_below_min(): same DataFrame but base_amount=100 (making opportunity=2.5 << min_discount_opportunity=1000); assert returns []
+- Edit file: tests/test_recommendations.py — add test_best_price_no_fire_when_no_unit_price(): create DataFrame without unit_price column; assert rule_best_price_extrapolation() returns []
+- Edit file: tests/test_recommendations.py — add test_best_price_fires(): create DataFrame with category_l3='Office Supplies', 2 suppliers (SUP_A and SUP_B), 6 rows each (total 12 >= min_price_benchmark_transactions=5), SUP_A unit_price=10.0 for all rows, SUP_B unit_price=15.0 for all rows, base_amount=1000 each row; assert rule_best_price_extrapolation() returns 1 rec with type=='BEST_PRICE_EXTRAPOLATION' and estimated_impact_aud > 0
+- Run: pytest tests/test_recommendations.py -v — all tests pass with no errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-011
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-011: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-011 - Add tests for the three new rules and the config override mechanism`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-011 ---
+All 35 tests pass. I added 6 new test methods to `TestRecommendationRules` covering the three new rule types: `test_spend_concentration_risk_fires`, `test_spend_concentration_risk_no_fire_single_supplier`, `test_early_payment_discount_fires`, `test_early_payment_discount_no_fire_below_min`, `test_best_price_no_fire_when_no_unit_price`, and `test_best_price_fires`.
+
+STORY_COMPLETE: US-011
+--- END OUTPUT ---
+[2026-05-04 22:18:17] [OK] Story US-011 completed!
+[2026-05-04 22:18:17] [OK] Marked US-011 as passed
+[2026-05-04 22:18:17] [INFO] Logged progress for US-011: PASSED
+[2026-05-04 22:18:17] [STEP] Committing changes...

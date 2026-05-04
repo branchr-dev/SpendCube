@@ -206,7 +206,8 @@
         "Edit file: tests/test_recommendations.py — add test_best_price_fires(): create DataFrame with category_l3='Office Supplies', 2 suppliers (SUP_A and SUP_B), 6 rows each (total 12 >= min_price_benchmark_transactions=5), SUP_A unit_price=10.0 for all rows, SUP_B unit_price=15.0 for all rows, base_amount=1000 each row; assert rule_best_price_extrapolation() returns 1 rec with type=='BEST_PRICE_EXTRAPOLATION' and estimated_impact_aud > 0",
         "Run: pytest tests/test_recommendations.py -v — all tests pass with no errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:18:17Z"
     },
     {
       "id": "US-012",
