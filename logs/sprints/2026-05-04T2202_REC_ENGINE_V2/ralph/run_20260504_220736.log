@@ -324,3 +324,66 @@ STORY_COMPLETE: US-005
 [2026-05-04 22:11:26] [OK] Marked US-005 as passed
 [2026-05-04 22:11:26] [INFO] Logged progress for US-005: PASSED
 [2026-05-04 22:11:26] [STEP] Committing changes...
+[2026-05-04 22:11:28] [INFO] Starting iteration 6
+[2026-05-04 22:11:28] [INFO] Processing story: US-006
+[2026-05-04 22:11:28] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Add EARLY_PAYMENT_DISCOUNT_CAPTURE rule
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add rule_early_payment_discount_capture() to RecommendationRules in src/recommendations/rules.py. Uses the existing has_early_payment_discount (INTEGER, 1=yes) and discount_percent (FLOAT, e.g. 2.5 means 2.5%) columns already on the transactions table. For each supplier with eligible transactions, annual_discount_opportunity = SUM(base_amount * discount_percent / 100). Apply addressability_pct from rates. Only fire when addressable_opportunity > cfg.min_discount_opportunity (default $1,000). Since saving_pct in savings_rates.yaml is 1.0 for this rule type, estimated_impact = annual_discount_opportunity * addressability_pct * 1.0.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/rules.py — add constant: EARLY_PAYMENT_DISCOUNT_CAPTURE = 'EARLY_PAYMENT_DISCOUNT_CAPTURE'
+- Edit file: src/recommendations/rules.py — add rule_early_payment_discount_capture() method with this logic: (1) required = {'has_early_payment_discount', 'discount_percent', 'base_amount', 'canonical_supplier_id'}; if not required.issubset(txn.columns): return []; (2) addr = self._addressable(txn); (3) eligible = addr[(addr['has_early_payment_discount'] == 1) & (addr['discount_percent'].notna()) & (addr['discount_percent'] > 0)]; if eligible.empty: return []; (4) agg_kwargs = {'annual_spend': ('base_amount', 'sum'), 'avg_discount_pct': ('discount_percent', 'mean'), 'discount_opportunity': (pd.Series(eligible['base_amount'] * eligible['discount_percent'] / 100).rename('disc_opp'), 'sum')}; NOTE: compute discount_opportunity as separate series operation: eligible['disc_opp'] = eligible['base_amount'] * eligible['discount_percent'] / 100; then groupby canonical_supplier_id and aggregate disc_opp sum and base_amount sum; (5) rates_row = self._rates.get(EARLY_PAYMENT_DISCOUNT_CAPTURE); addressability_pct = rates_row['addressability_pct']; for each supplier row: addressable_opportunity = disc_opp_sum * addressability_pct; skip if addressable_opportunity <= cfg.min_discount_opportunity; append rec dict with confidence='HIGH', lever='Early Payment Discount', saving_pct=None, estimated_impact_aud=round(addressable_opportunity, 2)
+- Edit file: src/recommendations/rules.py — the recommendation dict for EARLY_PAYMENT_DISCOUNT_CAPTURE must include: type=EARLY_PAYMENT_DISCOUNT_CAPTURE, context=supplier_name, evidence=f'Avg discount: {avg_discount_pct:.1f}%; annual spend with discount terms: {formatcurrency}; capturing discount saves {formatcurrency}/yr', action=f'Capture early payment discount with {supplier_name} — pay within discount window', baseline_spend=round(annual_spend, 2), addressability_pct=addressability_pct, saving_pct=None, addressable_baseline=round(disc_opp_sum, 2)
+- Edit file: src/recommendations/rules.py — add self.rule_early_payment_discount_capture to rule_methods list in generate_all()
+- Run: python -c "from src.recommendations.rules import EARLY_PAYMENT_DISCOUNT_CAPTURE; print(EARLY_PAYMENT_DISCOUNT_CAPTURE)" — should print EARLY_PAYMENT_DISCOUNT_CAPTURE
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Add EARLY_PAYMENT_DISCOUNT_CAPTURE rule`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+Committed successfully. The `EARLY_PAYMENT_DISCOUNT_CAPTURE` rule is now live — it finds suppliers with `has_early_payment_discount=1`, computes `base_amount * discount_percent / 100` per transaction, groups by supplier, applies `addressability_pct=0.80` from the savings rates, and fires when the addressable opportunity exceeds `min_discount_opportunity` ($1,000 default).
+
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-04 22:12:27] [OK] Story US-006 completed!
+[2026-05-04 22:12:27] [OK] Marked US-006 as passed
+[2026-05-04 22:12:27] [INFO] Logged progress for US-006: PASSED
+[2026-05-04 22:12:27] [STEP] Committing changes...

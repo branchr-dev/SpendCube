@@ -136,7 +136,8 @@
         "Edit file: src/recommendations/rules.py — add self.rule_early_payment_discount_capture to rule_methods list in generate_all()",
         "Run: python -c \"from src.recommendations.rules import EARLY_PAYMENT_DISCOUNT_CAPTURE; print(EARLY_PAYMENT_DISCOUNT_CAPTURE)\" — should print EARLY_PAYMENT_DISCOUNT_CAPTURE"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:12:27Z"
     },
     {
       "id": "US-007",
