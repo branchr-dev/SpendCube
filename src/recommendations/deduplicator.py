@@ -9,6 +9,7 @@ EXCLUSIVE_GROUPS: dict[str, str] = {
     "PAYMENT_TERM_EXTENSION": "WORKING_CAPITAL",
     "TAIL_SPEND_RATIONALISATION": "PORTFOLIO_TAIL",
     "CONTRACT_COMPLIANCE": "PORTFOLIO_COMPLIANCE",
+    "SPEND_CONCENTRATION_RISK": "SOURCING_CONCENTRATION",
 }
 
 _DEDUP_NOTE = "Spend pool already claimed by higher-impact recommendation of same exclusive group"

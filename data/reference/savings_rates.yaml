@@ -22,6 +22,9 @@ defaults:
     addressability_pct: 0.75
   PAYMENT_TERM_EXTENSION:
     addressability_pct: 0.80
+  SPEND_CONCENTRATION_RISK:
+    saving_pct: 0.05
+    addressability_pct: 0.70
 
 categories:
   Information Technology:

@@ -41,6 +41,7 @@ TAIL_SPEND_RATIONALISATION = "TAIL_SPEND_RATIONALISATION"
 CONTRACT_COMPLIANCE = "CONTRACT_COMPLIANCE"
 COMPETITIVE_TENDER = "COMPETITIVE_TENDER"
 CONTRACT_COVERAGE_GAP = "CONTRACT_COVERAGE_GAP"
+SPEND_CONCENTRATION_RISK = "SPEND_CONCENTRATION_RISK"
 
 
 class RecommendationRules:
@@ -75,6 +76,7 @@ class RecommendationRules:
             self.rule_maverick_spend,
             self.rule_competitive_tender,
             self.rule_contract_coverage_gap,
+            self.rule_spend_concentration_risk,
         ]
 
         for rule_method in rule_methods:
@@ -447,6 +449,82 @@ class RecommendationRules:
                 ),
                 "lever": "Contract Coverage",
                 "baseline_spend": round(total_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": saving_pct,
+                "addressable_baseline": round(addressable_baseline, 2),
+            })
+
+        return recs
+
+    def rule_spend_concentration_risk(self) -> list[dict]:
+        """SPEND_CONCENTRATION_RISK — L2 categories dominated by a single supplier.
+
+        Fires when n_suppliers > 1, top supplier > concentration_threshold_pct of
+        category spend, and category spend > competitive_tender_min_spend.
+        """
+        txn = self.cube.get("transactions", pd.DataFrame())
+        if txn.empty:
+            return []
+        required = {"category_l2", "canonical_supplier_id", "base_amount"}
+        if not required.issubset(txn.columns):
+            return []
+
+        cfg = self._rec_cfg
+        addr = self._addressable(txn)
+        if addr.empty:
+            return []
+
+        addr_cat = addr.dropna(subset=["category_l2"])
+        if addr_cat.empty:
+            return []
+
+        recs: list[dict] = []
+        for category, group in addr_cat.groupby("category_l2"):
+            n_suppliers = int(group["canonical_supplier_id"].nunique())
+            if n_suppliers <= 1:
+                continue
+
+            category_spend = float(group["base_amount"].sum())
+            if category_spend <= cfg.competitive_tender_min_spend:
+                continue
+
+            supplier_spend = group.groupby("canonical_supplier_id")["base_amount"].sum()
+            top_supplier_pct = float(supplier_spend.max() / category_spend)
+            if top_supplier_pct <= cfg.concentration_threshold_pct:
+                continue
+
+            top_supplier_id = supplier_spend.idxmax()
+            if "canonical_supplier_name" in group.columns:
+                name_series = group.loc[
+                    group["canonical_supplier_id"] == top_supplier_id,
+                    "canonical_supplier_name",
+                ].dropna()
+                top_supplier_name = str(name_series.iloc[0]) if len(name_series) > 0 else str(top_supplier_id)
+            else:
+                top_supplier_name = str(top_supplier_id)
+
+            rates_row = self._rates.get(SPEND_CONCENTRATION_RISK, str(category))
+            saving_pct = rates_row["saving_pct"]
+            addressability_pct = rates_row["addressability_pct"]
+            addressable_baseline = category_spend * addressability_pct
+            estimated_impact = addressable_baseline * saving_pct
+
+            recs.append({
+                "type": SPEND_CONCENTRATION_RISK,
+                "context": str(category),
+                "evidence": (
+                    f"{top_supplier_pct:.0%} of {category} spend concentrated in "
+                    f"{top_supplier_name}; {n_suppliers} total suppliers; "
+                    f"{addressability_pct:.0%} addressable"
+                ),
+                "estimated_impact_aud": round(estimated_impact, 2),
+                "confidence": "MEDIUM",
+                "action": (
+                    f"Introduce second-source competition in {category} — "
+                    f"{top_supplier_name} holds {top_supplier_pct:.0%} of spend"
+                ),
+                "lever": "Supply Risk Management",
+                "baseline_spend": round(category_spend, 2),
                 "addressability_pct": addressability_pct,
                 "saving_pct": saving_pct,
                 "addressable_baseline": round(addressable_baseline, 2),
