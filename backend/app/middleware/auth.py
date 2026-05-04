@@ -24,10 +24,16 @@ class SupabaseAuthMiddleware(BaseHTTPMiddleware):
         secret = os.getenv("SUPABASE_JWT_SECRET", "")
 
         try:
+            header = pyjwt.get_unverified_header(token)
+            token_alg = header.get("alg", "unknown")
+        except Exception:
+            token_alg = "unreadable"
+
+        try:
             payload = pyjwt.decode(
                 token,
                 secret,
-                algorithms=["HS256"],
+                algorithms=["HS256", "HS384", "HS512"],
                 options={"verify_aud": False},
             )
             email = payload.get("email") or payload.get("sub", "")
@@ -35,7 +41,7 @@ class SupabaseAuthMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(status_code=401, content={"detail": "Token missing email claim"})
             request.state.user_email = email
         except pyjwt.PyJWTError as exc:
-            logger.warning("JWT validation failed: %s", exc)
-            return JSONResponse(status_code=401, content={"detail": f"JWT error: {exc}"})
+            logger.warning("JWT validation failed (alg=%s): %s", token_alg, exc)
+            return JSONResponse(status_code=401, content={"detail": f"JWT error (alg={token_alg}): {exc}"})
 
         return await call_next(request)
