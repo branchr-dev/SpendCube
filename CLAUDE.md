@@ -243,6 +243,9 @@ Phase 6 (final) adds a rule-based recommendation engine and a human review works
 - `CONTRACT_COMPLIANCE` — maverick spend > 15% threshold; default saving = 5% of addressable maverick spend
 - `COMPETITIVE_TENDER` — single-source categories with spend > `competitive_tender_min_spend`; default saving = 7%
 - `CONTRACT_COVERAGE_GAP` — L1 categories with contract coverage < 50% and spend > `contract_coverage_gap_min_spend`; default saving = 5%
+- `SPEND_CONCENTRATION_RISK` — multi-supplier L2 categories where the top supplier holds > `concentration_threshold_pct` (default 80%) of category spend; risk-mitigation saving = 4% of addressable spend
+- `EARLY_PAYMENT_DISCOUNT_CAPTURE` — suppliers with `has_early_payment_discount=1`; captures contractually available discounts already negotiated but not being taken; estimated impact = `SUM(base_amount × discount_percent / 100) × addressability_pct`
+- `BEST_PRICE_EXTRAPOLATION` — benchmarks `unit_price` across suppliers in the same L3 category (falls back to L2); price gap saving = `(avg_price − best_price) / avg_price × category_spend × addressability_pct`; no-ops gracefully when `unit_price` column is absent or all-null
 
 **Output:** `data/output/recommendations.json` — wrapped object with two top-level keys. Each recommendation dict: `{type, context, evidence, estimated_impact_aud, confidence, action, lever, narrative, baseline_spend, addressability_pct, saving_pct, addressable_baseline}`.
 
@@ -302,6 +305,9 @@ estimated_impact_aud = addressable_baseline * saving_pct   # (or WACC formula)
 | `WORKING_CAPITAL` | `PAYMENT_TERM_EXTENSION` |
 | `PORTFOLIO_TAIL` | `TAIL_SPEND_RATIONALISATION` |
 | `PORTFOLIO_COMPLIANCE` | `CONTRACT_COMPLIANCE` |
+| `SOURCING_CONCENTRATION` | `SPEND_CONCENTRATION_RISK` |
+| `EARLY_PAYMENT` | `EARLY_PAYMENT_DISCOUNT_CAPTURE` |
+| `PRICE_BENCHMARK` | `BEST_PRICE_EXTRAPOLATION` |
 
 **Deduplication mechanism:** `pool_key = (context, exclusive_group)`. For `PORTFOLIO_*` groups the pool key is `('PORTFOLIO', exclusive_group)` (portfolio-level, not per-category). `allocate(recommendations)` sorts by `estimated_impact_aud` descending, then iterates: if `pool_key` already claimed, the recommendation is zeroed and filtered out; otherwise the pool is claimed. The input list is deep-copied to avoid mutation.
 
@@ -319,6 +325,43 @@ Four fields are added to every recommendation dict to make the impact calculatio
 | `addressable_baseline` | `float` | `baseline_spend × addressability_pct` — the spend the saving rate is applied to |
 
 These fields are display-only and do not affect engine logic. The recommendations dashboard detail cards show a **Calculation Basis** section using these fields.
+
+### Per-Engagement Recommendation Config
+
+Rule thresholds are configurable per engagement without touching `config.yaml`. Global defaults live in `config.yaml`; per-engagement overrides are stored as a JSON blob in `engagements.recommendation_config_json` (TEXT, nullable).
+
+**New `RecommendationsConfig` fields** (in `src/config.py`):
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `concentration_threshold_pct` | `0.80` | Top-supplier share threshold for `SPEND_CONCENTRATION_RISK` to fire |
+| `min_discount_opportunity` | `1000.0` | Minimum addressable discount value (AUD) for `EARLY_PAYMENT_DISCOUNT_CAPTURE` to fire |
+| `min_price_benchmark_transactions` | `5` | Minimum transaction count in an L3 category for `BEST_PRICE_EXTRAPOLATION` to fire |
+
+Note: `SPEND_CONCENTRATION_RISK` reuses `competitive_tender_min_spend` as its category spend floor — lowering that threshold also lowers the concentration risk threshold.
+
+**Override mechanism** — `RecommendationEngine.__init__` accepts `engagement_id: str | None = None`. At the start of `run()` it calls `_apply_engagement_overrides()`, which:
+1. Queries `SELECT recommendation_config_json FROM engagements WHERE id = :eid`
+2. Parses the JSON blob
+3. For each key that `hasattr(self.config.recommendations, key)`, calls `setattr(self.config.recommendations, key, value)`
+4. Wraps the whole block in `try/except` — if the `engagements` table doesn't exist (e.g. in-memory SQLite test DBs), it logs a WARNING and returns without crashing
+
+**API endpoints** (added to `backend/app/routers/recommendations.py` under prefix `/api/engagements/{engagement_id}/recommendations`):
+- `GET /config` — returns config.yaml defaults merged with any stored `recommendation_config_json` overrides
+- `PATCH /config` — accepts a partial `RecommendationConfigUpdate` body, merges non-None fields into the stored JSON, persists, returns merged dict
+
+**Frontend** — `RecommendationsPage` has a collapsible settings panel toggled by a **Configure** button (Settings icon). It uses the `useRecommendationConfig(engagementId)` hook (`frontend/src/hooks/useRecommendationConfig.ts`) which wraps the GET/PATCH endpoints via TanStack Query. Saving calls `saveConfig` (converting displayed percentage values back to fractions where needed) then triggers recommendation regeneration.
+
+### Unit Price Fields
+
+`unit_price` (Float, nullable) and `unit_of_measure` (Text, nullable) were added as nullable columns to:
+- `CanonicalTransaction` in `src/models/schema.py` (after `abc_segment`)
+- `transactions_table` in `src/models/database.py` (after `source_raw_id`)
+- The `_DB_COLUMNS` allowlist in `src/ingestion/ingest.py`
+
+`BEST_PRICE_EXTRAPOLATION` no-ops immediately (`return []`) when `unit_price` is not present in the transactions columns or is entirely null — so existing datasets without unit prices are unaffected.
+
+**Known limitation:** The frontend `UploadPage` column mapping UI sends a `column_mapping` dict to the backend, but `_run_pipeline` in `backend/app/routers/ingestion.py` does not pass it to `ingest_to_raw()`. This means the user's column mapping for `unit_price` is silently ignored. `unit_price` only populates in the DB if the source CSV column is **literally named `unit_price`**. Fixing this is a separate sprint.
 
 ### Review Workstation
 
