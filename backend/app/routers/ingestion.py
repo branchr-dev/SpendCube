@@ -162,17 +162,18 @@ def _run_pipeline(
 ) -> None:
     import logging
 
-    from src.config import load_config
-    from src.models.database import get_engine as src_get_engine, init_db
-    from src.ingestion.ingest import Ingestor
-    from src.ingestion.promoter import IncrementalPromoter
-    from src.cube.pipeline import run_pipeline as run_cube_pipeline
-
     logger = logging.getLogger(__name__)
     db_url = os.environ["SUPABASE_DATABASE_URL"]
     bg_engine = get_engine()
 
     try:
+        # Imports are inside try so missing src/ raises a caught, reported failure
+        from src.config import load_config
+        from src.models.database import get_engine as src_get_engine, init_db
+        from src.ingestion.ingest import Ingestor
+        from src.ingestion.promoter import IncrementalPromoter
+        from src.cube.pipeline import run_pipeline as run_cube_pipeline
+
         # Stage 1: ingesting — write to transactions_raw via ingest_to_raw()
         _update_job(bg_engine, job_id, status="running", stage="ingesting")
 

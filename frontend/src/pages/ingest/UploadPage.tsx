@@ -30,16 +30,17 @@ const PIPELINE_STAGES = [
 type StageStatus = 'pending' | 'active' | 'done' | 'failed'
 
 function getStageStatus(stageKey: string, jobStatus: PipelineJob | null): StageStatus {
-  if (!jobStatus) return 'pending'
+  if (!jobStatus || jobStatus.status === 'queued') return 'pending'
   const currentIdx = PIPELINE_STAGES.findIndex(s => s.key === jobStatus.stage)
   const thisIdx = PIPELINE_STAGES.findIndex(s => s.key === stageKey)
   if (jobStatus.status === 'done') return 'done'
   if (jobStatus.status === 'failed') {
-    if (thisIdx < currentIdx) return 'done'
-    if (thisIdx === currentIdx) return 'failed'
-    return 'pending'
+    if (currentIdx >= 0 && thisIdx < currentIdx) return 'done'
+    if (currentIdx >= 0 && thisIdx === currentIdx) return 'failed'
+    return thisIdx === 0 ? 'failed' : 'pending'
   }
-  // running
+  // running / promoting (promoting maps to stage after ingesting)
+  if (currentIdx < 0) return thisIdx === 0 ? 'active' : 'pending'
   if (thisIdx < currentIdx) return 'done'
   if (thisIdx === currentIdx) return 'active'
   return 'pending'
@@ -293,7 +294,7 @@ export default function UploadPage() {
             })}
           </div>
 
-          {!ingestion.jobStatus && (
+          {(!ingestion.jobStatus || ingestion.jobStatus.status === 'queued') && (
             <p className="text-sm text-muted-foreground text-center">
               Starting pipeline…
             </p>
