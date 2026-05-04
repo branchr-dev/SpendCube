@@ -163,7 +163,8 @@
         "Run: python -c \"from src.recommendations.deduplicator import EXCLUSIVE_GROUPS; assert 'SPEND_CONCENTRATION_RISK' in EXCLUSIVE_GROUPS; assert 'EARLY_PAYMENT_DISCOUNT_CAPTURE' in EXCLUSIVE_GROUPS; assert 'BEST_PRICE_EXTRAPOLATION' in EXCLUSIVE_GROUPS; print('OK')\" — should print OK",
         "Run: python -c \"from src.recommendations.savings_rates import SavingsRates; r = SavingsRates(); s1=r.get('SPEND_CONCENTRATION_RISK'); s2=r.get('EARLY_PAYMENT_DISCOUNT_CAPTURE'); s3=r.get('BEST_PRICE_EXTRAPOLATION'); assert s1['saving_pct']==0.04; assert s2['saving_pct']==1.0; assert s3['saving_pct']==1.0; print('OK')\" — should print OK"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:13:54Z"
     },
     {
       "id": "US-009",

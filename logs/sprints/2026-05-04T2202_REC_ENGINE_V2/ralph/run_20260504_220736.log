@@ -448,3 +448,63 @@ STORY_COMPLETE: US-007
 [2026-05-04 22:13:14] [OK] Marked US-007 as passed
 [2026-05-04 22:13:14] [INFO] Logged progress for US-007: PASSED
 [2026-05-04 22:13:14] [STEP] Committing changes...
+[2026-05-04 22:13:16] [INFO] Starting iteration 8
+[2026-05-04 22:13:16] [INFO] Processing story: US-008
+[2026-05-04 22:13:16] [STEP] Spawning Claude with prompt for US-008
+--- PROMPT FOR US-008 ---
+You are working on story US-008: Register new rules in SpendAllocator and savings_rates.yaml
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add the three new rule type constants to EXCLUSIVE_GROUPS in src/recommendations/deduplicator.py so they participate correctly in spend pool deduplication. Add default saving rates for all three new rule types to data/reference/savings_rates.yaml under the defaults: section. For EARLY_PAYMENT_DISCOUNT_CAPTURE and BEST_PRICE_EXTRAPOLATION the saving_pct is 1.0 because the rules compute impact directly — the rates multiplier must not double-discount.
+
+## Acceptance Criteria
+- Edit file: src/recommendations/deduplicator.py — add to EXCLUSIVE_GROUPS dict (after existing entries): 'SPEND_CONCENTRATION_RISK': 'SOURCING_CONCENTRATION', 'EARLY_PAYMENT_DISCOUNT_CAPTURE': 'EARLY_PAYMENT', 'BEST_PRICE_EXTRAPOLATION': 'PRICE_BENCHMARK'
+- Edit file: data/reference/savings_rates.yaml — under defaults: section, add three new entries with correct YAML indentation (2 spaces): SPEND_CONCENTRATION_RISK: with sub-keys saving_pct: 0.04 and addressability_pct: 0.70; EARLY_PAYMENT_DISCOUNT_CAPTURE: with sub-keys saving_pct: 1.0 and addressability_pct: 0.85; BEST_PRICE_EXTRAPOLATION: with sub-keys saving_pct: 1.0 and addressability_pct: 0.75
+- Run: python -c "from src.recommendations.deduplicator import EXCLUSIVE_GROUPS; assert 'SPEND_CONCENTRATION_RISK' in EXCLUSIVE_GROUPS; assert 'EARLY_PAYMENT_DISCOUNT_CAPTURE' in EXCLUSIVE_GROUPS; assert 'BEST_PRICE_EXTRAPOLATION' in EXCLUSIVE_GROUPS; print('OK')" — should print OK
+- Run: python -c "from src.recommendations.savings_rates import SavingsRates; r = SavingsRates(); s1=r.get('SPEND_CONCENTRATION_RISK'); s2=r.get('EARLY_PAYMENT_DISCOUNT_CAPTURE'); s3=r.get('BEST_PRICE_EXTRAPOLATION'); assert s1['saving_pct']==0.04; assert s2['saving_pct']==1.0; assert s3['saving_pct']==1.0; print('OK')" — should print OK
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-008
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-008: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-008 - Register new rules in SpendAllocator and savings_rates.yaml`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-008 ---
+STORY_COMPLETE: US-008
+--- END OUTPUT ---
+[2026-05-04 22:13:54] [OK] Story US-008 completed!
+[2026-05-04 22:13:54] [OK] Marked US-008 as passed
+[2026-05-04 22:13:54] [INFO] Logged progress for US-008: PASSED
+[2026-05-04 22:13:54] [STEP] Committing changes...
