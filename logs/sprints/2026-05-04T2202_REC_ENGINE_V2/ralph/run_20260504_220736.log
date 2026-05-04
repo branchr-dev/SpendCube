@@ -508,3 +508,62 @@ STORY_COMPLETE: US-008
 [2026-05-04 22:13:54] [OK] Marked US-008 as passed
 [2026-05-04 22:13:54] [INFO] Logged progress for US-008: PASSED
 [2026-05-04 22:13:54] [STEP] Committing changes...
+[2026-05-04 22:13:57] [INFO] Starting iteration 9
+[2026-05-04 22:13:57] [INFO] Processing story: US-009
+[2026-05-04 22:13:57] [STEP] Spawning Claude with prompt for US-009
+--- PROMPT FOR US-009 ---
+You are working on story US-009: Add RecommendationConfig TypeScript type and useRecommendationConfig hook
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add a RecommendationConfig interface to frontend/src/types/index.ts, then create frontend/src/hooks/useRecommendationConfig.ts as a new hook that wraps the GET and PATCH /recommendations/config API calls using TanStack Query patterns already used in this codebase.
+
+## Acceptance Criteria
+- Edit file: frontend/src/types/index.ts — add interface RecommendationConfig { consolidation_threshold?: number; target_payment_days?: number; wacc?: number; min_wc_opportunity?: number; tail_spend_alert_pct?: number; maverick_alert_pct?: number; competitive_tender_min_spend?: number; contract_coverage_gap_min_spend?: number; concentration_threshold_pct?: number; min_discount_opportunity?: number; }
+- Create file: frontend/src/hooks/useRecommendationConfig.ts — imports: useQuery, useMutation, useQueryClient from '@tanstack/react-query'; api from '@/lib/api'; RecommendationConfig from '@/types'. Exports default function useRecommendationConfig(engagementId: string | undefined). Inside: const queryClient = useQueryClient(); const { data: config, isLoading } = useQuery<RecommendationConfig>({ queryKey: ['rec-config', engagementId], queryFn: () => api.get(`/api/engagements/${engagementId}/recommendations/config`).then(r => r.data), enabled: !!engagementId, retry: false }); const { mutateAsync: patchConfig, isPending: isSaving } = useMutation({ mutationFn: (updates: Partial<RecommendationConfig>) => api.patch(`/api/engagements/${engagementId}/recommendations/config`, updates).then(r => r.data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rec-config', engagementId] }) }); const saveConfig = async (updates: Partial<RecommendationConfig>) => { await patchConfig(updates) }; return { config, isLoading, saveConfig, isSaving }
+- Run: cd frontend && npm run build — should succeed with no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-009
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-009: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-009 - Add RecommendationConfig TypeScript type and useRecommendationConfig hook`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-009 ---
+STORY_COMPLETE: US-009
+--- END OUTPUT ---
+[2026-05-04 22:14:41] [OK] Story US-009 completed!
+[2026-05-04 22:14:41] [OK] Marked US-009 as passed
+[2026-05-04 22:14:41] [INFO] Logged progress for US-009: PASSED
+[2026-05-04 22:14:41] [STEP] Committing changes...
