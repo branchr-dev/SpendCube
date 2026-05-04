@@ -71,7 +71,8 @@
         "Run: python3 -m pytest backend/tests/test_ingestion_api.py::TestStatus::test_get_status_known_job_returns_row -v — must show PASSED",
         "Run: python3 -m pytest backend/tests/ -v 2>&1 | tail -5 — must show 0 failed"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:03:37Z"
     },
     {
       "id": "US-003",

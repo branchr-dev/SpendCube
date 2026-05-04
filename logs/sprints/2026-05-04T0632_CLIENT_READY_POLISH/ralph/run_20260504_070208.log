@@ -75,3 +75,62 @@ STORY_COMPLETE: US-001
 [2026-05-04 07:03:16] [OK] Marked US-001 as passed
 [2026-05-04 07:03:16] [INFO] Logged progress for US-001: PASSED
 [2026-05-04 07:03:16] [STEP] Committing changes...
+[2026-05-04 07:03:18] [INFO] Starting iteration 2
+[2026-05-04 07:03:18] [INFO] Processing story: US-002
+[2026-05-04 07:03:18] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Fix backend test failure — add batch_id to _MOCK_JOB
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The test backend/tests/test_ingestion_api.py::TestStatus::test_get_status_known_job_returns_row fails with KeyError: 'batch_id'. The get_job_status router in backend/app/routers/ingestion.py (around line 138) reads row['batch_id'] from the SQL SELECT result. The _MOCK_JOB dict in the test file (around line 30) was written before batch_id was added to the pipeline_jobs table in the Data Model Hardening sprint. The fix is to add 'batch_id': None to _MOCK_JOB so the mock mapping returns None for that key.
+
+## Acceptance Criteria
+- Edit file: backend/tests/test_ingestion_api.py — add key-value pair 'batch_id': None to the _MOCK_JOB dict
+- Run: python3 -m pytest backend/tests/test_ingestion_api.py::TestStatus::test_get_status_known_job_returns_row -v — must show PASSED
+- Run: python3 -m pytest backend/tests/ -v 2>&1 | tail -5 — must show 0 failed
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Fix backend test failure — add batch_id to _MOCK_JOB`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-04 07:03:37] [OK] Story US-002 completed!
+[2026-05-04 07:03:37] [OK] Marked US-002 as passed
+[2026-05-04 07:03:37] [INFO] Logged progress for US-002: PASSED
+[2026-05-04 07:03:37] [STEP] Committing changes...
