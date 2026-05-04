@@ -1,9 +1,12 @@
+import logging
 import os
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
+
+logger = logging.getLogger(__name__)
 
 _SKIP_PATHS = {"/health"}
 
@@ -21,9 +24,19 @@ class SupabaseAuthMiddleware(BaseHTTPMiddleware):
         secret = os.getenv("SUPABASE_JWT_SECRET", "")
 
         try:
-            payload = jwt.decode(token, secret, algorithms=["HS256"])
-            request.state.user_email = payload["email"]
-        except (JWTError, KeyError):
+            payload = jwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
+            email = payload.get("email") or payload.get("sub", "")
+            if not email:
+                logger.warning("JWT payload missing email and sub claims")
+                return JSONResponse(status_code=401, content={"detail": "Token missing email claim"})
+            request.state.user_email = email
+        except JWTError as exc:
+            logger.warning("JWT validation failed: %s", exc)
             return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
 
         return await call_next(request)
