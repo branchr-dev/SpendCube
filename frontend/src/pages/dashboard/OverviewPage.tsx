@@ -1,7 +1,8 @@
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { DollarSign, Lightbulb, AlertTriangle } from 'lucide-react'
+import { DollarSign, Lightbulb, AlertTriangle, UploadCloud } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import FilterBar from '@/components/dashboard/FilterBar'
 import KpiCard from '@/components/dashboard/KpiCard'
 import SpendAreaChart from '@/components/charts/SpendAreaChart'
@@ -137,6 +138,17 @@ export default function OverviewPage() {
       {overview?.data_freshness && <p className="text-sm text-muted-foreground -mt-4">{formatDate(overview.data_freshness)}</p>}
 
       <FilterBar filters={filters} onChange={handleFilterChange} options={filterOptions} />
+
+      {!loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0 && (
+        <div className='border rounded-xl p-8 bg-card text-center mb-4'>
+          <div className='flex flex-col items-center gap-3'>
+            <UploadCloud className='h-10 w-10 text-muted-foreground' />
+            <h3 className='text-lg font-semibold'>No spend data yet</h3>
+            <p className='text-sm text-muted-foreground'>Upload a CSV file to run the pipeline and generate insights.</p>
+            <Button asChild><Link to={`/engagements/${engagementId}/upload`}>Upload Data</Link></Button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4">
         {loadingOverview ? (
