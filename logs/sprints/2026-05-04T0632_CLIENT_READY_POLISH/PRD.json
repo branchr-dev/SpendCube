@@ -129,7 +129,8 @@
         "Run: python3 -c \"import pandas as pd; df=pd.read_csv('/tmp/test_500.csv'); print('Rows:', len(df)); cn=df[df['INV_NO'].str.startswith('CN-', na=False)]; print('Credit notes:', len(cn)); nopo=(df['PO_NUM'].isna()|(df['PO_NUM'].astype(str).str.strip()=='')).sum(); print('No-PO rows:', nopo); nocc=(df['COST_CTR'].isna()|(df['COST_CTR'].astype(str).str.strip()=='')).sum(); print('Missing COST_CTR:', nocc)\" — credit notes >= 5 for 500 rows, no-PO rows >= 50, missing COST_CTR >= 10",
         "Run: python3 -m pytest tests/ -v 2>&1 | tail -5 — must still show 0 failed (generator changes must not break unit tests that use the existing sample.csv or hardcoded fixtures)"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:16:24Z"
     },
     {
       "id": "US-007",

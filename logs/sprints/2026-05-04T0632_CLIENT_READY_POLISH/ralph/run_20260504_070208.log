@@ -322,3 +322,63 @@ STORY_COMPLETE: US-005
 [2026-05-04 07:12:28] [OK] Marked US-005 as passed
 [2026-05-04 07:12:28] [INFO] Logged progress for US-005: PASSED
 [2026-05-04 07:12:28] [STEP] Committing changes...
+[2026-05-04 07:12:30] [INFO] Starting iteration 6
+[2026-05-04 07:12:30] [INFO] Processing story: US-006
+[2026-05-04 07:12:30] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Enhance test data generator with realistic procurement scenarios
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update src/utils/generate_test_data.py to produce more realistic procurement data. The generator must still work with the existing CLI interface (--rows, --seed, --output, --messiness). Add: (1) tail spend concentration — generate 2-3 anchor suppliers that collectively receive ~40% of rows, rest distributed across many tail suppliers; (2) maverick spend — approximately 15% of rows should have empty PO_NUM; (3) credit notes — approximately 3% of rows have negative AMT and INV_NO prefixed with 'CN-'; (4) missing cost centre — approximately 5% of rows have empty COST_CTR. The existing currencies, pay terms variants, and GL ranges should be preserved.
+
+## Acceptance Criteria
+- Edit file: src/utils/generate_test_data.py — add tail spend, maverick, credit note, and missing cost centre logic to the row generation loop
+- Run: python3 src/utils/generate_test_data.py --rows 500 --seed 42 --output /tmp/test_500.csv — must complete without error
+- Run: python3 -c "import pandas as pd; df=pd.read_csv('/tmp/test_500.csv'); print('Rows:', len(df)); cn=df[df['INV_NO'].str.startswith('CN-', na=False)]; print('Credit notes:', len(cn)); nopo=(df['PO_NUM'].isna()|(df['PO_NUM'].astype(str).str.strip()=='')).sum(); print('No-PO rows:', nopo); nocc=(df['COST_CTR'].isna()|(df['COST_CTR'].astype(str).str.strip()=='')).sum(); print('Missing COST_CTR:', nocc)" — credit notes >= 5 for 500 rows, no-PO rows >= 50, missing COST_CTR >= 10
+- Run: python3 -m pytest tests/ -v 2>&1 | tail -5 — must still show 0 failed (generator changes must not break unit tests that use the existing sample.csv or hardcoded fixtures)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Enhance test data generator with realistic procurement scenarios`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-04 07:16:24] [OK] Story US-006 completed!
+[2026-05-04 07:16:24] [OK] Marked US-006 as passed
+[2026-05-04 07:16:24] [INFO] Logged progress for US-006: PASSED
+[2026-05-04 07:16:24] [STEP] Committing changes...
