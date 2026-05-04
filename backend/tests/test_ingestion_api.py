@@ -34,6 +34,7 @@ _MOCK_JOB = {
     "started_at": "2026-05-03T00:00:00+00:00",
     "completed_at": None,
     "error_message": None,
+    "batch_id": None,
 }
 
 
