@@ -1110,3 +1110,38 @@ Nav items reordered in `frontend/src/components/Layout.tsx` to match the natural
 6. **Data Quality** — data completeness and confidence (diagnostic, not primary)
 
 Review Workstation (`99_` prefix) stays at the bottom. This order surfaces the most client-facing content first and positions Data Quality as a supporting diagnostic rather than a primary view.
+
+## Dashboard Polish Fixes (2026-05)
+
+### `/cube/diagnostics` API Contract
+
+`GET /cube/diagnostics` returns `Record<string, CheckResult>` — a plain object keyed on check name, **not** an array. The actual check names returned by `DataQualityDiagnostics.run_all()` (`src/diagnostics/quality.py`) are:
+
+```
+missing_supplier_name, uncategorised_spend, unresolved_suppliers, missing_payment_terms,
+duplicate_invoice_risk, negative_reversal_lines, weak_descriptions,
+missing_contract_linkage, missing_bu_cost_centre
+```
+
+Frontend code that needs the values as an array must use `Object.values(data)`. The `DataQualityPage` correctly uses `Object.entries(data).map()`. `OverviewPage` uses `Object.values(diagRaw ?? {}).filter(...)`.
+
+### Pipeline Stage Names
+
+Backend `pipeline_jobs.stage` values and their frontend display mapping:
+
+| Backend stage | Display step |
+|---------------|-------------|
+| `ingesting` | Ingesting Data (active) |
+| `promoting` | Harmonising Suppliers (active) — backend uses 'promoting', not 'harmonising' |
+| `building_cube` | Building Analytics Cube (active) |
+| `recommendations` | Generating Recommendations (active) — 5th and final stage |
+
+`UploadPage.tsx getStageStatus()` has an explicit early-return for `stage === 'promoting'` that maps it to: ingesting=done, harmonising=active, all others=pending.
+
+### Recommendations Auto-Run
+
+`_run_pipeline` in `backend/app/routers/ingestion.py` now runs `RecommendationEngine` as the 5th pipeline stage after `building_cube`. It writes the result directly to `engagements.recommendations_json`. The `GET /recommendations` endpoint reads from this column, so recommendations are available immediately after the pipeline completes — no manual "Run Recommendations" click required.
+
+### DiagnosticsCheckCard CHECK_GUIDANCE
+
+`frontend/src/components/dashboard/DiagnosticsCheckCard.tsx` has a `CHECK_GUIDANCE` constant keyed on the **actual** `run_all()` output names listed above. A `DISPLAY_NAMES` constant provides human-readable titles; `humanize()` checks `DISPLAY_NAMES[s]` first before falling back to snake_case conversion.

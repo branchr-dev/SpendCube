@@ -16,51 +16,63 @@ interface Props {
   expanded?: boolean
 }
 
+const DISPLAY_NAMES: Record<string, string> = {
+  missing_supplier_name: 'Missing Supplier Name',
+  uncategorised_spend: 'Uncategorised Spend',
+  unresolved_suppliers: 'Unresolved Suppliers',
+  missing_payment_terms: 'Missing Payment Terms',
+  duplicate_invoice_risk: 'Duplicate Invoice Risk',
+  negative_reversal_lines: 'Negative Reversal Lines',
+  weak_descriptions: 'Weak Descriptions',
+  missing_contract_linkage: 'Missing Contract Linkage',
+  missing_bu_cost_centre: 'Missing BU / Cost Centre',
+}
+
 const CHECK_GUIDANCE: Record<string, { meaning: string; impacts: string; fix: string }> = {
-  missing_supplier: {
+  missing_supplier_name: {
     meaning: 'Transactions with no canonical supplier name matched.',
     impacts: 'Impacts supplier consolidation recommendations and spend-by-supplier views.',
     fix: 'Upload a supplier master file or manually map raw names in the Review Workstation.',
   },
-  missing_category: {
+  uncategorised_spend: {
     meaning: 'Transactions not assigned to a UNSPSC category after all 6 pipeline passes.',
-    impacts: 'Directly reduces recommendation coverage.',
+    impacts: 'Directly reduces recommendation coverage — uncategorised spend cannot be analysed.',
     fix: 'Add keyword rules in data/reference/keyword_rules.yaml or run the Review Workstation category queue.',
   },
-  missing_gl_account: {
-    meaning: 'Transactions with no GL account code.',
-    impacts: 'Reduces GL-based categorisation accuracy.',
-    fix: 'Ensure the source ERP export includes GL codes and re-ingest.',
+  unresolved_suppliers: {
+    meaning: 'Supplier names that could not be matched to a canonical supplier with sufficient confidence.',
+    impacts: 'Reduces accuracy of supplier consolidation and spend-by-supplier analytics.',
+    fix: 'Review PENDING entries in the Review Workstation supplier queue and approve or override matches.',
   },
-  missing_cost_centre: {
-    meaning: 'Transactions with no cost centre or business unit.',
-    impacts: 'Limits spend-by-BU analysis.',
-    fix: 'Add cost centre column mapping during ingestion.',
+  missing_payment_terms: {
+    meaning: 'Transactions with no payment terms data present.',
+    impacts: 'Limits working capital opportunity analysis and payment terms benchmarking.',
+    fix: 'Ensure the source ERP export includes payment terms and re-ingest.',
   },
-  low_confidence_category: {
-    meaning: 'Categories assigned with confidence below 0.60.',
-    impacts: 'These are likely miscategorised.',
-    fix: 'Review low-confidence transactions in the Review Workstation and add overrides.',
-  },
-  low_confidence_supplier: {
-    meaning: 'Supplier matches with confidence below 0.60.',
-    impacts: 'These may be incorrectly harmonised.',
-    fix: 'Review PENDING entries in the Review Workstation supplier queue.',
-  },
-  duplicate_transactions: {
-    meaning: 'Potential duplicate invoice rows detected.',
-    impacts: 'Inflates spend totals.',
+  duplicate_invoice_risk: {
+    meaning: 'Potential duplicate invoice rows detected based on supplier, amount, and date proximity.',
+    impacts: 'Inflates spend totals and can skew supplier concentration metrics.',
     fix: 'Check source data for duplicate invoice numbers and re-ingest after deduplication.',
   },
-  maverick_spend: {
-    meaning: 'Spend without a purchase order on non-contracted suppliers.',
-    impacts: 'Indicates off-contract buying.',
-    fix: 'Enforce PO requirements and expand contract coverage.',
+  negative_reversal_lines: {
+    meaning: 'Negative-value transaction lines (credit notes and reversals) as a share of total rows.',
+    impacts: 'High reversal rates indicate invoicing errors or disputes that may mask true spend levels.',
+    fix: 'Investigate source system for high reversal volumes; consider excluding from analytics if systemic.',
   },
-  tail_spend_ratio: {
-    meaning: 'Proportion of spend in low-volume tail suppliers.',
-    impacts: 'High tail spend increases admin cost and reduces leverage.',
-    fix: 'Consolidate tail suppliers to preferred vendors.',
+  weak_descriptions: {
+    meaning: 'Transaction line descriptions that are too short or generic to support categorisation.',
+    impacts: 'Reduces keyword and embedding categorisation accuracy; more rows fall through to LLM or remain uncategorised.',
+    fix: 'Enrich descriptions at source or add keyword rules in data/reference/keyword_rules.yaml.',
+  },
+  missing_contract_linkage: {
+    meaning: 'Transactions with no PO or contract reference that could link them to a managed agreement.',
+    impacts: 'Inflates maverick spend figures and reduces contract compliance visibility.',
+    fix: 'Enforce PO requirements at source and map PO number column during ingestion.',
+  },
+  missing_bu_cost_centre: {
+    meaning: 'Transactions with no business unit or cost centre assignment.',
+    impacts: 'Limits spend-by-BU analysis and stakeholder accountability reporting.',
+    fix: 'Add cost centre column mapping during ingestion or enrich via GL code lookup.',
   },
 }
 
@@ -77,7 +89,7 @@ const BADGE_CLASS: Record<Status, string> = {
 }
 
 function humanize(s: string) {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return DISPLAY_NAMES[s] ?? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 const PROGRESS_CLASS: Record<Status, string> = {

@@ -12,7 +12,7 @@ import { CHART_COLORS } from '@/components/charts/constants'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import type { OverviewData, MonthRow, SupplierRow, CategoryRow, PaymentTermsRow, DiagnosticsCheck } from '@/types'
+import type { OverviewData, MonthRow, SupplierRow, CategoryRow, PaymentTermsRow } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
 
 interface RecommendationsResponse {
@@ -78,11 +78,12 @@ export default function OverviewPage() {
     enabled: !!engagementId,
   })
 
-  const { data: diagData = [] } = useQuery<DiagnosticsCheck[]>({
+  const { data: diagRaw = {} } = useQuery<Record<string, { status?: string }>>({
     queryKey: ['diag-overview', engagementId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data),
+      api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data).catch(() => ({})),
     enabled: !!engagementId,
+    retry: false,
   })
 
   function handleFilterChange(newFilters: FilterState) {
@@ -123,7 +124,7 @@ export default function OverviewPage() {
 
   const totalWcOpportunity = ptData.reduce((s, r) => s + (r.wc_opportunity_aud ?? 0), 0)
   const recCount = recData?.recommendations?.length ?? 0
-  const redCount = diagData.filter(c => c.status === 'RED' || c.status === 'ALERT').length
+  const redCount = Object.values(diagRaw ?? {}).filter(c => c.status === 'RED' || c.status === 'ALERT').length
 
   const currency = overview?.currency_label ?? 'AUD'
   const maverickPct = overview?.maverick_spend_pct ?? 0

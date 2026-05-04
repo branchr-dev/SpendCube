@@ -9,6 +9,7 @@ import {
   Lightbulb,
   ClipboardList,
   LogOut,
+  UploadCloud,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,6 +24,7 @@ const navItems = [
   { to: 'supplier', label: 'Supplier', icon: Building2 },
   { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard },
   { to: 'quality', label: 'Data Quality', icon: ShieldCheck },
+  { to: 'upload', label: 'Upload Data', icon: UploadCloud },
 ]
 
 export default function Layout() {

@@ -1,0 +1,145 @@
+{
+  "project": {
+    "id": "DASHBOARD-POLISH-2026-05",
+    "name": "Dashboard Polish — End-to-End Fixes",
+    "created": "2026-05-04",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-04T2146_DASHBOARD_POLISH",
+    "track": "code"
+  },
+  "summary": "Four confirmed bugs found by reading every dashboard page and its API contract. (1) OverviewPage calls .filter() on an object — the /cube/diagnostics endpoint returns a Record<string,CheckResult> but OverviewPage types it as DiagnosticsCheck[] and calls diagData.filter(), which throws TypeError and crashes the page. (2) DiagnosticsCheckCard CHECK_GUIDANCE is keyed on old names (missing_supplier, missing_category, etc.) that do not match the actual check names returned by DataQualityDiagnostics.run_all() (missing_supplier_name, uncategorised_spend, etc.) — guidance text is always blank. (3) The backend pipeline uses stage name 'promoting' which is not in the frontend PIPELINE_STAGES array, so all stage icons get stuck on pending during harmonisation and categorisation. (4) After the pipeline finishes, the user must manually click 'Run Recommendations Engine' — recommendations should auto-generate as the final pipeline stage. This sprint fixes all four and adds an Upload nav link to the sidebar.",
+  "decisions": {
+    "diagnostics_fix_location": "Fix on the frontend only — change OverviewPage to use Object.values() instead of array typing. No API change needed.",
+    "guidance_keys": "Update CHECK_GUIDANCE in DiagnosticsCheckCard to use the actual check names from DataQualityDiagnostics.run_all(). Add DISPLAY_NAMES map for humanized titles.",
+    "recommendations_autorun": "Add a 5th stage to _run_pipeline in backend/app/routers/ingestion.py: after building the cube, run RecommendationEngine and store recommendations_json on the engagement row. Frontend gets a new PIPELINE_STAGES entry for 'recommendations'.",
+    "stage_name_mapping": "Add early-return in getStageStatus for 'promoting' stage: ingesting=done, harmonising=active, all others=pending."
+  },
+  "context": {
+    "existing_tables": {
+      "engagements": "Has recommendations_json TEXT column — used by GET /recommendations and populated by POST /run. After this sprint, _run_pipeline will also write to it directly.",
+      "pipeline_jobs": "Tracks stage name as TEXT. Backend sets stage='promoting' which frontend does not recognise. Will also get stage='recommendations'.",
+      "transactions": "Queried by diagnostics and recommendations engine. engagement_id scoped."
+    },
+    "key_files": [
+      "frontend/src/pages/dashboard/OverviewPage.tsx — diagData typed as DiagnosticsCheck[] but API returns Record; diagData.filter() will crash",
+      "frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — CHECK_GUIDANCE uses wrong key names; all guidance text is blank at runtime",
+      "frontend/src/pages/ingest/UploadPage.tsx — PIPELINE_STAGES missing 'promoting' and 'recommendations' stage mappings",
+      "frontend/src/components/Layout.tsx — no Upload nav link in sidebar",
+      "backend/app/routers/ingestion.py — _run_pipeline missing recommendations stage; import json not present",
+      "src/diagnostics/quality.py — run_all() actual keys: missing_supplier_name, uncategorised_spend, unresolved_suppliers, missing_payment_terms, duplicate_invoice_risk, negative_reversal_lines, weak_descriptions, missing_contract_linkage, missing_bu_cost_centre"
+    ],
+    "patterns_to_follow": [
+      "Object.entries(data).map() pattern used in DataQualityPage.tsx for iterating the diagnostics Record — replicate in OverviewPage with Object.values().",
+      "import json and json.dumps(payload, default=str) pattern used in recommendations router POST /run — replicate in _run_pipeline.",
+      "_update_job(bg_engine, job_id, stage='building_cube') call pattern — replicate for 'recommendations' stage.",
+      "PIPELINE_STAGES constant in UploadPage.tsx: { key: string, label: string }[] — add new entry to end of array."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Fix OverviewPage diagnostics crash",
+      "description": "In frontend/src/pages/dashboard/OverviewPage.tsx, the query for /cube/diagnostics is typed as DiagnosticsCheck[] but the API returns a Record<string, {status, pct, description}> object. When data loads, calling diagData.filter(...) throws TypeError: diagData.filter is not a function and crashes the overview page. Fix by changing the query type to Record<string, {status?: string}>, defaulting to {}, computing redCount with Object.values(), and adding retry:false plus .catch(() => ({})) so a diagnostics failure does not crash the page.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — change the diagData query: type parameter from DiagnosticsCheck[] to Record<string, { status?: string }>, default value from [] to {}, add retry: false, and in the queryFn add .catch(() => ({}))",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — rename the destructured variable from diagData to diagRaw",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — replace 'diagData.filter(c => c.status === 'RED' || c.status === 'ALERT').length' with 'Object.values(diagRaw ?? {}).filter(c => c.status === 'RED' || c.status === 'ALERT').length'",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — remove DiagnosticsCheck from the type import line at the top if it is not used elsewhere in the file",
+        "Run: cd frontend && npm run build — should succeed with no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Fix DiagnosticsCheckCard guidance keys and display names",
+      "description": "In frontend/src/components/dashboard/DiagnosticsCheckCard.tsx, the CHECK_GUIDANCE constant is keyed on names like 'missing_supplier', 'missing_category', 'duplicate_transactions' but the actual keys from DataQualityDiagnostics.run_all() (src/diagnostics/quality.py lines 256-266) are: missing_supplier_name, uncategorised_spend, unresolved_suppliers, missing_payment_terms, duplicate_invoice_risk, negative_reversal_lines, weak_descriptions, missing_contract_linkage, missing_bu_cost_centre. Replace the entire CHECK_GUIDANCE constant with entries for these 9 actual keys. Also add a DISPLAY_NAMES constant for human titles and update humanize() to check it first.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — add a DISPLAY_NAMES constant mapping: missing_supplier_name→'Missing Supplier Name', uncategorised_spend→'Uncategorised Spend', unresolved_suppliers→'Unresolved Suppliers', missing_payment_terms→'Missing Payment Terms', duplicate_invoice_risk→'Duplicate Invoice Risk', negative_reversal_lines→'Negative Reversal Lines', weak_descriptions→'Weak Descriptions', missing_contract_linkage→'Missing Contract Linkage', missing_bu_cost_centre→'Missing BU / Cost Centre'",
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — replace the entire CHECK_GUIDANCE constant with 9 entries keyed on the actual check names above. Each entry must have non-empty meaning, impacts, and fix strings.",
+        "Edit file: frontend/src/components/dashboard/DiagnosticsCheckCard.tsx — update humanize(s) to return DISPLAY_NAMES[s] ?? s.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase())",
+        "Run: cd frontend && npm run build — should succeed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Fix pipeline stage display for 'promoting' backend stage name",
+      "description": "In frontend/src/pages/ingest/UploadPage.tsx, the getStageStatus function calls PIPELINE_STAGES.findIndex(s => s.key === jobStatus.stage). The backend pipeline sets stage='promoting' but PIPELINE_STAGES has keys: ingesting, harmonising, categorising, building_cube. So findIndex returns -1 for 'promoting' and all stages appear as pending. Add an early-return in getStageStatus: when stage is 'promoting', return 'done' for ingesting, 'active' for harmonising, and 'pending' for all others. The existing early-return for 'queued' status is at the top of the function — add the 'promoting' special case right after it.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/ingest/UploadPage.tsx — in getStageStatus, after the 'if (!jobStatus || jobStatus.status === queued) return pending' line, add: if (jobStatus.stage === 'promoting') { return stageKey === 'ingesting' ? 'done' : stageKey === 'harmonising' ? 'active' : 'pending' }",
+        "Run: cd frontend && npm run build — should succeed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Auto-run recommendations as final pipeline stage",
+      "description": "In backend/app/routers/ingestion.py, the _run_pipeline function ends at stage='building_cube'. Add a 5th stage 'recommendations' that runs RecommendationEngine and stores the JSON result in engagements.recommendations_json. This mirrors the existing POST /recommendations/run handler in backend/app/routers/recommendations.py. The config object and src_engine are already in scope. Note: import json is not currently at the top of ingestion.py — add it. The _portfolio_summary attribute is accessed as rec_engine._portfolio_summary (confirmed from recommendations.py). On the frontend, add a 5th PIPELINE_STAGES entry { key: 'recommendations', label: 'Generating Recommendations' }.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/ingestion.py — add 'import json' to the top-level imports section (after 'import tempfile')",
+        "Edit file: backend/app/routers/ingestion.py — inside _run_pipeline try block, after the run_cube_pipeline block and before the final _update_job done call, add: _update_job(bg_engine, job_id, stage='recommendations'); from src.recommendations.engine import RecommendationEngine; rec_engine = RecommendationEngine(config, src_engine); recs = rec_engine.run(); payload = {'recommendations': recs, 'portfolio_summary': rec_engine._portfolio_summary}; with bg_engine.begin() as conn: conn.execute(text(\"UPDATE engagements SET recommendations_json = :rjson WHERE id = :eid\"), {'rjson': json.dumps(payload, default=str), 'eid': engagement_id})",
+        "Edit file: frontend/src/pages/ingest/UploadPage.tsx — add { key: 'recommendations', label: 'Generating Recommendations' } as the 5th entry in PIPELINE_STAGES (after building_cube)",
+        "Edit file: frontend/src/pages/ingest/UploadPage.tsx — in getStageStatus, add handling for stage='recommendations': return 'done' for ingesting/harmonising/categorising/building_cube, 'active' for recommendations",
+        "Run: cd frontend && npm run build — should succeed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add Upload Data nav link to sidebar",
+      "description": "The Layout sidebar (frontend/src/components/Layout.tsx) has no Upload Data nav link, making it impossible to navigate back to the upload page after initial setup. Add UploadCloud as an icon import from lucide-react and add an 'Upload Data' entry to the navItems array. It should appear after the existing analytics nav items and before the bottom user/logout section.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/components/Layout.tsx — add UploadCloud to the existing lucide-react import destructure",
+        "Edit file: frontend/src/components/Layout.tsx — add { to: 'upload', label: 'Upload Data', icon: UploadCloud } to the end of the navItems array",
+        "Run: cd frontend && npm run build — should succeed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Fix avg payment days display and null-safety in PaymentTermsPage",
+      "description": "In frontend/src/pages/dashboard/PaymentTermsPage.tsx, avg_payment_days is the result of AVG() in SQL so it is a float. The table cell renders formatNumber(avgDays) which will show decimal places (e.g. 42.33). Wrap in Math.round() for cleaner display. Also verify all null-safety on avg_payment_days in the computeSupplierWc function and daysCls-equivalent expressions in SupplierPage. Read both files before editing.",
+      "acceptanceCriteria": [
+        "Read file: frontend/src/pages/dashboard/SupplierPage.tsx — verify avg_payment_days null handling is safe (has ?? 0 fallback)",
+        "Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx — change {formatNumber(avgDays)} in the avg days TableCell to {formatNumber(Math.round(avgDays))}",
+        "Run: cd frontend && npm run build — should succeed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Update CLAUDE.md with dashboard polish findings",
+      "description": "Document the bugs found and fixed in this sprint so future sessions understand the API contracts and pipeline flow. Add a new section to CLAUDE.md.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add a '## Dashboard Polish Fixes (2026-05)' section documenting: (1) /cube/diagnostics returns Record<string,CheckResult> not an array — frontend must use Object.values(); (2) Pipeline stage 'promoting' maps to Harmonising Suppliers display step; stage 'recommendations' is the 5th and final stage; (3) RecommendationEngine auto-runs as final pipeline stage and writes to engagements.recommendations_json; (4) DiagnosticsCheckCard CHECK_GUIDANCE keys must exactly match run_all() output keys from src/diagnostics/quality.py"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {},
+    "expected_counts": {},
+    "checks": [
+      "cd frontend && npm run build — zero TypeScript errors",
+      "Overview page loads with data without crashing (no TypeError on diagData.filter)",
+      "DataQualityPage expanded AMBER/RED card shows non-empty guidance text",
+      "Upload page shows all 5 stages including 'Generating Recommendations' during pipeline run",
+      "After pipeline completes, /recommendations page shows data without requiring manual Run click",
+      "PaymentTermsPage shows whole-number avg days in supplier table"
+    ]
+  },
+  "risks": [
+    "RecommendationEngine._portfolio_summary: this private attribute is already accessed in recommendations.py POST /run handler — confirmed safe",
+    "Adding recommendations stage extends pipeline runtime by a few seconds on 500 rows — acceptable",
+    "CHECK_GUIDANCE all 9 keys verified against src/diagnostics/quality.py lines 256-266"
+  ],
+  "outOfScope": [
+    "Admin review workstation fixes",
+    "New dashboard pages or charts",
+    "Mobile/responsive layout improvements",
+    "FilterBar analytics dimensions (legal_entities, currencies, countries) — not populated by current demo data",
+    "Performance optimisation of API queries",
+    "Error boundary components for individual page crash isolation"
+  ]
+}

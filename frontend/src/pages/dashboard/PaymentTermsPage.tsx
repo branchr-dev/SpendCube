@@ -256,7 +256,7 @@ export default function PaymentTermsPage() {
                           : 'text-right'
                       }
                     >
-                      {formatNumber(avgDays)}
+                      {formatNumber(Math.round(avgDays))}
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(spend)}</TableCell>
                     <TableCell>{deriveBucket(avgDays)}</TableCell>

@@ -3,6 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
+import json
 import tempfile
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -215,6 +216,18 @@ def _run_pipeline(
         _update_job(bg_engine, job_id, stage="building_cube")
         with tempfile.TemporaryDirectory() as tmp_dir:
             run_cube_pipeline(db_url, config_path, tmp_dir)
+
+        # Stage 4: recommendations
+        _update_job(bg_engine, job_id, stage="recommendations")
+        from src.recommendations.engine import RecommendationEngine
+        rec_engine = RecommendationEngine(config, src_engine)
+        recs = rec_engine.run()
+        payload = {"recommendations": recs, "portfolio_summary": rec_engine._portfolio_summary}
+        with bg_engine.begin() as conn:
+            conn.execute(
+                text("UPDATE engagements SET recommendations_json = :rjson WHERE id = :eid"),
+                {"rjson": json.dumps(payload, default=str), "eid": engagement_id},
+            )
 
         # Done
         now = datetime.now(timezone.utc).isoformat()

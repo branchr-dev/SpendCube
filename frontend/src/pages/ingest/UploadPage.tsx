@@ -25,12 +25,16 @@ const PIPELINE_STAGES = [
   { key: 'harmonising', label: 'Harmonising Suppliers' },
   { key: 'categorising', label: 'Categorising Spend' },
   { key: 'building_cube', label: 'Building Analytics Cube' },
+  { key: 'recommendations', label: 'Generating Recommendations' },
 ]
 
 type StageStatus = 'pending' | 'active' | 'done' | 'failed'
 
 function getStageStatus(stageKey: string, jobStatus: PipelineJob | null): StageStatus {
   if (!jobStatus || jobStatus.status === 'queued') return 'pending'
+  if (jobStatus.stage === 'promoting') {
+    return stageKey === 'ingesting' ? 'done' : stageKey === 'harmonising' ? 'active' : 'pending'
+  }
   const currentIdx = PIPELINE_STAGES.findIndex(s => s.key === jobStatus.stage)
   const thisIdx = PIPELINE_STAGES.findIndex(s => s.key === stageKey)
   if (jobStatus.status === 'done') return 'done'
