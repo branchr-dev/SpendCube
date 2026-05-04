@@ -53,3 +53,10 @@ Created scripts/evaluate_pipeline.py — standalone 5-phase evaluation harness. 
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+---
+
+### [US-006] - 2026-05-04
+**Status:** PASSED
+Enhanced generate_test_data.py: (1) anchor supplier pool — first 3 base suppliers pre-selected as anchors, chosen 40% of the time for non-intercompany rows, producing ~38% concentration by VENDOR_NUM (gap from target is intercompany rows); (2) maverick rate fixed at 15% independent of messiness (replaces messiness-driven formula that gave 30% at default); (3) credit_note_rate default changed 0.05→0.03; (4) missing cost-centre rate fixed at 5% independent of messiness. All 168 tests pass. Acceptance criteria: 500-row run gives 26 credit notes (>=5 ✓), 95 no-PO rows (>=50 ✓), 19 missing COST_CTR (>=10 ✓).
+

@@ -152,7 +152,7 @@ def generate_test_data(
     categories: int = 50,
     messiness: float = 0.3,
     duplicate_supplier_rate: float = 0.15,
-    credit_note_rate: float = 0.05,
+    credit_note_rate: float = 0.03,
     intercompany_rate: float = 0.03,
     seed: int = 42,
 ) -> pd.DataFrame:
@@ -184,8 +184,10 @@ def generate_test_data(
         base_suppliers.append(name)
         supplier_nums[name] = _make_vendor_num(i)
 
-    # Suffix variant pool (for duplicate supplier names)
-    suffix_pool = LEGAL_SUFFIX_VARIANTS[0]  # default
+    # Tail-spend concentration: first 3 suppliers are anchors receiving ~40% of rows.
+    num_anchors = min(3, len(base_suppliers))
+    anchor_suppliers = base_suppliers[:num_anchors]
+    tail_suppliers = base_suppliers[num_anchors:] or base_suppliers
 
     def _variant_name(base: str) -> str:
         """Create a variant of a supplier name by swapping legal suffix."""
@@ -205,16 +207,12 @@ def generate_test_data(
     date_range_days = (end_date - start_date).days
 
     # ------------------------------------------------------------------
-    # 3. Missing rates (driven by messiness)
+    # 3. Missing rates
+    #    Maverick (no PO) and missing cost centre are fixed procurement-
+    #    quality rates; pay-terms and currency missing scale with messiness.
     # ------------------------------------------------------------------
-    po_missing_rate    = messiness * 0.30 / 0.3 * 0.3 if messiness <= 1.0 else 0.30  # ~30% at m=0.3
-    cost_ctr_missing   = messiness * 0.20 / 0.3 * 0.3 if messiness <= 1.0 else 0.20  # ~20% at m=0.3
-    pay_terms_missing  = messiness * 0.10 / 0.3 * 0.3 if messiness <= 1.0 else 0.10  # ~10% at m=0.3
-    ccy_missing_rate   = messiness * 0.10 / 0.3 * 0.3 if messiness <= 1.0 else 0.10  # ~10% at m=0.3
-
-    # Simplify: linear scaling
-    po_missing_rate   = min(messiness * 1.0, 0.30)
-    cost_ctr_missing  = min(messiness * 0.667, 0.20)
+    maverick_rate     = 0.15   # ~15% of normal rows have no PO
+    missing_cc_rate   = 0.05   # ~5% of rows have blank cost centre
     pay_terms_missing = min(messiness * 0.333, 0.10)
     ccy_missing_rate  = min(messiness * 0.333, 0.10)
 
@@ -235,7 +233,11 @@ def generate_test_data(
             vendor_name = f"INTERCOMPANY - {dept}"
             vendor_num = "V-INTCO"
         else:
-            base = rng.choice(base_suppliers)
+            # Anchor suppliers receive ~40% of rows for realistic tail-spend concentration.
+            if rng.random() < 0.40:
+                base = rng.choice(anchor_suppliers)
+            else:
+                base = rng.choice(tail_suppliers)
             vendor_num = supplier_nums[base]
             if rng.random() < duplicate_supplier_rate:
                 vendor_name = _variant_name(base)
@@ -278,7 +280,7 @@ def generate_test_data(
 
         # --- Cost Centre ---
         cost_ctr = _make_cost_centre(rng, messiness)
-        cost_ctr = _apply_missing(cost_ctr, cost_ctr_missing, rng)
+        cost_ctr = _apply_missing(cost_ctr, missing_cc_rate, rng)
 
         # --- Payment Terms ---
         pay_terms = _make_pay_terms(messiness, rng)
@@ -289,7 +291,7 @@ def generate_test_data(
         if is_credit_note:
             po_num = ""  # credit notes rarely have PO
         else:
-            po_num = _apply_missing(po_num, po_missing_rate, rng)
+            po_num = _apply_missing(po_num, maverick_rate, rng)
 
         # --- Business Unit / Site ---
         bus_unit = rng.choice(BUSINESS_UNITS)
