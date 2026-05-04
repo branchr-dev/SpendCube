@@ -55,7 +55,7 @@ def health():
 
 @app.get("/debug")
 def debug():
-    from jose import jwt as jose_jwt, JWTError
+    import jwt as pyjwt
 
     secret = os.getenv("SUPABASE_JWT_SECRET", "")
     db_url = os.getenv("SUPABASE_DATABASE_URL", "")
@@ -65,9 +65,9 @@ def debug():
     jwt_secret_valid = False
     jwt_secret_error = ""
     try:
-        jose_jwt.decode(ANON_KEY, secret, algorithms=["HS256"], options={"verify_aud": False})
+        pyjwt.decode(ANON_KEY, secret, algorithms=["HS256"], options={"verify_aud": False})
         jwt_secret_valid = True
-    except JWTError as e:
+    except pyjwt.PyJWTError as e:
         jwt_secret_error = str(e)
 
     # Test DB connection
