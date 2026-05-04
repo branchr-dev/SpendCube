@@ -42,6 +42,7 @@ CONTRACT_COMPLIANCE = "CONTRACT_COMPLIANCE"
 COMPETITIVE_TENDER = "COMPETITIVE_TENDER"
 CONTRACT_COVERAGE_GAP = "CONTRACT_COVERAGE_GAP"
 SPEND_CONCENTRATION_RISK = "SPEND_CONCENTRATION_RISK"
+EARLY_PAYMENT_DISCOUNT_CAPTURE = "EARLY_PAYMENT_DISCOUNT_CAPTURE"
 
 
 class RecommendationRules:
@@ -77,6 +78,7 @@ class RecommendationRules:
             self.rule_competitive_tender,
             self.rule_contract_coverage_gap,
             self.rule_spend_concentration_risk,
+            self.rule_early_payment_discount_capture,
         ]
 
         for rule_method in rule_methods:
@@ -528,6 +530,86 @@ class RecommendationRules:
                 "addressability_pct": addressability_pct,
                 "saving_pct": saving_pct,
                 "addressable_baseline": round(addressable_baseline, 2),
+            })
+
+        return recs
+
+    def rule_early_payment_discount_capture(self) -> list[dict]:
+        """EARLY_PAYMENT_DISCOUNT_CAPTURE — Suppliers with uncaptured early payment discounts.
+
+        annual_discount_opportunity = SUM(base_amount * discount_percent / 100).
+        Only fires when addressable_opportunity > min_discount_opportunity.
+        """
+        txn = self.cube.get("transactions", pd.DataFrame())
+        if txn.empty:
+            return []
+        required = {"has_early_payment_discount", "discount_percent", "base_amount", "canonical_supplier_id"}
+        if not required.issubset(txn.columns):
+            return []
+
+        cfg = self._rec_cfg
+        addr = self._addressable(txn)
+        if addr.empty:
+            return []
+
+        eligible = addr[
+            (addr["has_early_payment_discount"] == 1)
+            & (addr["discount_percent"].notna())
+            & (addr["discount_percent"] > 0)
+        ]
+        if eligible.empty:
+            return []
+
+        eligible = eligible.copy()
+        eligible["disc_opp"] = eligible["base_amount"] * eligible["discount_percent"] / 100
+
+        agg_kwargs: dict = {
+            "annual_spend": ("base_amount", "sum"),
+            "avg_discount_pct": ("discount_percent", "mean"),
+            "disc_opp_sum": ("disc_opp", "sum"),
+        }
+        if "canonical_supplier_name" in eligible.columns:
+            agg_kwargs["supplier_name"] = ("canonical_supplier_name", "first")
+
+        supplier_stats = (
+            eligible.groupby("canonical_supplier_id")
+            .agg(**agg_kwargs)
+            .reset_index()
+        )
+
+        rates_row = self._rates.get(EARLY_PAYMENT_DISCOUNT_CAPTURE)
+        addressability_pct = rates_row["addressability_pct"]
+        recs: list[dict] = []
+
+        for _, row in supplier_stats.iterrows():
+            disc_opp_sum = float(row["disc_opp_sum"])
+            addressable_opportunity = disc_opp_sum * addressability_pct
+            if addressable_opportunity <= cfg.min_discount_opportunity:
+                continue
+
+            annual_spend = float(row["annual_spend"])
+            avg_discount_pct = float(row["avg_discount_pct"])
+            supplier_name = str(row.get("supplier_name", row["canonical_supplier_id"]))
+
+            recs.append({
+                "type": EARLY_PAYMENT_DISCOUNT_CAPTURE,
+                "context": supplier_name,
+                "evidence": (
+                    f"Avg discount: {avg_discount_pct:.1f}%; "
+                    f"annual spend with discount terms: ${annual_spend:,.0f}; "
+                    f"capturing discount saves ${addressable_opportunity:,.0f}/yr"
+                ),
+                "estimated_impact_aud": round(addressable_opportunity, 2),
+                "confidence": "HIGH",
+                "action": (
+                    f"Capture early payment discount with {supplier_name} "
+                    "— pay within discount window"
+                ),
+                "lever": "Early Payment Discount",
+                "baseline_spend": round(annual_spend, 2),
+                "addressability_pct": addressability_pct,
+                "saving_pct": None,
+                "addressable_baseline": round(disc_opp_sum, 2),
             })
 
         return recs

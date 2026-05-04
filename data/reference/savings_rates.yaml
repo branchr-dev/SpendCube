@@ -25,6 +25,9 @@ defaults:
   SPEND_CONCENTRATION_RISK:
     saving_pct: 0.05
     addressability_pct: 0.70
+  EARLY_PAYMENT_DISCOUNT_CAPTURE:
+    saving_pct: 1.0
+    addressability_pct: 0.80
 
 categories:
   Information Technology:
