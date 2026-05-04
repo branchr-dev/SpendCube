@@ -28,10 +28,12 @@ export default function NewEngagementPage() {
         navigate(`/engagements/${response.data.id}/upload`)
       }
     } catch (err: unknown) {
-      toast.error(
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-          'Failed to create engagement'
-      )
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      const message =
+        typeof detail === 'string' ? detail :
+        Array.isArray(detail) ? (detail as { msg?: string }[])[0]?.msg ?? 'Failed to create engagement' :
+        'Failed to create engagement'
+      toast.error(message)
     } finally {
       setLoading(false)
     }
