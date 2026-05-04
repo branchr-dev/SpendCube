@@ -134,3 +134,64 @@ STORY_COMPLETE: US-002
 [2026-05-04 07:03:37] [OK] Marked US-002 as passed
 [2026-05-04 07:03:37] [INFO] Logged progress for US-002: PASSED
 [2026-05-04 07:03:37] [STEP] Committing changes...
+[2026-05-04 07:03:39] [INFO] Starting iteration 3
+[2026-05-04 07:03:39] [INFO] Processing story: US-003
+[2026-05-04 07:03:39] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Fix deprecation warnings in cleaner.py and ingest.py
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Two deprecation warnings appear across the test run. First, src/ingestion/cleaner.py has two calls to df.select_dtypes(include=['object']) (at approximately lines 176 and 182) that trigger Pandas4Warning. The forward-compatible fix is select_dtypes(include=['object', 'string']). Second, src/ingestion/ingest.py calls datetime.utcnow() (approximately line 144) which is deprecated since Python 3.12. Fix by importing timezone from datetime and changing to datetime.now(timezone.utc).
+
+## Acceptance Criteria
+- Edit file: src/ingestion/cleaner.py — change both occurrences of select_dtypes(include=['object']) to select_dtypes(include=['object', 'string'])
+- Edit file: src/ingestion/ingest.py — ensure 'timezone' is in the datetime import (e.g. from datetime import datetime, timezone), then change datetime.utcnow() to datetime.now(timezone.utc)
+- Run: python3 -m pytest tests/ -v 2>&1 | grep -c 'Pandas4Warning' — output must be 0
+- Run: python3 -m pytest tests/ -v 2>&1 | grep 'utcnow' — must return empty (no matches)
+- Run: python3 -m pytest tests/ -v 2>&1 | tail -5 — must show 0 failed (no regressions)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Fix deprecation warnings in cleaner.py and ingest.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-04 07:08:11] [OK] Story US-003 completed!
+[2026-05-04 07:08:11] [OK] Marked US-003 as passed
+[2026-05-04 07:08:11] [INFO] Logged progress for US-003: PASSED
+[2026-05-04 07:08:11] [STEP] Committing changes...
