@@ -39,3 +39,17 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+---
+
+### [US-005] - 2026-05-04
+**Status:** PASSED
+Created scripts/evaluate_pipeline.py — standalone 5-phase evaluation harness. Runs on 200-row synthetic data by default (--csv and --db flags optional). Constructor arg order matches actual source: SupplierHarmoniser(config, engine), SpendCategoriser(config, engine), RecommendationEngine(config, engine). Script explicitly calls harmoniser.update_transactions() and categoriser.update_transactions_in_db() to persist enriched data before cube/rec phases. Verified: runs clean on 200-row dataset, prints PASS across coverage (85.5%), recommendation count (23), sanity check (True).
+
+
+---
+
+### [US-005] - 2026-05-04 07:12:28
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

@@ -116,7 +116,8 @@
         "Show verdict per metric: coverage_pct >= 0.70 → PASS, >= 0.50 → WARN, < 0.50 → FAIL; recommendation count >= 3 → PASS, >= 1 → WARN, 0 → FAIL; sanity_check_passed true → PASS, false → FAIL",
         "Run: python3 scripts/evaluate_pipeline.py 2>&1 | tail -30 — must complete without uncaught exception and print a report containing at least one PASS verdict"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:12:28Z"
     },
     {
       "id": "US-006",

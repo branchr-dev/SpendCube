@@ -256,3 +256,69 @@ STORY_COMPLETE: US-004
 [2026-05-04 07:08:52] [OK] Marked US-004 as passed
 [2026-05-04 07:08:52] [INFO] Logged progress for US-004: PASSED
 [2026-05-04 07:08:52] [STEP] Committing changes...
+[2026-05-04 07:08:54] [INFO] Starting iteration 5
+[2026-05-04 07:08:54] [INFO] Processing story: US-005
+[2026-05-04 07:08:54] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Create evaluation harness — scripts/evaluate_pipeline.py
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create scripts/evaluate_pipeline.py — a standalone quality-gate script for validating pipeline output before client delivery. When run with no arguments it generates 200-row synthetic data and runs the full pipeline on a temp SQLite DB. When run with --csv path/to/file.csv it uses that file instead. The script prints a structured 5-section report with PASS/WARN/FAIL verdicts. It must add the project root to sys.path so it can import from src/ (use: sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')) at the top).
+
+## Acceptance Criteria
+- Create file: scripts/evaluate_pipeline.py
+- Script adds project root to sys.path before any src/ imports
+- Script accepts --csv (optional, path to CSV file) and --db (optional, SQLite path; default tempfile that is deleted after run)
+- If --csv not provided: generate 200 rows using src/utils/generate_test_data.py GenerateTestData or the generate_data() function, write to a temp CSV, use that
+- Run pipeline phases in order: (1) Ingestor(config).ingest_to_db(csv_path, engine) from src/ingestion/ingest.py, (2) SupplierHarmoniser(engine, config).harmonise() from src/suppliers/harmoniser.py, (3) SpendCategoriser(engine, config).categorise() from src/categorisation/categoriser.py, (4) run_pipeline(engine, config) from src/cube/pipeline.py, (5) RecommendationEngine(db_path).run() from src/recommendations/engine.py
+- Print 5-section report: Section 1 Ingestion (row_count, credit_notes, intercompany_filtered), Section 2 Supplier Harmonisation (canonical_suppliers, high_pct, medium_pct, low_pct, unmatched), Section 3 Categorisation (coverage_pct = rows with confidence>=0.60 / total, high_pct, medium_pct, low_pct, uncategorised), Section 4 Recommendations (count, types list, total_savings_aud, sanity_check_passed), Section 5 Data Quality (each check name, status, value_pct)
+- Show verdict per metric: coverage_pct >= 0.70 → PASS, >= 0.50 → WARN, < 0.50 → FAIL; recommendation count >= 3 → PASS, >= 1 → WARN, 0 → FAIL; sanity_check_passed true → PASS, false → FAIL
+- Run: python3 scripts/evaluate_pipeline.py 2>&1 | tail -30 — must complete without uncaught exception and print a report containing at least one PASS verdict
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Create evaluation harness — scripts/evaluate_pipeline.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+`scripts/evaluate_pipeline.py` is created and working. The script generates 200 rows of synthetic data, runs all 5 pipeline phases, and prints a structured report. On the test run: coverage 85.5% [PASS], 23 recommendations [PASS], sanity check passed [PASS], overall PASS.
+
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-04 07:12:28] [OK] Story US-005 completed!
+[2026-05-04 07:12:28] [OK] Marked US-005 as passed
+[2026-05-04 07:12:28] [INFO] Logged progress for US-005: PASSED
+[2026-05-04 07:12:28] [STEP] Committing changes...
