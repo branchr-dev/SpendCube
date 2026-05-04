@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
@@ -12,8 +12,12 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
+import { Settings } from 'lucide-react'
+import useRecommendationConfig from '@/hooks/useRecommendationConfig'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import KpiCard from '@/components/dashboard/KpiCard'
 import RecommendationCard from '@/components/dashboard/RecommendationCard'
 import { SpendBarChart } from '@/components/charts'
@@ -121,6 +125,31 @@ export default function RecommendationsPage() {
   const queryClient = useQueryClient()
   const [confidenceFilter, setConfidenceFilter] = useState<Confidence>('ALL')
   const [selectedLever, setSelectedLever] = useState<string | null>(null)
+  const [showConfig, setShowConfig] = useState(false)
+  const { config: recConfig, saveConfig, isSaving } = useRecommendationConfig(engagementId)
+
+  const [targetPaymentDays, setTargetPaymentDays] = useState<number>(0)
+  const [wacc, setWacc] = useState<number>(0)
+  const [consolidationThreshold, setConsolidationThreshold] = useState<number>(0)
+  const [tailSpendAlertPct, setTailSpendAlertPct] = useState<number>(0)
+  const [maverickAlertPct, setMaverickAlertPct] = useState<number>(0)
+  const [competitiveTenderMinSpend, setCompetitiveTenderMinSpend] = useState<number>(0)
+  const [contractCoverageGapMinSpend, setContractCoverageGapMinSpend] = useState<number>(0)
+  const [concentrationThresholdPct, setConcentrationThresholdPct] = useState<number>(0)
+  const [minDiscountOpportunity, setMinDiscountOpportunity] = useState<number>(0)
+
+  useEffect(() => {
+    if (!recConfig) return
+    setTargetPaymentDays(recConfig.target_payment_days ?? 0)
+    setWacc((recConfig.wacc ?? 0) * 100)
+    setConsolidationThreshold(recConfig.consolidation_threshold ?? 0)
+    setTailSpendAlertPct((recConfig.tail_spend_alert_pct ?? 0) * 100)
+    setMaverickAlertPct((recConfig.maverick_alert_pct ?? 0) * 100)
+    setCompetitiveTenderMinSpend(recConfig.competitive_tender_min_spend ?? 0)
+    setContractCoverageGapMinSpend(recConfig.contract_coverage_gap_min_spend ?? 0)
+    setConcentrationThresholdPct((recConfig.concentration_threshold_pct ?? 0) * 100)
+    setMinDiscountOpportunity(recConfig.min_discount_opportunity ?? 0)
+  }, [recConfig])
 
   const { data, isLoading, error } = useQuery<RecommendationsResponse>({
     queryKey: ['recommendations', engagementId],
@@ -175,6 +204,21 @@ export default function RecommendationsPage() {
   const displayedRecs = (
     selectedLever ? filtered.filter(r => (r.lever ?? 'OTHER') === selectedLever) : filtered
   ).sort((a, b) => (b.estimated_impact_aud ?? 0) - (a.estimated_impact_aud ?? 0))
+
+  async function handleSaveConfig() {
+    await saveConfig({
+      target_payment_days: targetPaymentDays,
+      wacc: wacc / 100,
+      consolidation_threshold: consolidationThreshold,
+      tail_spend_alert_pct: tailSpendAlertPct / 100,
+      maverick_alert_pct: maverickAlertPct / 100,
+      competitive_tender_min_spend: competitiveTenderMinSpend,
+      contract_coverage_gap_min_spend: contractCoverageGapMinSpend,
+      concentration_threshold_pct: concentrationThresholdPct / 100,
+      min_discount_opportunity: minDiscountOpportunity,
+    })
+    runMutation.mutate()
+  }
 
   function exportToExcel() {
     const clientName = (engagement?.client_name ?? engagementId ?? 'client')
@@ -234,13 +278,19 @@ export default function RecommendationsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Recommendations</h1>
-        <Button
-          variant="outline"
-          onClick={exportToExcel}
-          disabled={recommendations.length === 0}
-        >
-          Export to Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowConfig(p => !p)}>
+            <Settings className="h-4 w-4 mr-2" />
+            {showConfig ? 'Close Settings' : 'Configure'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={exportToExcel}
+            disabled={recommendations.length === 0}
+          >
+            Export to Excel
+          </Button>
+        </div>
       </div>
 
       {portfolio && (
@@ -273,6 +323,101 @@ export default function RecommendationsPage() {
             valueType="text"
             accentColor={portfolio.sanity_check_passed ? 'green' : 'risk'}
           />
+        </div>
+      )}
+
+      {showConfig && (
+        <div className="border rounded-xl p-5 bg-muted/30 space-y-4">
+          <h3 className="text-sm font-semibold">Recommendation Thresholds</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="target_payment_days">Target Payment Days</Label>
+              <Input
+                id="target_payment_days"
+                type="number"
+                value={targetPaymentDays}
+                onChange={e => setTargetPaymentDays(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="wacc">WACC (%)</Label>
+              <Input
+                id="wacc"
+                type="number"
+                value={wacc}
+                onChange={e => setWacc(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="consolidation_threshold">Consolidation Threshold (suppliers)</Label>
+              <Input
+                id="consolidation_threshold"
+                type="number"
+                value={consolidationThreshold}
+                onChange={e => setConsolidationThreshold(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tail_spend_alert_pct">Tail Spend Alert (%)</Label>
+              <Input
+                id="tail_spend_alert_pct"
+                type="number"
+                value={tailSpendAlertPct}
+                onChange={e => setTailSpendAlertPct(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="maverick_alert_pct">Maverick Alert (%)</Label>
+              <Input
+                id="maverick_alert_pct"
+                type="number"
+                value={maverickAlertPct}
+                onChange={e => setMaverickAlertPct(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="competitive_tender_min_spend">Competitive Tender Min Spend</Label>
+              <Input
+                id="competitive_tender_min_spend"
+                type="number"
+                value={competitiveTenderMinSpend}
+                onChange={e => setCompetitiveTenderMinSpend(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="contract_coverage_gap_min_spend">Contract Coverage Gap Min Spend</Label>
+              <Input
+                id="contract_coverage_gap_min_spend"
+                type="number"
+                value={contractCoverageGapMinSpend}
+                onChange={e => setContractCoverageGapMinSpend(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="concentration_threshold_pct">Concentration Threshold (%)</Label>
+              <Input
+                id="concentration_threshold_pct"
+                type="number"
+                value={concentrationThresholdPct}
+                onChange={e => setConcentrationThresholdPct(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="min_discount_opportunity">Min Discount Opportunity</Label>
+              <Input
+                id="min_discount_opportunity"
+                type="number"
+                value={minDiscountOpportunity}
+                onChange={e => setMinDiscountOpportunity(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowConfig(false)}>Cancel</Button>
+            <Button onClick={handleSaveConfig} disabled={isSaving}>
+              {isSaving ? 'Saving…' : 'Save & Regenerate'}
+            </Button>
+          </div>
         </div>
       )}
 

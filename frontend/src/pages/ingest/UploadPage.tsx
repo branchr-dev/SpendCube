@@ -18,6 +18,8 @@ const CANONICAL_FIELDS = [
   { key: 'currency', label: 'Currency', keyword: 'currency' },
   { key: 'gl_code', label: 'GL Code', keyword: 'gl' },
   { key: 'cost_centre', label: 'Cost Centre', keyword: 'cost' },
+  { key: 'unit_price', label: 'Unit Price', keyword: 'unit_price' },
+  { key: 'unit_of_measure', label: 'Unit of Measure', keyword: 'uom' },
 ]
 
 const PIPELINE_STAGES = [
