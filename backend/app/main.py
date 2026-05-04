@@ -11,6 +11,7 @@ app = FastAPI(title="SpendCube API", version="2.0.0")
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "*")
 allowed_origins = [o.strip() for o in allowed_origins_raw.split(",")] if allowed_origins_raw != "*" else ["*"]
 
+app.add_middleware(SupabaseAuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -18,7 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(SupabaseAuthMiddleware)
 
 app.include_router(engagements.router)
 app.include_router(ingestion.router)
