@@ -1,0 +1,77 @@
+[2026-05-04 07:02:08] [INFO] Ralph loop starting
+[2026-05-04 07:02:08] [INFO] Created progress file: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Mon  4 May 2026 07:02:08 BST
+PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-04 07:02:08] [INFO] Starting iteration 1
+[2026-05-04 07:02:08] [INFO] Processing story: US-001
+[2026-05-04 07:02:08] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Fix sample.csv to match test expectations
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The file data/input/sample.csv was generated with invoice numbers that do not match what tests/test_ingestion.py expects. Three tests fail: test_ingest_cn_row_is_credit_note looks for CN-2024-001 (does not exist in current CSV), test_ingest_intercompany_row_flagged looks for INV-2024-006 to be INTERCOMPANY (currently Creative Display), and test_ingest_usd_row_converted_to_aud looks for INV-2024-007 to be DHL USD 8750 (currently INTERCOMPANY AUD). Rewrite sample.csv with exactly 10 rows matching the test expectations. The header is: VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE
+
+## Acceptance Criteria
+- Edit file: data/input/sample.csv — rewrite with exactly 10 data rows plus header
+- Include row: Sodexo Australia Pty Ltd,V-002,CN-2024-001,15/04/2024,Credit note - catering overcharge,-850.00,AUD,6512,CC-OPS-01,Net 30,,Operations,Melbourne
+- Include row: INTERCOMPANY - LEGAL,V-999,INV-2024-006,12/02/2024,Legal services - internal,5000.00,AUD,7800100,CC-LEG-01,Net 45,,Corporate,Sydney
+- Include row: DHL Express Pty Ltd,V-004,INV-2024-007,12/02/2024,International freight - Shanghai to Melb,8750.00,USD,6301,CC-LOG-01,Net 14,PO-9004,Operations,Sydney
+- Include row: ,V-TAX,TAX-ADJ-001,31/03/2024,Tax adjustment - GST,-125.00,AUD,2100100,,N/A,,Corporate,Sydney (needed for test_ingest_tax_row_flagged)
+- Include row: Officeworks Business Supplies,V-001,INV-2024-001,15/03/2024,Office supplies - toner cartridges HP,340.50,AUD,6421,CC-ADM-01,Net 30,PO-9001,Corporate,Sydney
+- Total row count must be exactly 10 data rows
+- Run: python3 -m pytest tests/test_ingestion.py::test_ingest_cn_row_is_credit_note tests/test_ingestion.py::test_ingest_intercompany_row_flagged tests/test_ingestion.py::test_ingest_usd_row_converted_to_aud tests/test_ingestion.py::test_ingest_sample_csv_returns_10_rows tests/test_ingestion.py::test_ingest_tax_row_flagged -v — all 5 must pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Fix sample.csv to match test expectations`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+All 5 tests pass. The fix was straightforward: renumbered the invoice IDs so `INV-2024-006` maps to the INTERCOMPANY row, `INV-2024-007` maps to DHL Express (USD), and replaced the old Sodexo catering row with the `CN-2024-001` credit note row.
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-04 07:03:16] [OK] Story US-001 completed!
+[2026-05-04 07:03:16] [OK] Marked US-001 as passed
+[2026-05-04 07:03:16] [INFO] Logged progress for US-001: PASSED
+[2026-05-04 07:03:16] [STEP] Committing changes...

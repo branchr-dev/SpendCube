@@ -1,0 +1,195 @@
+{
+  "project": {
+    "id": "CLIENT-READY-POLISH-2026-05",
+    "name": "SpendCube Client-Ready Polish",
+    "created": "2026-05-04",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH",
+    "track": "code"
+  },
+  "summary": "Final polish sprint to take SpendCube from working prototype to client-ready state. Fixes all 4 failing tests (3 in test_ingestion.py due to sample.csv invoice number mismatches, 1 in backend due to missing batch_id in mock), eliminates deprecation warnings, adds a no-data empty state to OverviewPage, creates an automated evaluation harness script for procurement opportunity assessment quality checks, enhances the synthetic test data generator with realistic procurement scenarios, and writes a comprehensive HANDOVER.md document covering full setup, deployment, and first-engagement walkthrough.",
+  "decisions": {
+    "sample_csv_redesign": "Update data/input/sample.csv invoice numbers to match test expectations rather than updating tests — the tests correctly describe the intended semantics (credit note detection, intercompany flagging, FX conversion); the CSV was regenerated with different invoice numbers",
+    "evaluation_harness_location": "scripts/evaluate_pipeline.py — runnable standalone with python3 scripts/evaluate_pipeline.py, uses a temp SQLite DB so it leaves no side effects on production data",
+    "handover_document": "HANDOVER.md at project root — separate from DEPLOYMENT.md (deployment steps only); covers architecture, local dev, Supabase migrations in order, Railway + Vercel deploy, first engagement walkthrough, troubleshooting",
+    "no_data_empty_state": "OverviewPage detects when total_spend == 0 AND month data is empty AND loading is complete, then renders an empty-state card with a link to the Upload page — sits above the KPI grid, does not replace it",
+    "deprecation_fixes": "Fix both pandas select_dtypes and datetime.utcnow warnings — use select_dtypes(include=['object', 'string']) for pandas 2/3/4 compatibility and datetime.now(timezone.utc) for UTC timestamps"
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Post-pipeline enriched fact table — all 6 phases write to this",
+      "transactions_raw": "Staging table added in DATA_MODEL_HARDENING sprint — has pipeline_status, source_row_hash",
+      "ingestion_batches": "Batch tracking table added in DATA_MODEL_HARDENING sprint",
+      "pipeline_jobs": "Job status table — now has batch_id column (added in migration 003_data_model_hardening.sql)",
+      "supplier_master": "Canonical supplier registry",
+      "category_overrides": "Human review override table"
+    },
+    "key_files": [
+      "data/input/sample.csv — 10-row sample used by test_ingestion.py; current header: VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE",
+      "tests/test_ingestion.py — 3 failing tests: test_ingest_cn_row_is_credit_note (expects CN-2024-001), test_ingest_intercompany_row_flagged (expects INV-2024-006 to be intercompany), test_ingest_usd_row_converted_to_aud (expects INV-2024-007 to be DHL USD 8750)",
+      "backend/tests/test_ingestion_api.py — _MOCK_JOB dict at line 30 missing 'batch_id' key; router at backend/app/routers/ingestion.py line 138 reads row['batch_id']",
+      "src/ingestion/cleaner.py:176,182 — select_dtypes(include=['object']) triggers Pandas4Warning; change to select_dtypes(include=['object', 'string'])",
+      "src/ingestion/ingest.py:144 — datetime.utcnow() triggers DeprecationWarning; change to datetime.now(timezone.utc) and add timezone to imports",
+      "frontend/src/pages/dashboard/OverviewPage.tsx — loadingOverview + loadingMonths booleans available; overview?.total_spend and monthData.length available for empty state detection",
+      "src/utils/generate_test_data.py — existing generator with --rows, --seed, --output, --messiness CLI args; GL_RANGES and PAY_TERMS_VARIANTS dicts at top of file",
+      "scripts/ — exists; contains ralph/ subdir and generate_reference_data.py; evaluate_pipeline.py is new",
+      "DEPLOYMENT.md — existing at project root; covers Railway/Vercel deployment; HANDOVER.md is new and separate"
+    ],
+    "patterns_to_follow": [
+      "Backend test mocks: _MOCK_JOB is a plain dict whose keys must match every column the router reads; adding 'batch_id': None to the dict is the minimal fix",
+      "sample.csv 10-row design: keep Officeworks INV-2024-001, Sodexo INV-2024-002, Compass INV-2024-003; add Sodexo credit note CN-2024-001; add INTERCOMPANY row as INV-2024-006; add DHL USD row as INV-2024-007; keep TAX-ADJ-001; keep Microsoft and KPMG with other invoice numbers; total = 10 rows",
+      "evaluate_pipeline.py sys.path: add project root to sys.path (same as src/utils/generate_test_data.py does: sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..')))",
+      "Empty state pattern: check !loading && condition before rendering Card, see EngagementListPage lines 46-50 for the pattern (!isLoading && (!engagements || engagements.length === 0))",
+      "datetime.now(timezone.utc) import pattern already in src/models/database.py line 6: from datetime import datetime, timezone"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Fix sample.csv to match test expectations",
+      "description": "The file data/input/sample.csv was generated with invoice numbers that do not match what tests/test_ingestion.py expects. Three tests fail: test_ingest_cn_row_is_credit_note looks for CN-2024-001 (does not exist in current CSV), test_ingest_intercompany_row_flagged looks for INV-2024-006 to be INTERCOMPANY (currently Creative Display), and test_ingest_usd_row_converted_to_aud looks for INV-2024-007 to be DHL USD 8750 (currently INTERCOMPANY AUD). Rewrite sample.csv with exactly 10 rows matching the test expectations. The header is: VENDOR_NAME,VENDOR_NUM,INV_NO,INV_DATE,LINE_DESC,AMT,CCY,GL_CODE,COST_CTR,PAY_TERMS,PO_NUM,BUS_UNIT,SITE",
+      "acceptanceCriteria": [
+        "Edit file: data/input/sample.csv — rewrite with exactly 10 data rows plus header",
+        "Include row: Sodexo Australia Pty Ltd,V-002,CN-2024-001,15/04/2024,Credit note - catering overcharge,-850.00,AUD,6512,CC-OPS-01,Net 30,,Operations,Melbourne",
+        "Include row: INTERCOMPANY - LEGAL,V-999,INV-2024-006,12/02/2024,Legal services - internal,5000.00,AUD,7800100,CC-LEG-01,Net 45,,Corporate,Sydney",
+        "Include row: DHL Express Pty Ltd,V-004,INV-2024-007,12/02/2024,International freight - Shanghai to Melb,8750.00,USD,6301,CC-LOG-01,Net 14,PO-9004,Operations,Sydney",
+        "Include row: ,V-TAX,TAX-ADJ-001,31/03/2024,Tax adjustment - GST,-125.00,AUD,2100100,,N/A,,Corporate,Sydney (needed for test_ingest_tax_row_flagged)",
+        "Include row: Officeworks Business Supplies,V-001,INV-2024-001,15/03/2024,Office supplies - toner cartridges HP,340.50,AUD,6421,CC-ADM-01,Net 30,PO-9001,Corporate,Sydney",
+        "Total row count must be exactly 10 data rows",
+        "Run: python3 -m pytest tests/test_ingestion.py::test_ingest_cn_row_is_credit_note tests/test_ingestion.py::test_ingest_intercompany_row_flagged tests/test_ingestion.py::test_ingest_usd_row_converted_to_aud tests/test_ingestion.py::test_ingest_sample_csv_returns_10_rows tests/test_ingestion.py::test_ingest_tax_row_flagged -v — all 5 must pass"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-04T06:03:16Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Fix backend test failure — add batch_id to _MOCK_JOB",
+      "description": "The test backend/tests/test_ingestion_api.py::TestStatus::test_get_status_known_job_returns_row fails with KeyError: 'batch_id'. The get_job_status router in backend/app/routers/ingestion.py (around line 138) reads row['batch_id'] from the SQL SELECT result. The _MOCK_JOB dict in the test file (around line 30) was written before batch_id was added to the pipeline_jobs table in the Data Model Hardening sprint. The fix is to add 'batch_id': None to _MOCK_JOB so the mock mapping returns None for that key.",
+      "acceptanceCriteria": [
+        "Edit file: backend/tests/test_ingestion_api.py — add key-value pair 'batch_id': None to the _MOCK_JOB dict",
+        "Run: python3 -m pytest backend/tests/test_ingestion_api.py::TestStatus::test_get_status_known_job_returns_row -v — must show PASSED",
+        "Run: python3 -m pytest backend/tests/ -v 2>&1 | tail -5 — must show 0 failed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Fix deprecation warnings in cleaner.py and ingest.py",
+      "description": "Two deprecation warnings appear across the test run. First, src/ingestion/cleaner.py has two calls to df.select_dtypes(include=['object']) (at approximately lines 176 and 182) that trigger Pandas4Warning. The forward-compatible fix is select_dtypes(include=['object', 'string']). Second, src/ingestion/ingest.py calls datetime.utcnow() (approximately line 144) which is deprecated since Python 3.12. Fix by importing timezone from datetime and changing to datetime.now(timezone.utc).",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/cleaner.py — change both occurrences of select_dtypes(include=['object']) to select_dtypes(include=['object', 'string'])",
+        "Edit file: src/ingestion/ingest.py — ensure 'timezone' is in the datetime import (e.g. from datetime import datetime, timezone), then change datetime.utcnow() to datetime.now(timezone.utc)",
+        "Run: python3 -m pytest tests/ -v 2>&1 | grep -c 'Pandas4Warning' — output must be 0",
+        "Run: python3 -m pytest tests/ -v 2>&1 | grep 'utcnow' — must return empty (no matches)",
+        "Run: python3 -m pytest tests/ -v 2>&1 | tail -5 — must show 0 failed (no regressions)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Add no-data empty state to OverviewPage",
+      "description": "When a client creates a new engagement but has not uploaded any data, OverviewPage shows zeroed KPIs and blank charts, which is confusing. Add an empty-state banner: when !loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0, render a Card with UploadCloud icon, heading, subtext, and a button navigating to the upload page. Place it between the FilterBar and the KPI grid. The KPI grid and charts still render below (they show zeros, which is truthful). Import UploadCloud from lucide-react and useParams is already imported.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — add import for UploadCloud from 'lucide-react'",
+        "Add empty-state block after the FilterBar JSX and before the KPI grid div, using the condition: {!loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0 && ( <div className='border rounded-xl p-8 bg-card text-center mb-4'><div className='flex flex-col items-center gap-3'><UploadCloud className='h-10 w-10 text-muted-foreground' /><h3 className='text-lg font-semibold'>No spend data yet</h3><p className='text-sm text-muted-foreground'>Upload a CSV file to run the pipeline and generate insights.</p><Button asChild><Link to={`/engagements/${engagementId}/upload`}>Upload Data</Link></Button></div></div> )}",
+        "Ensure Link is imported from 'react-router-dom' (it should already be imported)",
+        "Ensure Button is imported from '@/components/ui/button' (it should already be imported)",
+        "Run: cd frontend && npm run build 2>&1 | tail -5 — must succeed with exit code 0 and no TypeScript errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Create evaluation harness — scripts/evaluate_pipeline.py",
+      "description": "Create scripts/evaluate_pipeline.py — a standalone quality-gate script for validating pipeline output before client delivery. When run with no arguments it generates 200-row synthetic data and runs the full pipeline on a temp SQLite DB. When run with --csv path/to/file.csv it uses that file instead. The script prints a structured 5-section report with PASS/WARN/FAIL verdicts. It must add the project root to sys.path so it can import from src/ (use: sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')) at the top).",
+      "acceptanceCriteria": [
+        "Create file: scripts/evaluate_pipeline.py",
+        "Script adds project root to sys.path before any src/ imports",
+        "Script accepts --csv (optional, path to CSV file) and --db (optional, SQLite path; default tempfile that is deleted after run)",
+        "If --csv not provided: generate 200 rows using src/utils/generate_test_data.py GenerateTestData or the generate_data() function, write to a temp CSV, use that",
+        "Run pipeline phases in order: (1) Ingestor(config).ingest_to_db(csv_path, engine) from src/ingestion/ingest.py, (2) SupplierHarmoniser(engine, config).harmonise() from src/suppliers/harmoniser.py, (3) SpendCategoriser(engine, config).categorise() from src/categorisation/categoriser.py, (4) run_pipeline(engine, config) from src/cube/pipeline.py, (5) RecommendationEngine(db_path).run() from src/recommendations/engine.py",
+        "Print 5-section report: Section 1 Ingestion (row_count, credit_notes, intercompany_filtered), Section 2 Supplier Harmonisation (canonical_suppliers, high_pct, medium_pct, low_pct, unmatched), Section 3 Categorisation (coverage_pct = rows with confidence>=0.60 / total, high_pct, medium_pct, low_pct, uncategorised), Section 4 Recommendations (count, types list, total_savings_aud, sanity_check_passed), Section 5 Data Quality (each check name, status, value_pct)",
+        "Show verdict per metric: coverage_pct >= 0.70 → PASS, >= 0.50 → WARN, < 0.50 → FAIL; recommendation count >= 3 → PASS, >= 1 → WARN, 0 → FAIL; sanity_check_passed true → PASS, false → FAIL",
+        "Run: python3 scripts/evaluate_pipeline.py 2>&1 | tail -30 — must complete without uncaught exception and print a report containing at least one PASS verdict"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Enhance test data generator with realistic procurement scenarios",
+      "description": "Update src/utils/generate_test_data.py to produce more realistic procurement data. The generator must still work with the existing CLI interface (--rows, --seed, --output, --messiness). Add: (1) tail spend concentration — generate 2-3 anchor suppliers that collectively receive ~40% of rows, rest distributed across many tail suppliers; (2) maverick spend — approximately 15% of rows should have empty PO_NUM; (3) credit notes — approximately 3% of rows have negative AMT and INV_NO prefixed with 'CN-'; (4) missing cost centre — approximately 5% of rows have empty COST_CTR. The existing currencies, pay terms variants, and GL ranges should be preserved.",
+      "acceptanceCriteria": [
+        "Edit file: src/utils/generate_test_data.py — add tail spend, maverick, credit note, and missing cost centre logic to the row generation loop",
+        "Run: python3 src/utils/generate_test_data.py --rows 500 --seed 42 --output /tmp/test_500.csv — must complete without error",
+        "Run: python3 -c \"import pandas as pd; df=pd.read_csv('/tmp/test_500.csv'); print('Rows:', len(df)); cn=df[df['INV_NO'].str.startswith('CN-', na=False)]; print('Credit notes:', len(cn)); nopo=(df['PO_NUM'].isna()|(df['PO_NUM'].astype(str).str.strip()=='')).sum(); print('No-PO rows:', nopo); nocc=(df['COST_CTR'].isna()|(df['COST_CTR'].astype(str).str.strip()=='')).sum(); print('Missing COST_CTR:', nocc)\" — credit notes >= 5 for 500 rows, no-PO rows >= 50, missing COST_CTR >= 10",
+        "Run: python3 -m pytest tests/ -v 2>&1 | tail -5 — must still show 0 failed (generator changes must not break unit tests that use the existing sample.csv or hardcoded fixtures)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Write comprehensive HANDOVER.md",
+      "description": "Create HANDOVER.md at the SpendCube project root — the primary document for a consultant taking over SpendCube to run it for a client. It is separate from DEPLOYMENT.md (which covers only deployment steps). HANDOVER.md is written for a non-developer with basic command-line skills. It must cover: what SpendCube does, the full stack architecture in plain English, prerequisites checklist, local development (3 commands to get running), Supabase setup including the pgvector extension and the exact order of the 3 migrations (001_initial_schema.sql then 002_analytics_extensions.sql then 003_data_model_hardening.sql), Railway and Vercel deployment, a complete environment variables reference table for both services, a step-by-step first engagement walkthrough, how to run the evaluation harness (scripts/evaluate_pipeline.py), and a troubleshooting section.",
+      "acceptanceCriteria": [
+        "Create file: HANDOVER.md at the project root (same level as CLAUDE.md, DEPLOYMENT.md)",
+        "Document contains these top-level sections (in order): ## Overview, ## Architecture, ## Prerequisites, ## Local Development, ## Supabase Setup, ## Backend Deployment (Railway), ## Frontend Deployment (Vercel), ## Environment Variables Reference, ## First Engagement Walkthrough, ## Running the Evaluation Harness, ## Troubleshooting",
+        "Supabase Setup section includes: enable pgvector extension SQL (CREATE EXTENSION IF NOT EXISTS vector;), and applies migrations in order 001 → 002 → 003 with the npx supabase db push command or manual SQL editor instructions",
+        "Environment Variables Reference section is a markdown table with columns: Variable | Service | Required | Description — covering all variables from DEPLOYMENT.md plus ANTHROPIC_API_KEY, DRY_RUN",
+        "First Engagement Walkthrough has 5 numbered steps: 1 Create engagement via UI, 2 Upload CSV on Upload page, 3 Wait for pipeline completion (poll /ingest/status), 4 View Overview dashboard, 5 Review Recommendations page",
+        "Troubleshooting section covers at least these 5 issues: pgvector extension missing, CORS error on API calls, JWT validation failure, pipeline job stuck in 'queued', empty dashboard after successful upload",
+        "Verify: wc -l HANDOVER.md — output must be >= 150"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "Full test suite green check and CLAUDE.md update",
+      "description": "Run the complete test suite after all previous stories are implemented to confirm a clean build. Then update CLAUDE.md at the project root to document the evaluation harness, the HANDOVER.md, and the corrected test suite count. If any test is still failing, investigate and fix before marking this story passed.",
+      "acceptanceCriteria": [
+        "Run: python3 -m pytest tests/ -v 2>&1 | tail -3 — must show '0 failed'",
+        "Run: python3 -m pytest backend/tests/ -v 2>&1 | tail -3 — must show '0 failed'",
+        "Run: cd frontend && npm run build 2>&1 | tail -3 — must show successful build",
+        "Run: python3 scripts/evaluate_pipeline.py 2>&1 | grep -E 'PASS|WARN|FAIL' — must show at least 3 lines with verdict",
+        "Edit file: CLAUDE.md — add a new '## Evaluation Harness' section after the Phase Status table documenting: purpose, how to run (python3 scripts/evaluate_pipeline.py or with --csv flag), what it reports (5 sections), target thresholds (categorisation >= 70%, >= 3 recommendation types)",
+        "Edit file: CLAUDE.md — add reference to HANDOVER.md near the DEPLOYMENT.md mention, noting it is the primary client-facing setup document",
+        "Run: grep -c 'evaluate_pipeline\\|HANDOVER' CLAUDE.md — must output >= 3"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "all_python_tests": "python3 -m pytest tests/ backend/tests/ -v 2>&1 | tail -5",
+      "frontend_build": "cd frontend && npm run build 2>&1 | tail -3",
+      "evaluation_harness": "python3 scripts/evaluate_pipeline.py 2>&1 | tail -30",
+      "handover_doc_size": "wc -l HANDOVER.md"
+    },
+    "expected_counts": {
+      "failing_tests_before": "4 (3 in test_ingestion.py, 1 in test_ingestion_api.py)",
+      "failing_tests_after": "0",
+      "total_pipeline_tests": "165+",
+      "total_backend_tests": "30+"
+    },
+    "checks": [
+      "python3 -m pytest tests/ backend/tests/ -- all pass, 0 failed",
+      "cd frontend && npm run build — exits 0 with no TypeScript errors",
+      "python3 scripts/evaluate_pipeline.py — completes and prints 5-section report with PASS/WARN/FAIL verdicts",
+      "wc -l HANDOVER.md — at least 150 lines",
+      "python3 -m pytest tests/ -v 2>&1 | grep -c 'Pandas4Warning' — outputs 0"
+    ]
+  },
+  "risks": [
+    "sample.csv changes may affect any test that reads it by invoice number — verify test_ingest_tax_row_flagged, test_ingest_all_rows_have_transaction_id, test_ingest_sample_csv_returns_10_rows still pass after US-001",
+    "evaluate_pipeline.py calls src/ modules that depend on config.yaml being loadable — the script must handle the case where config.yaml is not in cwd by passing an explicit config path; read src/ingestion/ingest.py constructor to understand how config is loaded",
+    "select_dtypes(include=['object', 'string']) — verify this does not change behaviour in pandas 2.x by running the test suite after the change; if 'string' causes issues (e.g. StringDtype columns being double-processed), use a safer fallback: df.columns[df.dtypes == object]"
+  ],
+  "outOfScope": [
+    "FastAPI on_event deprecation in backend/app/main.py — low risk, non-breaking in current FastAPI version",
+    "Frontend bundle size optimisation (1562KB) — performance concern, not a correctness or client-readiness blocker",
+    "pgvector embedding integration tests — requires Postgres; all tests use SQLite",
+    "New dashboard pages or visualisations",
+    "Supabase user management / client authentication setup",
+    "CI/CD pipeline setup (GitHub Actions)"
+  ]
+}
