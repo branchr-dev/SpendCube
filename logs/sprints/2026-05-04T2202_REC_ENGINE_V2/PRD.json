@@ -77,7 +77,8 @@
         "Run: python -c \"from src.models.schema import CanonicalTransaction; t = CanonicalTransaction(source_system='T', source_row_number=1, invoice_number='I', original_amount=1, original_currency='AUD', base_amount=1, base_currency='AUD', raw_data={}); print(t.unit_price, t.unit_of_measure)\" — should print None None without error",
         "Run: python -c \"from src.models.database import transactions_table; cols = [c.name for c in transactions_table.columns]; assert 'unit_price' in cols and 'unit_of_measure' in cols; print('OK')\" — should print OK"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:08:25Z"
     },
     {
       "id": "US-003",

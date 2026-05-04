@@ -70,3 +70,69 @@ STORY_COMPLETE: US-001
 [2026-05-04 22:07:53] [OK] Marked US-001 as passed
 [2026-05-04 22:07:53] [INFO] Logged progress for US-001: PASSED
 [2026-05-04 22:07:53] [STEP] Committing changes...
+[2026-05-04 22:07:55] [INFO] Starting iteration 2
+[2026-05-04 22:07:55] [INFO] Processing story: US-002
+[2026-05-04 22:07:55] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Add unit_price and unit_of_measure to CanonicalTransaction, SQLAlchemy table, and ingestor allowlist
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Three additive changes so unit_price flows from ingestion through to the rules engine. (1) Add unit_price: Optional[float] = None and unit_of_measure: Optional[str] = None to CanonicalTransaction in src/models/schema.py after the abc_segment field. (2) Add Column('unit_price', Float, nullable=True) and Column('unit_of_measure', Text, nullable=True) to transactions_table in src/models/database.py after the existing source_raw_id column. (3) Add 'unit_price' and 'unit_of_measure' to the _DB_COLUMNS set in src/ingestion/ingest.py so these columns pass through the _df_to_records filter.
+
+## Acceptance Criteria
+- Edit file: src/models/schema.py — in CanonicalTransaction class, after the line 'abc_segment: Optional[str] = None', add two new lines: 'unit_price: Optional[float] = None' and 'unit_of_measure: Optional[str] = None'
+- Edit file: src/models/database.py — in transactions_table Table definition, after the line "Column('source_raw_id', Text, nullable=True),", add: "Column('unit_price', Float, nullable=True)," and "Column('unit_of_measure', Text, nullable=True),"
+- Edit file: src/ingestion/ingest.py — in the _DB_COLUMNS set definition (lines starting with the set literal), add 'unit_price' and 'unit_of_measure' to the set
+- Run: python -c "from src.models.schema import CanonicalTransaction; t = CanonicalTransaction(source_system='T', source_row_number=1, invoice_number='I', original_amount=1, original_currency='AUD', base_amount=1, base_currency='AUD', raw_data={}); print(t.unit_price, t.unit_of_measure)" — should print None None without error
+- Run: python -c "from src.models.database import transactions_table; cols = [c.name for c in transactions_table.columns]; assert 'unit_price' in cols and 'unit_of_measure' in cols; print('OK')" — should print OK
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Add unit_price and unit_of_measure to CanonicalTransaction, SQLAlchemy table, and ingestor allowlist`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+All three edits made and verified:
+- `src/models/schema.py`: `unit_price` and `unit_of_measure` added after `abc_segment`
+- `src/models/database.py`: corresponding `Column` definitions added after `source_raw_id`
+- `src/ingestion/ingest.py`: both field names added to `_DB_COLUMNS`
+
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-04 22:08:25] [OK] Story US-002 completed!
+[2026-05-04 22:08:25] [OK] Marked US-002 as passed
+[2026-05-04 22:08:25] [INFO] Logged progress for US-002: PASSED
+[2026-05-04 22:08:25] [STEP] Committing changes...
