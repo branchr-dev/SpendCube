@@ -141,7 +141,7 @@ class Ingestor:
         df["transaction_id"] = [str(uuid4()) for _ in range(len(df))]
 
         # Timestamps (ISO string — stored as TEXT in SQLite)
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         df["ingested_at"] = now
         df["last_modified_at"] = now
 

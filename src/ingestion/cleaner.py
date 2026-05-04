@@ -173,13 +173,13 @@ class DataCleaner:
         df = df.copy()
 
         # 1. Strip whitespace from all string/object columns
-        for col in df.select_dtypes(include=["object"]).columns:
+        for col in df.select_dtypes(include=["object", "string"]).columns:
             df[col] = df[col].apply(
                 lambda v: v.strip() if isinstance(v, str) else v
             )
 
         # 2. Normalise null representations
-        for col in df.select_dtypes(include=["object"]).columns:
+        for col in df.select_dtypes(include=["object", "string"]).columns:
             df[col] = df[col].apply(
                 lambda v: np.nan if (isinstance(v, str) and v in _NULL_VALUES) else v
             )
