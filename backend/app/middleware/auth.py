@@ -1,9 +1,9 @@
 import logging
 import os
 
+import httpx
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
@@ -21,22 +21,34 @@ class SupabaseAuthMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=401, content={"detail": "Missing or invalid Authorization header"})
 
         token = auth_header[len("Bearer "):]
-        secret = os.getenv("SUPABASE_JWT_SECRET", "")
+        supabase_url = os.getenv("SUPABASE_URL", "")
+        anon_key = os.getenv("SUPABASE_ANON_KEY", "")
 
         try:
-            payload = jwt.decode(
-                token,
-                secret,
-                algorithms=["HS256"],
-                options={"verify_aud": False},
-            )
-            email = payload.get("email") or payload.get("sub", "")
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(
+                    f"{supabase_url}/auth/v1/user",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "apikey": anon_key,
+                    },
+                )
+            if resp.status_code != 200:
+                logger.warning("Supabase token rejected: %s", resp.text)
+                return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
+
+            user_data = resp.json()
+            email = user_data.get("email", "")
             if not email:
-                logger.warning("JWT payload missing email and sub claims")
-                return JSONResponse(status_code=401, content={"detail": "Token missing email claim"})
+                return JSONResponse(status_code=401, content={"detail": "Token missing email"})
+
             request.state.user_email = email
-        except JWTError as exc:
-            logger.warning("JWT validation failed: %s", exc)
-            return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
+
+        except httpx.TimeoutException:
+            logger.error("Supabase auth check timed out")
+            return JSONResponse(status_code=503, content={"detail": "Auth service timeout"})
+        except Exception as exc:
+            logger.error("Auth check failed: %s", exc)
+            return JSONResponse(status_code=401, content={"detail": "Auth check failed"})
 
         return await call_next(request)
