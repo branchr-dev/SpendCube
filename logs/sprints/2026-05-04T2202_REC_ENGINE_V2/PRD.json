@@ -91,7 +91,8 @@
         "Edit file: backend/app/routers/recommendations.py — add PATCH /config endpoint decorated with @router.patch('/config'): verify_engagement_ownership; query existing recommendation_config_json; parse existing JSON or start with {}; update with body.model_dump(exclude_none=True); persist json.dumps(merged) back to engagements.recommendation_config_json; return merged dict",
         "Run: cd backend && python -c \"from app.routers.recommendations import router; paths = [r.path for r in router.routes]; print(paths)\" — output list must contain strings ending in '/config'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:09:17Z"
     },
     {
       "id": "US-004",

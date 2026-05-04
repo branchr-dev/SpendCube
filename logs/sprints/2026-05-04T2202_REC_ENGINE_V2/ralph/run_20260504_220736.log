@@ -136,3 +136,64 @@ STORY_COMPLETE: US-002
 [2026-05-04 22:08:25] [OK] Marked US-002 as passed
 [2026-05-04 22:08:25] [INFO] Logged progress for US-002: PASSED
 [2026-05-04 22:08:25] [STEP] Committing changes...
+[2026-05-04 22:08:27] [INFO] Starting iteration 3
+[2026-05-04 22:08:27] [INFO] Processing story: US-003
+[2026-05-04 22:08:27] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Add GET /config and PATCH /config endpoints to recommendations router
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add two endpoints to backend/app/routers/recommendations.py. GET /config returns the current per-engagement recommendation thresholds as a flat dict (config.yaml defaults merged with any recommendation_config_json overrides stored on the engagement row). PATCH /config accepts a partial RecommendationConfigUpdate Pydantic body, merges the non-None fields into the existing stored JSON, and persists to engagements.recommendation_config_json. Both endpoints call verify_engagement_ownership and load_config() using the SPENDCUBE_CONFIG_PATH env var.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/recommendations.py — add import os at the top if not present; add 'from src.config import load_config' import inside the endpoint functions (following existing lazy-import pattern in this file)
+- Edit file: backend/app/routers/recommendations.py — add Pydantic model RecommendationConfigUpdate(BaseModel) with all Optional fields: consolidation_threshold: Optional[int] = None; target_payment_days: Optional[int] = None; wacc: Optional[float] = None; min_wc_opportunity: Optional[int] = None; tail_spend_alert_pct: Optional[float] = None; maverick_alert_pct: Optional[float] = None; competitive_tender_min_spend: Optional[float] = None; contract_coverage_gap_min_spend: Optional[float] = None; concentration_threshold_pct: Optional[float] = None; min_discount_opportunity: Optional[float] = None
+- Edit file: backend/app/routers/recommendations.py — add GET /config endpoint decorated with @router.get('/config'): verify_engagement_ownership; load config defaults; query SELECT recommendation_config_json FROM engagements WHERE id = :eid; build defaults_dict from config.recommendations model_dump(); if stored JSON exists, merge into defaults_dict; return merged dict
+- Edit file: backend/app/routers/recommendations.py — add PATCH /config endpoint decorated with @router.patch('/config'): verify_engagement_ownership; query existing recommendation_config_json; parse existing JSON or start with {}; update with body.model_dump(exclude_none=True); persist json.dumps(merged) back to engagements.recommendation_config_json; return merged dict
+- Run: cd backend && python -c "from app.routers.recommendations import router; paths = [r.path for r in router.routes]; print(paths)" — output list must contain strings ending in '/config'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Add GET /config and PATCH /config endpoints to recommendations router`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-04 22:09:17] [OK] Story US-003 completed!
+[2026-05-04 22:09:17] [OK] Marked US-003 as passed
+[2026-05-04 22:09:17] [INFO] Logged progress for US-003: PASSED
+[2026-05-04 22:09:17] [STEP] Committing changes...
