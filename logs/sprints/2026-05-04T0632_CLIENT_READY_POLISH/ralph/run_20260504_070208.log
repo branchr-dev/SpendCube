@@ -195,3 +195,64 @@ STORY_COMPLETE: US-003
 [2026-05-04 07:08:11] [OK] Marked US-003 as passed
 [2026-05-04 07:08:11] [INFO] Logged progress for US-003: PASSED
 [2026-05-04 07:08:11] [STEP] Committing changes...
+[2026-05-04 07:08:13] [INFO] Starting iteration 4
+[2026-05-04 07:08:13] [INFO] Processing story: US-004
+[2026-05-04 07:08:13] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Add no-data empty state to OverviewPage
+
+## Project Context
+**Project:** SpendCube Client-Ready Polish
+**Project ID:** CLIENT-READY-POLISH-2026-05
+**PRD:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+When a client creates a new engagement but has not uploaded any data, OverviewPage shows zeroed KPIs and blank charts, which is confusing. Add an empty-state banner: when !loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0, render a Card with UploadCloud icon, heading, subtext, and a button navigating to the upload page. Place it between the FilterBar and the KPI grid. The KPI grid and charts still render below (they show zeros, which is truthful). Import UploadCloud from lucide-react and useParams is already imported.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — add import for UploadCloud from 'lucide-react'
+- Add empty-state block after the FilterBar JSX and before the KPI grid div, using the condition: {!loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0 && ( <div className='border rounded-xl p-8 bg-card text-center mb-4'><div className='flex flex-col items-center gap-3'><UploadCloud className='h-10 w-10 text-muted-foreground' /><h3 className='text-lg font-semibold'>No spend data yet</h3><p className='text-sm text-muted-foreground'>Upload a CSV file to run the pipeline and generate insights.</p><Button asChild><Link to={`/engagements/${engagementId}/upload`}>Upload Data</Link></Button></div></div> )}
+- Ensure Link is imported from 'react-router-dom' (it should already be imported)
+- Ensure Button is imported from '@/components/ui/button' (it should already be imported)
+- Run: cd frontend && npm run build 2>&1 | tail -5 — must succeed with exit code 0 and no TypeScript errors
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/PRD.json
+   - Session: logs/sprints/2026-05-04T0632_CLIENT_READY_POLISH/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Add no-data empty state to OverviewPage`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-04 07:08:52] [OK] Story US-004 completed!
+[2026-05-04 07:08:52] [OK] Marked US-004 as passed
+[2026-05-04 07:08:52] [INFO] Logged progress for US-004: PASSED
+[2026-05-04 07:08:52] [STEP] Committing changes...

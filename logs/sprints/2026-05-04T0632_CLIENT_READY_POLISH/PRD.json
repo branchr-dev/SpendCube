@@ -99,7 +99,8 @@
         "Ensure Button is imported from '@/components/ui/button' (it should already be imported)",
         "Run: cd frontend && npm run build 2>&1 | tail -5 — must succeed with exit code 0 and no TypeScript errors"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T06:08:52Z"
     },
     {
       "id": "US-005",
