@@ -89,3 +89,17 @@ Story completed successfully by Ralph loop iteration 10
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 11
 
+
+---
+
+### [US-012] - 2026-05-04
+**Status:** PASSED
+Updated CLAUDE.md with three new rule rows (SPEND_CONCENTRATION_RISK, EARLY_PAYMENT_DISCOUNT_CAPTURE, BEST_PRICE_EXTRAPOLATION) in the Rule types implemented list, three new exclusive group rows in the Double-Counting Prevention table, a new '### Per-Engagement Recommendation Config' subsection documenting the override mechanism and new RecommendationsConfig fields, and a new '### Unit Price Fields' subsection documenting the column_mapping bug and graceful no-op behaviour of BEST_PRICE_EXTRAPOLATION.
+
+
+---
+
+### [US-012] - 2026-05-04 22:19:54
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 12
+

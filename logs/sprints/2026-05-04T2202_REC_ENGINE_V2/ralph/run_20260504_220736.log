@@ -702,3 +702,62 @@ STORY_COMPLETE: US-011
 [2026-05-04 22:18:17] [OK] Marked US-011 as passed
 [2026-05-04 22:18:17] [INFO] Logged progress for US-011: PASSED
 [2026-05-04 22:18:17] [STEP] Committing changes...
+[2026-05-04 22:18:19] [INFO] Starting iteration 12
+[2026-05-04 22:18:19] [INFO] Processing story: US-012
+[2026-05-04 22:18:19] [STEP] Spawning Claude with prompt for US-012
+--- PROMPT FOR US-012 ---
+You are working on story US-012: Update CLAUDE.md with recommendation engine v2 documentation
+
+## Project Context
+**Project:** Recommendation Engine v2 — New Rules, Configurable Thresholds, Unit Price
+**Project ID:** REC-ENGINE-V2-2026-05
+**PRD:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+**Progress Log:** logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Document the three new rule types, the per-engagement config override mechanism, and the unit price fields in CLAUDE.md. Future sessions need this to understand why _apply_engagement_overrides() exists, what the new rules fire on, and the column_mapping limitation for unit_price.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — in the 'Rule types implemented' table under Phase 6, add three new rows: SPEND_CONCENTRATION_RISK (top supplier > concentration_threshold_pct of multi-supplier L2 category), EARLY_PAYMENT_DISCOUNT_CAPTURE (suppliers with has_early_payment_discount=1; captures contractually available discounts), BEST_PRICE_EXTRAPOLATION (benchmarks unit_price across suppliers in same L3 category; no-ops when unit_price absent)
+- Edit file: CLAUDE.md — add new subsection '### Per-Engagement Recommendation Config' under Phase 6 documenting: overrides stored in engagements.recommendation_config_json as JSON; GET/PATCH /recommendations/config endpoints in recommendations router; RecommendationEngine accepts engagement_id param; _apply_engagement_overrides() uses setattr on config.recommendations; new RecommendationsConfig fields: concentration_threshold_pct (default 0.80), min_discount_opportunity (default 1000.0), min_price_benchmark_transactions (default 5); frontend settings panel on RecommendationsPage
+- Edit file: CLAUDE.md — add note about unit_price: unit_price (Float) and unit_of_measure (Text) added as nullable columns to transactions table and CanonicalTransaction; BEST_PRICE_EXTRAPOLATION rule no-ops when absent; note the column_mapping bug: frontend UploadPage sends column_mapping but ingest_to_raw() does not use it — unit_price only populates if CSV column is already named unit_price
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/PRD.json
+   - Session: logs/sprints/2026-05-04T2202_REC_ENGINE_V2/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-012
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-012: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-012 - Update CLAUDE.md with recommendation engine v2 documentation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-012 ---
+STORY_COMPLETE: US-012
+--- END OUTPUT ---
+[2026-05-04 22:19:54] [OK] Story US-012 completed!
+[2026-05-04 22:19:54] [OK] Marked US-012 as passed
+[2026-05-04 22:19:54] [INFO] Logged progress for US-012: PASSED
+[2026-05-04 22:19:54] [STEP] Committing changes...

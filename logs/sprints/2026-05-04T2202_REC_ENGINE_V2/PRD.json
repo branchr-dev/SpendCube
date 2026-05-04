@@ -218,7 +218,8 @@
         "Edit file: CLAUDE.md — add new subsection '### Per-Engagement Recommendation Config' under Phase 6 documenting: overrides stored in engagements.recommendation_config_json as JSON; GET/PATCH /recommendations/config endpoints in recommendations router; RecommendationEngine accepts engagement_id param; _apply_engagement_overrides() uses setattr on config.recommendations; new RecommendationsConfig fields: concentration_threshold_pct (default 0.80), min_discount_opportunity (default 1000.0), min_price_benchmark_transactions (default 5); frontend settings panel on RecommendationsPage",
         "Edit file: CLAUDE.md — add note about unit_price: unit_price (Float) and unit_of_measure (Text) added as nullable columns to transactions table and CanonicalTransaction; BEST_PRICE_EXTRAPOLATION rule no-ops when absent; note the column_mapping bug: frontend UploadPage sends column_mapping but ingest_to_raw() does not use it — unit_price only populates if CSV column is already named unit_price"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-04T21:19:54Z"
     }
   ],
   "verification": {
