@@ -44,6 +44,7 @@ export default function DataQualityPage() {
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const SEVERITY_ORDER: Record<string, number> = { RED: 0, AMBER: 1, GREEN: 2 }

@@ -157,11 +157,13 @@ export default function RecommendationsPage() {
       api.get(`/api/engagements/${engagementId}/recommendations`).then(r => r.data),
     enabled: !!engagementId,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: engagements = [] } = useQuery<Engagement[]>({
     queryKey: ['engagements'],
     queryFn: () => api.get('/api/engagements').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
   const engagement = engagements.find(e => e.id === engagementId)
 

@@ -97,6 +97,7 @@ export default function CategoryPage() {
         .get(`/api/engagements/${engagementId}/cube/by-category`, { params: qp })
         .then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: topCategorySuppliers = [] } = useQuery<SupplierRow[]>({
@@ -106,8 +107,9 @@ export default function CategoryPage() {
         .get(`/api/engagements/${engagementId}/cube/by-supplier`, {
           params: { category_l1: selectedL1 },
         })
-        .then(r => r.data),
+        .then(r => r.data?.data ?? []),
     enabled: !!engagementId && !!selectedL1,
+    staleTime: 5 * 60 * 1000,
   })
 
   function handleFilterChange(newFilters: FilterState) {

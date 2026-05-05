@@ -30,6 +30,7 @@ export default function OverviewPage() {
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/overview`, { params: qp }).then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: monthData = [], isLoading: loadingMonths } = useQuery<MonthRow[]>({
@@ -37,6 +38,7 @@ export default function OverviewPage() {
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/by-month`, { params: qp }).then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
@@ -46,6 +48,7 @@ export default function OverviewPage() {
         .get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { ...qp, limit: 10 } })
         .then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: categoryData = [], isLoading: loadingCategories } = useQuery<CategoryRow[]>({
@@ -55,6 +58,7 @@ export default function OverviewPage() {
         .get(`/api/engagements/${engagementId}/cube/by-category`, { params: qp })
         .then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: ptData = [] } = useQuery<PaymentTermsRow[]>({
@@ -62,6 +66,7 @@ export default function OverviewPage() {
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/by-payment-terms`).then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: recData } = useQuery<RecommendationsResponse | null>({
@@ -76,6 +81,7 @@ export default function OverviewPage() {
         }),
     retry: false,
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: diagRaw = {} } = useQuery<Record<string, { status?: string }>>({
@@ -84,6 +90,7 @@ export default function OverviewPage() {
       api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data).catch(() => ({})),
     enabled: !!engagementId,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 
   function handleFilterChange(newFilters: FilterState) {
