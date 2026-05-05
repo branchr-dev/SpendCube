@@ -198,3 +198,69 @@ STORY_COMPLETE: US-003
 [2026-05-06 00:51:17] [OK] Marked US-003 as passed
 [2026-05-06 00:51:17] [INFO] Logged progress for US-003: PASSED
 [2026-05-06 00:51:17] [STEP] Committing changes...
+[2026-05-06 00:51:19] [INFO] Starting iteration 4
+[2026-05-06 00:51:19] [INFO] Processing story: US-004
+[2026-05-06 00:51:19] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Fix CategoryPage L2 drill-down null crash and add Back button
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+CategoryPage crashes when selectedL2 is set but selectedL2Entry is null (e.g. after a filter change resets the hierarchy). The l3Rows computation at line ~164 needs a null guard. Also add an explicit Back button that appears whenever selectedL1 is set, giving users a clear way to return to the category overview without needing to know about the DrilldownBreadcrumb.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — guard the l3Rows line to: const l3Rows = (selectedL1Entry && selectedL2Entry) ? [...selectedL2Entry.l3s].sort((a, b) => (b.total_spend ?? 0) - (a.total_spend ?? 0)) : []
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — add an ArrowLeft import from lucide-react (if not already imported); render a Back button immediately above the KPI cards section (when selectedL1 is non-null): <Button variant='outline' size='sm' className='mb-4' onClick={() => { setSelectedL1(null); setSelectedL2(null) }}><ArrowLeft className='h-4 w-4 mr-1' />All Categories</Button>
+- When selectedL2 is set and the Back button is clicked, both selectedL1 and selectedL2 are cleared and the overview scorecard table is shown again
+- Run: cd frontend && npx tsc --noEmit — exits with code 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Fix CategoryPage L2 drill-down null crash and add Back button`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+Changes made:
+1. Added `ArrowLeft` (lucide-react) and `Button` (@/components/ui/button) imports
+2. Guarded `l3Rows` computation with `(selectedL1Entry && selectedL2Entry)` to prevent null crash
+3. Added Back button above the KPI cards grid, rendered when `selectedL1` is non-null — clicking it clears both `selectedL1` and `selectedL2`
+4. TypeScript check passed, changes committed
+
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-06 00:52:11] [OK] Story US-004 completed!
+[2026-05-06 00:52:11] [OK] Marked US-004 as passed
+[2026-05-06 00:52:11] [INFO] Logged progress for US-004: PASSED
+[2026-05-06 00:52:11] [STEP] Committing changes...

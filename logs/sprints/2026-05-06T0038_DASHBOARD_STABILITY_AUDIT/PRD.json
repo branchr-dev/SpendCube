@@ -97,7 +97,8 @@
         "When selectedL2 is set and the Back button is clicked, both selectedL1 and selectedL2 are cleared and the overview scorecard table is shown again",
         "Run: cd frontend && npx tsc --noEmit — exits with code 0"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-05T23:52:11Z"
     },
     {
       "id": "US-005",

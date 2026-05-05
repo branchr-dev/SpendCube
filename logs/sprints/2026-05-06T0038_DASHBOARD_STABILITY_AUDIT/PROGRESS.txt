@@ -35,3 +35,18 @@ Story completed successfully by Ralph loop iteration 2
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 3
 
+2026-05-06 US-004 complete: Fixed l3Rows null guard in CategoryPage (added `selectedL1Entry &&` check), added Button+ArrowLeft imports, added Back button above KPI cards grid (rendered when selectedL1 is non-null). tsc --noEmit passed.
+
+---
+
+### [US-004] - 2026-05-06
+**Status:** PASSED
+Story completed successfully.
+
+
+---
+
+### [US-004] - 2026-05-06 00:52:11
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 4
+
