@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Layout from '@/components/Layout'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import LoginPage from '@/pages/auth/LoginPage'
 import EngagementListPage from '@/pages/engagements/EngagementListPage'
 import NewEngagementPage from '@/pages/engagements/NewEngagementPage'
@@ -20,18 +21,18 @@ export default function App() {
       <Route path="/" element={<Navigate to="/engagements" replace />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/engagements" element={<EngagementListPage />} />
-        <Route path="/engagements/new" element={<NewEngagementPage />} />
+        <Route path="/engagements" element={<ErrorBoundary><EngagementListPage /></ErrorBoundary>} />
+        <Route path="/engagements/new" element={<ErrorBoundary><NewEngagementPage /></ErrorBoundary>} />
         <Route path="/engagements/:id" element={<Layout />}>
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<OverviewPage />} />
-          <Route path="category" element={<CategoryPage />} />
-          <Route path="supplier" element={<SupplierPage />} />
-          <Route path="payment-terms" element={<PaymentTermsPage />} />
-          <Route path="quality" element={<DataQualityPage />} />
-          <Route path="recommendations" element={<RecommendationsPage />} />
-          <Route path="upload" element={<UploadPage />} />
-          <Route path="admin/review" element={<ReviewWorkstationPage />} />
+          <Route path="overview" element={<ErrorBoundary><OverviewPage /></ErrorBoundary>} />
+          <Route path="category" element={<ErrorBoundary><CategoryPage /></ErrorBoundary>} />
+          <Route path="supplier" element={<ErrorBoundary><SupplierPage /></ErrorBoundary>} />
+          <Route path="payment-terms" element={<ErrorBoundary><PaymentTermsPage /></ErrorBoundary>} />
+          <Route path="quality" element={<ErrorBoundary><DataQualityPage /></ErrorBoundary>} />
+          <Route path="recommendations" element={<ErrorBoundary><RecommendationsPage /></ErrorBoundary>} />
+          <Route path="upload" element={<ErrorBoundary><UploadPage /></ErrorBoundary>} />
+          <Route path="admin/review" element={<ErrorBoundary><ReviewWorkstationPage /></ErrorBoundary>} />
         </Route>
       </Route>
     </Routes>
