@@ -1,0 +1,71 @@
+[2026-05-06 00:48:48] [INFO] Ralph loop starting
+[2026-05-06 00:48:48] [INFO] Created progress file: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Wed  6 May 2026 00:48:48 BST
+PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-06 00:48:48] [INFO] Starting iteration 1
+[2026-05-06 00:48:48] [INFO] Processing story: US-001
+[2026-05-06 00:48:48] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Add global ErrorBoundary component and wrap all routes
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create a React class component ErrorBoundary in frontend/src/components/ErrorBoundary.tsx that catches any unhandled render error in its subtree and shows a friendly fallback card instead of a blank white page. Then wrap every dashboard route element in frontend/src/App.tsx with this component so no page can produce a white screen again.
+
+## Acceptance Criteria
+- Create file: frontend/src/components/ErrorBoundary.tsx — React class component with state { hasError: boolean, error: Error | null }, static getDerivedStateFromError returns { hasError: true, error }, componentDidCatch calls console.error with error and errorInfo
+- Fallback renders: a centred div with max-w-md mx-auto mt-16, shadcn/ui Card containing AlertCircle icon (h-8 w-8 text-destructive), <h3 className='font-semibold text-lg'>Something went wrong</h3>, <p className='text-xs font-mono text-muted-foreground break-all'>{this.state.error?.message}</p>, and a Button onClick={() => window.location.reload()} labelled 'Reload page'
+- Edit file: frontend/src/App.tsx — import ErrorBoundary and wrap each route element (OverviewPage, CategoryPage, SupplierPage, PaymentTermsPage, RecommendationsPage, DataQualityPage, UploadPage, and any other page components) individually with <ErrorBoundary>...</ErrorBoundary>
+- Run: cd frontend && npx tsc --noEmit — exits with code 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Add global ErrorBoundary component and wrap all routes`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-06 00:49:39] [OK] Story US-001 completed!
+[2026-05-06 00:49:39] [OK] Marked US-001 as passed
+[2026-05-06 00:49:39] [INFO] Logged progress for US-001: PASSED
+[2026-05-06 00:49:39] [STEP] Committing changes...

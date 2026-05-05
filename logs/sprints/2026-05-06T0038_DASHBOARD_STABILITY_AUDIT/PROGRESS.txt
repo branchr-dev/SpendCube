@@ -1,0 +1,22 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+# Created: Wed  6 May 2026 00:48:48 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+
+## US-001 — Add global ErrorBoundary component and wrap all routes
+Status: COMPLETE
+Completed: 2026-05-06
+
+Created frontend/src/components/ErrorBoundary.tsx — class component with getDerivedStateFromError, componentDidCatch, and a Card fallback (AlertCircle icon, error message, Reload page button).
+Updated frontend/src/App.tsx — all route elements (EngagementListPage, NewEngagementPage, OverviewPage, CategoryPage, SupplierPage, PaymentTermsPage, DataQualityPage, RecommendationsPage, UploadPage, ReviewWorkstationPage) individually wrapped with <ErrorBoundary>.
+TypeScript check: npx tsc --noEmit exits 0.
+
+
+---
+
+### [US-001] - 2026-05-06 00:49:39
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+
