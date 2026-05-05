@@ -129,3 +129,72 @@ STORY_COMPLETE: US-002
 [2026-05-06 00:50:18] [OK] Marked US-002 as passed
 [2026-05-06 00:50:18] [INFO] Logged progress for US-002: PASSED
 [2026-05-06 00:50:18] [STEP] Committing changes...
+[2026-05-06 00:50:20] [INFO] Starting iteration 3
+[2026-05-06 00:50:20] [INFO] Processing story: US-003
+[2026-05-06 00:50:20] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Fix by-supplier extraction in CategoryPage and add staleTime to remaining dashboard pages
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+CategoryPage has the same by-supplier envelope extraction bug in its suppliers-by-category query. Fix it and add staleTime:5min to CategoryPage's queries. Then add staleTime:5min to all useQuery calls in OverviewPage, RecommendationsPage, and DataQualityPage. Ralph must read each file before editing to confirm the exact query structure.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — find the suppliers-by-category useQuery that calls /cube/by-supplier with category_l1 param; change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to this query and to the by-category useQuery in the same file
+- Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present
+- Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present
+- Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present
+- Run: cd frontend && npx tsc --noEmit — exits with code 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Fix by-supplier extraction in CategoryPage and add staleTime to remaining dashboard pages`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+All changes committed. Summary of what was done:
+
+- **CategoryPage.tsx**: Fixed `suppliers-by-category` query to use `.then(r => r.data?.data ?? [])` (envelope extraction bug), added `staleTime: 5 * 60 * 1000` to both queries.
+- **OverviewPage.tsx**: Added `staleTime: 5 * 60 * 1000` to all 6 `useQuery` calls.
+- **RecommendationsPage.tsx**: Added `staleTime: 5 * 60 * 1000` to both `useQuery` calls.
+- **DataQualityPage.tsx**: Added `staleTime: 5 * 60 * 1000` to the single `useQuery` call.
+- TypeScript check passes cleanly.
+
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-06 00:51:17] [OK] Story US-003 completed!
+[2026-05-06 00:51:17] [OK] Marked US-003 as passed
+[2026-05-06 00:51:17] [INFO] Logged progress for US-003: PASSED
+[2026-05-06 00:51:17] [STEP] Committing changes...

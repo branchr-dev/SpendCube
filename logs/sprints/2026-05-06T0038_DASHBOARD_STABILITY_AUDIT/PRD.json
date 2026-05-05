@@ -84,7 +84,8 @@
         "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present",
         "Run: cd frontend && npx tsc --noEmit — exits with code 0"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-05T23:51:17Z"
     },
     {
       "id": "US-004",
