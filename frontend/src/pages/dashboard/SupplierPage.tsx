@@ -72,8 +72,9 @@ export default function SupplierPage() {
   const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
     queryKey: ['all-suppliers', engagementId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-supplier`).then(r => r.data),
+      api.get(`/api/engagements/${engagementId}/cube/by-supplier`).then(r => r.data?.data ?? []),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: monthData = [] } = useQuery<MonthRow[]>({
@@ -85,6 +86,7 @@ export default function SupplierPage() {
         })
         .then(r => r.data),
     enabled: !!engagementId && !!selectedSupplierId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: categoryData = [] } = useQuery<CategoryRow[]>({
@@ -96,6 +98,7 @@ export default function SupplierPage() {
         })
         .then(r => r.data),
     enabled: !!engagementId && !!selectedSupplierId,
+    staleTime: 5 * 60 * 1000,
   })
 
   function handleSort(key: SortKey) {

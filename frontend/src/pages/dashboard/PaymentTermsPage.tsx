@@ -58,13 +58,15 @@ export default function PaymentTermsPage() {
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/by-payment-terms`).then(r => r.data),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
     queryKey: ['all-suppliers-pt', engagementId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-supplier`).then(r => r.data),
+      api.get(`/api/engagements/${engagementId}/cube/by-supplier`).then(r => r.data?.data ?? []),
     enabled: !!engagementId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const totalWcOpportunity = ptData.reduce((sum, row) => sum + (row.wc_opportunity_aud ?? 0), 0)
