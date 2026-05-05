@@ -141,6 +141,89 @@ async def get_job_status(
 
 
 # ---------------------------------------------------------------------------
+# GET /batches
+# ---------------------------------------------------------------------------
+
+@router.get("/batches")
+async def list_batches(
+    engagement_id: str,
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT id, filename, row_count, new_rows, duplicate_rows, status, "
+                "uploaded_at, completed_at "
+                "FROM ingestion_batches WHERE engagement_id = :eid "
+                "ORDER BY uploaded_at DESC NULLS LAST"
+            ),
+            {"eid": engagement_id},
+        ).mappings().all()
+
+    return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# GET /batches/{batch_id}
+# ---------------------------------------------------------------------------
+
+@router.get("/batches/{batch_id}")
+async def get_batch(
+    engagement_id: str,
+    batch_id: str,
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    with engine.connect() as conn:
+        batch_row = conn.execute(
+            text("SELECT engagement_id FROM ingestion_batches WHERE id = :bid"),
+            {"bid": batch_id},
+        ).mappings().first()
+
+        if batch_row is None:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        if batch_row["engagement_id"] != engagement_id:
+            raise HTTPException(status_code=403, detail="Batch does not belong to this engagement")
+
+        batch = conn.execute(
+            text(
+                "SELECT id, engagement_id, filename, row_count, new_rows, duplicate_rows, "
+                "status, uploaded_at, completed_at "
+                "FROM ingestion_batches WHERE id = :bid"
+            ),
+            {"bid": batch_id},
+        ).mappings().first()
+
+        status_breakdown = conn.execute(
+            text(
+                "SELECT pipeline_status, COUNT(*) as count "
+                "FROM transactions_raw WHERE batch_id = :bid GROUP BY pipeline_status"
+            ),
+            {"bid": batch_id},
+        ).mappings().all()
+
+        sample_rows = conn.execute(
+            text(
+                "SELECT id, invoice_number, invoice_date, raw_supplier_name, base_amount, "
+                "pipeline_status FROM transactions_raw "
+                "WHERE batch_id = :bid ORDER BY created_at ASC LIMIT 25"
+            ),
+            {"bid": batch_id},
+        ).mappings().all()
+
+    return {
+        "batch": dict(batch),
+        "pipeline_status_breakdown": [dict(r) for r in status_breakdown],
+        "sample_rows": [dict(r) for r in sample_rows],
+    }
+
+
+# ---------------------------------------------------------------------------
 # Background pipeline
 # ---------------------------------------------------------------------------
 
