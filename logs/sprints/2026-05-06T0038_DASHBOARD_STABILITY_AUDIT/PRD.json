@@ -1,0 +1,173 @@
+{
+  "project": {
+    "id": "DASHBOARD-STABILITY-AUDIT-2026-05",
+    "name": "Dashboard Stability & Audit",
+    "created": "2026-05-06",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT",
+    "track": "code"
+  },
+  "summary": "Fixes a class of white-page crashes across SupplierPage, PaymentTermsPage, and CategoryPage caused by a single root-cause bug: the /cube/by-supplier endpoint returns a paginated envelope {data: SupplierRow[], total_count: N} but every page does .then(r => r.data) and treats the envelope object as a plain array — calling .filter()/.sort() on a plain object throws TypeError and crashes the page with no error boundary to catch it. The sprint also adds a global ErrorBoundary to prevent future white screens, sets TanStack Query staleTime:5min on all dashboard queries to eliminate redundant refetches and make navigation feel instant, fixes the CategoryPage L2 drill-down null crash with an explicit Back button, adds backend endpoints for ingestion batch audit, and builds a new Ingestion Audit page so clients can verify their uploaded data was ingested and categorised correctly.",
+  "decisions": {
+    "fix_by_supplier_extraction": "Change .then(r => r.data) to .then(r => r.data?.data ?? []) in SupplierPage, PaymentTermsPage, and CategoryPage wherever /cube/by-supplier is called. The paginated envelope shape {data:[], total_count:N} is correct for the endpoint; the bug is in the consumers.",
+    "error_boundary_class_component": "React ErrorBoundary must be a class component (getDerivedStateFromError/componentDidCatch are class-only lifecycle methods). Create a single reusable ErrorBoundary in frontend/src/components/ErrorBoundary.tsx and wrap each route element in App.tsx individually.",
+    "stale_time_5min": "Set staleTime: 5 * 60 * 1000 on all dashboard data queries. Dashboard data changes only when a new file is uploaded — 5-minute client-side cache eliminates re-fetches on every tab switch. Layout sidebar already uses this pattern.",
+    "audit_page_new_route": "Add a dedicated /engagements/:id/audit route rather than a tab on UploadPage. Audit is a standalone verification workflow distinct from file upload. Add a nav link in Layout.tsx below Upload Data.",
+    "audit_endpoints_in_ingestion_router": "Add GET /batches and GET /batches/{batch_id} to backend/app/routers/ingestion.py using raw text() SQL — consistent with the existing _update_job pattern. No new router file needed.",
+    "category_back_nav": "CategoryPage already has DrilldownBreadcrumb wired. The L2 crash is a null guard issue on l3Rows. Add an explicit Back button (ArrowLeft icon, variant=outline) that calls setSelectedL1(null) and setSelectedL2(null) — more discoverable than the breadcrumb alone."
+  },
+  "context": {
+    "existing_tables": {
+      "ingestion_batches": "Tracks each CSV upload: id (TEXT PK), engagement_id, filename, row_count, new_rows, duplicate_rows, status, uploaded_at, completed_at. SQLAlchemy definition at src/models/database.py:159.",
+      "transactions_raw": "Staging layer: id, engagement_id, batch_id, source_row_hash, pipeline_status (queued/processing/processed/review_required/failed), invoice_number, invoice_date, raw_supplier_name, base_amount, raw_data, created_at. SQLAlchemy definition at src/models/database.py:173.",
+      "transactions": "Enriched fact table — promoted rows after supplier harmonisation and categorisation.",
+      "pipeline_jobs": "Background job tracking: id, engagement_id, status, stage, started_at, completed_at, error_message, batch_id."
+    },
+    "key_files": [
+      "frontend/src/App.tsx — route definitions; wrap route elements with ErrorBoundary here",
+      "frontend/src/components/ErrorBoundary.tsx — NEW FILE to create",
+      "frontend/src/pages/dashboard/SupplierPage.tsx — line 75: .then(r => r.data) bug; useQuery<SupplierRow[]> at line 72",
+      "frontend/src/pages/dashboard/PaymentTermsPage.tsx — line 66: .then(r => r.data) bug for by-supplier; line 56: ptData (by-payment-terms returns plain array, correct)",
+      "frontend/src/pages/dashboard/CategoryPage.tsx — line ~107: .then(r => r.data) bug for suppliers-by-category; line 160-165: selectedL2Entry null guard needed",
+      "frontend/src/pages/dashboard/OverviewPage.tsx — add staleTime to all useQuery calls",
+      "frontend/src/pages/dashboard/RecommendationsPage.tsx — add staleTime to all useQuery calls",
+      "frontend/src/pages/dashboard/DataQualityPage.tsx — add staleTime to all useQuery calls",
+      "frontend/src/pages/ingest/AuditPage.tsx — NEW FILE to create",
+      "frontend/src/components/Layout.tsx — add Audit nav item below Upload Data",
+      "backend/app/routers/ingestion.py — add GET /batches and GET /batches/{batch_id} endpoints"
+    ],
+    "patterns_to_follow": [
+      "ErrorBoundary: class component with getDerivedStateFromError + componentDidCatch. Fallback: shadcn/ui Card, AlertCircle icon, 'Something went wrong' h3, error.message in monospace, Button onClick={window.location.reload} labelled 'Reload page'.",
+      "staleTime: existing Layout.tsx sidebar uses staleTime: 5 * 60 * 1000 — copy this for all dashboard page queries.",
+      "by-supplier extraction: .then(r => r.data?.data ?? []) — the endpoint returns {data: SupplierRow[], total_count: N}.",
+      "Audit endpoints: follow text() + conn.execute() + verify_engagement_ownership() pattern in backend/app/routers/ingestion.py.",
+      "Audit page: useQuery with queryKey ['ingest-batches', engagementId], Skeleton while loading, shadcn/ui Table, Badge for status.",
+      "Back navigation: Button with ArrowLeft from lucide-react, onClick calls setSelectedL1(null) and setSelectedL2(null)."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add global ErrorBoundary component and wrap all routes",
+      "description": "Create a React class component ErrorBoundary in frontend/src/components/ErrorBoundary.tsx that catches any unhandled render error in its subtree and shows a friendly fallback card instead of a blank white page. Then wrap every dashboard route element in frontend/src/App.tsx with this component so no page can produce a white screen again.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/components/ErrorBoundary.tsx — React class component with state { hasError: boolean, error: Error | null }, static getDerivedStateFromError returns { hasError: true, error }, componentDidCatch calls console.error with error and errorInfo",
+        "Fallback renders: a centred div with max-w-md mx-auto mt-16, shadcn/ui Card containing AlertCircle icon (h-8 w-8 text-destructive), <h3 className='font-semibold text-lg'>Something went wrong</h3>, <p className='text-xs font-mono text-muted-foreground break-all'>{this.state.error?.message}</p>, and a Button onClick={() => window.location.reload()} labelled 'Reload page'",
+        "Edit file: frontend/src/App.tsx — import ErrorBoundary and wrap each route element (OverviewPage, CategoryPage, SupplierPage, PaymentTermsPage, RecommendationsPage, DataQualityPage, UploadPage, and any other page components) individually with <ErrorBoundary>...</ErrorBoundary>",
+        "Run: cd frontend && npx tsc --noEmit — exits with code 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Fix by-supplier response extraction bug in SupplierPage and PaymentTermsPage",
+      "description": "The /cube/by-supplier endpoint returns {data: SupplierRow[], total_count: N}. SupplierPage (line 75) and PaymentTermsPage (line 66) both do .then(r => r.data) and store the whole envelope as SupplierRow[], causing TypeError when .filter()/.sort()/.find()/.reduce() are called on a plain object — this is the root cause of the white page on both pages. Fix both files to extract the nested array and add staleTime:5min to all queries.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — in the all-suppliers useQuery (line ~75), change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to all three useQuery calls in this file (all-suppliers, by-month-detail, by-category-detail)",
+        "Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx — in the all-suppliers-pt useQuery (line ~66), change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to both useQuery calls. The by-payment-terms query (line ~59) returns a plain array — its .then(r => r.data) is correct, do not change it.",
+        "Verify: the useQuery<SupplierRow[]> type annotation at SupplierPage line 72 still matches after the fix — the return type of .then(r => r.data?.data ?? []) is SupplierRow[] | never[] which is compatible",
+        "Run: cd frontend && npx tsc --noEmit — exits with code 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Fix by-supplier extraction in CategoryPage and add staleTime to remaining dashboard pages",
+      "description": "CategoryPage has the same by-supplier envelope extraction bug in its suppliers-by-category query. Fix it and add staleTime:5min to CategoryPage's queries. Then add staleTime:5min to all useQuery calls in OverviewPage, RecommendationsPage, and DataQualityPage. Ralph must read each file before editing to confirm the exact query structure.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — find the suppliers-by-category useQuery that calls /cube/by-supplier with category_l1 param; change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to this query and to the by-category useQuery in the same file",
+        "Edit file: frontend/src/pages/dashboard/OverviewPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present",
+        "Edit file: frontend/src/pages/dashboard/RecommendationsPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present",
+        "Edit file: frontend/src/pages/dashboard/DataQualityPage.tsx — read the file first, then add staleTime: 5 * 60 * 1000 to every useQuery call present",
+        "Run: cd frontend && npx tsc --noEmit — exits with code 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Fix CategoryPage L2 drill-down null crash and add Back button",
+      "description": "CategoryPage crashes when selectedL2 is set but selectedL2Entry is null (e.g. after a filter change resets the hierarchy). The l3Rows computation at line ~164 needs a null guard. Also add an explicit Back button that appears whenever selectedL1 is set, giving users a clear way to return to the category overview without needing to know about the DrilldownBreadcrumb.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — guard the l3Rows line to: const l3Rows = (selectedL1Entry && selectedL2Entry) ? [...selectedL2Entry.l3s].sort((a, b) => (b.total_spend ?? 0) - (a.total_spend ?? 0)) : []",
+        "Edit file: frontend/src/pages/dashboard/CategoryPage.tsx — add an ArrowLeft import from lucide-react (if not already imported); render a Back button immediately above the KPI cards section (when selectedL1 is non-null): <Button variant='outline' size='sm' className='mb-4' onClick={() => { setSelectedL1(null); setSelectedL2(null) }}><ArrowLeft className='h-4 w-4 mr-1' />All Categories</Button>",
+        "When selectedL2 is set and the Back button is clicked, both selectedL1 and selectedL2 are cleared and the overview scorecard table is shown again",
+        "Run: cd frontend && npx tsc --noEmit — exits with code 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add backend ingestion batch audit endpoints",
+      "description": "Add two GET endpoints to backend/app/routers/ingestion.py. GET /batches returns all ingestion batches for the engagement ordered newest-first. GET /batches/{batch_id} returns batch metadata plus a pipeline_status breakdown from transactions_raw and the first 25 raw rows. Both follow the existing text()/conn.execute()/verify_engagement_ownership() pattern in the same file.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/ingestion.py — add GET endpoint at path /batches (full path: /api/engagements/{engagement_id}/ingest/batches). Query: SELECT id, filename, row_count, new_rows, duplicate_rows, status, uploaded_at, completed_at FROM ingestion_batches WHERE engagement_id = :eid ORDER BY uploaded_at DESC NULLS LAST. Returns list of dicts. Uses verify_engagement_ownership() and engine = Depends(_engine).",
+        "Edit file: backend/app/routers/ingestion.py — add GET endpoint at path /batches/{batch_id}. First verify the batch belongs to the engagement (SELECT engagement_id FROM ingestion_batches WHERE id = :bid; raise 404 if not found, 403 if wrong engagement). Return dict with: batch (all columns from ingestion_batches), pipeline_status_breakdown (SELECT pipeline_status, COUNT(*) as count FROM transactions_raw WHERE batch_id=:bid GROUP BY pipeline_status), sample_rows (SELECT id, invoice_number, invoice_date, raw_supplier_name, base_amount, pipeline_status FROM transactions_raw WHERE batch_id=:bid ORDER BY created_at ASC LIMIT 25).",
+        "Run: cd backend && python -c \"from app.routers.ingestion import router; routes=[r.path for r in router.routes]; print(routes)\" — output should contain strings ending in '/batches' and '/batches/{batch_id}'"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Build Ingestion Audit page and add to navigation",
+      "description": "Create frontend/src/pages/ingest/AuditPage.tsx listing all ingestion batches for the engagement. Clicking a batch row fetches its detail and shows a pipeline status breakdown and sample rows. Register the page as a route in App.tsx and add a nav link in Layout.tsx below Upload Data.",
+      "acceptanceCriteria": [
+        "Create file: frontend/src/pages/ingest/AuditPage.tsx — heading 'Ingestion Audit', subheading text 'Verify your uploaded data was ingested and processed correctly'. useQuery with queryKey ['ingest-batches', engagementId] and queryFn calling GET /api/engagements/{engagementId}/ingest/batches, staleTime: 5 * 60 * 1000. Show <Skeleton className='h-64' /> while loading.",
+        "Batch list: shadcn/ui Table with columns: Filename, Uploaded (format as date string), Total Rows, Promoted (new_rows), Review Required (row_count - new_rows - duplicate_rows if available, else show — ), Duplicates, Status Badge (complete→green, processing→blue, failed→red, default→slate). No data state: <p className='text-muted-foreground text-center py-8'>No uploads yet</p>.",
+        "Clicking a batch row sets selectedBatchId state and fetches GET /api/engagements/{engagementId}/ingest/batches/{batch_id} (useQuery enabled: !!selectedBatchId). Show detail below or in a Sheet (right drawer, w-[560px]). Detail shows: stat tiles for each pipeline_status count (Promoted, Review Required, Failed, Queued — use coloured Badge chips), then a Table of sample_rows with columns: Invoice #, Date, Supplier, Amount (formatted currency), Status.",
+        "Edit file: frontend/src/App.tsx — add <Route path='audit' element={<ErrorBoundary><AuditPage /></ErrorBoundary>} /> inside the engagement/:id Layout routes. Import AuditPage.",
+        "Edit file: frontend/src/components/Layout.tsx — read the file first to check existing nav items and imports. Add { label: 'Ingestion Audit', to: 'audit', icon: ClipboardList } after the Upload Data nav item. ClipboardList is likely already imported (used by Review Workstation) — if so, do not add a duplicate import.",
+        "Run: cd frontend && npx tsc --noEmit — exits with code 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "Update CLAUDE.md with stability conventions and audit page documentation",
+      "description": "Update CLAUDE.md to document the ErrorBoundary pattern, the staleTime:5min convention, the by-supplier response shape, and the new Ingestion Audit page. Future Claude sessions must follow these patterns consistently.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — add section '## Frontend Stability Conventions' after the last 'Dashboard UX Conventions' section. Document: (1) ErrorBoundary wraps every route in App.tsx — class component at frontend/src/components/ErrorBoundary.tsx; (2) all dashboard useQuery calls use staleTime: 5 * 60 * 1000; (3) /cube/by-supplier returns {data: SupplierRow[], total_count: N} — always extract with .then(r => r.data?.data ?? []).",
+        "Edit file: CLAUDE.md — add 'Ingestion Audit Page' subsection documenting: route /engagements/:id/audit, component frontend/src/pages/ingest/AuditPage.tsx, backend endpoints GET /api/engagements/{id}/ingest/batches and GET /api/engagements/{id}/ingest/batches/{batch_id}.",
+        "Verify the CLAUDE.md file is valid (no broken markdown, sections are coherent)"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "tsc_clean": "cd frontend && npx tsc --noEmit",
+      "backend_import": "cd backend && python -c \"from app.routers.ingestion import router; print([r.path for r in router.routes])\"",
+      "audit_routes_present": "cd backend && python -c \"from app.routers.ingestion import router; paths=[r.path for r in router.routes]; assert any('batches' in p for p in paths), 'batches endpoint missing'; print('OK')\""
+    },
+    "expected_counts": {
+      "new_files": 2,
+      "modified_files": 9,
+      "user_stories": 7
+    },
+    "checks": [
+      "TypeScript build passes with no errors after all stories",
+      "SupplierPage loads without white screen (supplierData is a SupplierRow[] array)",
+      "PaymentTermsPage loads without white screen",
+      "CategoryPage L2 drill-down does not crash; Back button appears and resets to overview",
+      "Dashboard tab navigation feels instant on second visit (staleTime cache)",
+      "GET /api/engagements/{id}/ingest/batches returns 200 with list",
+      "GET /api/engagements/{id}/ingest/batches/{batch_id} returns 200 with breakdown and sample_rows",
+      "Ingestion Audit page renders in sidebar and shows batch list",
+      "Deliberately throwing in a page component shows ErrorBoundary fallback, not white screen"
+    ]
+  },
+  "risks": [
+    "OverviewPage, RecommendationsPage, DataQualityPage may have unusual query patterns — Ralph must read each file before editing to confirm staleTime placement is correct.",
+    "ClipboardList icon: verify it is already imported in Layout.tsx (used by Review Workstation admin nav item) before adding a duplicate import.",
+    "ingestion_batches.uploaded_at may be NULL for batches created before the column existed — use ORDER BY COALESCE(uploaded_at, completed_at, '1970-01-01') DESC in the SQL query.",
+    "transactions_raw table may not exist on the Supabase schema if migration 003 was not applied — the audit endpoint should handle this gracefully (try/except the SQL, return empty list if table does not exist)."
+  ],
+  "outOfScope": [
+    "Full server-side pagination controls for SupplierPage (total_count is now available but page controls are a separate sprint)",
+    "Real-time pipeline progress via websockets — 3-second polling is sufficient",
+    "Exporting audit data to CSV/Excel",
+    "Backend query optimisation and database indexes",
+    "Multi-engagement data comparison views",
+    "Review Workstation changes — already complete"
+  ]
+}
