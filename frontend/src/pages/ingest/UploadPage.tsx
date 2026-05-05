@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -140,7 +140,22 @@ export default function UploadPage() {
     pollingStartedRef.current = false
     ingestion.reset()
     setLocalMapping({})
+    setElapsedSeconds(0)
   }
+
+  // Elapsed-time counter — starts when step moves to 3, resets on reset
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  useEffect(() => {
+    if (ingestion.step !== 3) return
+    setElapsedSeconds(0)
+    const timer = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    return () => clearInterval(timer)
+  }, [ingestion.step])
+
+  const elapsedLabel = useMemo(() => {
+    if (elapsedSeconds < 60) return `${elapsedSeconds}s`
+    return `${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`
+  }, [elapsedSeconds])
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -300,12 +315,38 @@ export default function UploadPage() {
             })}
           </div>
 
+          {/* Queued / starting */}
           {(!ingestion.jobStatus || ingestion.jobStatus.status === 'queued') && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Starting pipeline… ({elapsedLabel})</span>
+            </div>
+          )}
+
+          {/* Running */}
+          {ingestion.jobStatus?.status === 'running' && (
             <p className="text-sm text-muted-foreground text-center">
-              Starting pipeline…
+              Processing… ({elapsedLabel})
             </p>
           )}
 
+          {/* Warning if stuck queued for > 45 s with no update */}
+          {elapsedSeconds > 45 &&
+            (!ingestion.jobStatus || ingestion.jobStatus.status === 'queued') && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+              This is taking longer than usual. The server may be starting up — please wait a
+              moment or try refreshing.
+            </div>
+          )}
+
+          {/* Poll errors */}
+          {ingestion.pollError && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+              {ingestion.pollError}
+            </div>
+          )}
+
+          {/* Done */}
           {ingestion.jobStatus?.status === 'done' && (
             <div className="rounded-lg bg-green-50 border border-green-200 p-4 space-y-3">
               <p className="font-semibold text-green-800">Data processed successfully</p>
@@ -315,11 +356,14 @@ export default function UploadPage() {
             </div>
           )}
 
+          {/* Failed */}
           {ingestion.jobStatus?.status === 'failed' && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 space-y-3">
               <p className="font-semibold text-red-800">Processing failed</p>
               {ingestion.jobStatus.error_message && (
-                <p className="text-sm text-red-700">{ingestion.jobStatus.error_message}</p>
+                <p className="text-sm text-red-700 font-mono break-all">
+                  {ingestion.jobStatus.error_message}
+                </p>
               )}
               <Button variant="outline" onClick={handleTryAgain}>
                 Try Again

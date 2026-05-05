@@ -162,14 +162,25 @@ def _run_pipeline(
     config_path: str = "config.yaml",
 ) -> None:
     import logging
+    import traceback
 
     logger = logging.getLogger(__name__)
-    db_url = os.environ["SUPABASE_DATABASE_URL"]
-    bg_engine = get_engine()
+
+    # bg_engine must be created before the try block so we can always write failure status.
+    # If we can't get an engine at all, there's nothing we can do.
+    try:
+        bg_engine = get_engine()
+    except Exception as eng_exc:
+        logger.error("_run_pipeline: cannot get engine for job %s: %s", job_id, eng_exc)
+        return
 
     try:
         # Imports are inside try so missing src/ raises a caught, reported failure
         from src.config import load_config
+
+        db_url = os.environ.get("SUPABASE_DATABASE_URL") or os.environ.get("DATABASE_URL")
+        if not db_url:
+            raise RuntimeError("No database URL configured (SUPABASE_DATABASE_URL is not set)")
         from src.models.database import get_engine as src_get_engine, init_db
         from src.ingestion.ingest import Ingestor
         from src.ingestion.promoter import IncrementalPromoter
@@ -234,6 +245,13 @@ def _run_pipeline(
         _update_job(bg_engine, job_id, status="done", stage=None, completed_at=now)
 
     except Exception as exc:
+        logger.error(
+            "Pipeline failed for job %s at stage %s: %s\n%s",
+            job_id,
+            "unknown",
+            exc,
+            traceback.format_exc(),
+        )
         now = datetime.now(timezone.utc).isoformat()
         _update_job(
             bg_engine,

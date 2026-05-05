@@ -20,6 +20,7 @@ interface IngestionState {
   uploading: boolean
   uploadProgress: number
   uploadError: string | null
+  pollError: string | null
 }
 
 const INITIAL_STATE: IngestionState = {
@@ -33,6 +34,7 @@ const INITIAL_STATE: IngestionState = {
   uploading: false,
   uploadProgress: 0,
   uploadError: null,
+  pollError: null,
 }
 
 export function useIngestion(engagementId: string) {
@@ -89,22 +91,27 @@ export function useIngestion(engagementId: string) {
 
   const runPipeline = useCallback(async (mapping: Record<string, string>) => {
     const { jobId, filePath } = latestStateRef.current
-    setState(s => ({ ...s, columnMapping: mapping, step: 3 }))
+    setState(s => ({ ...s, columnMapping: mapping }))
+    // POST first — only advance to step 3 after the job is confirmed queued
     await api.post(`/api/engagements/${engagementId}/ingest/run`, {
       job_id: jobId,
       file_path: filePath,
       column_mapping: mapping,
     })
+    setState(s => ({ ...s, step: 3 }))
   }, [engagementId])
 
   const startPolling = useCallback((jobId: string) => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(async () => {
+    let consecutiveErrors = 0
+
+    const poll = async () => {
       try {
         const { data } = await api.get(
           `/api/engagements/${engagementId}/ingest/status/${jobId}`
         )
-        setState(s => ({ ...s, jobStatus: data }))
+        consecutiveErrors = 0
+        setState(s => ({ ...s, jobStatus: data, pollError: null }))
         if (data.status === 'done' || data.status === 'failed') {
           if (intervalRef.current) {
             clearInterval(intervalRef.current)
@@ -112,9 +119,19 @@ export function useIngestion(engagementId: string) {
           }
         }
       } catch {
-        // silently ignore poll errors to avoid noise during processing
+        consecutiveErrors++
+        if (consecutiveErrors >= 4) {
+          setState(s => ({
+            ...s,
+            pollError: 'Cannot reach the server — the pipeline may still be running.',
+          }))
+        }
       }
-    }, 3000)
+    }
+
+    // Immediate first poll, then every 3 s
+    poll()
+    intervalRef.current = setInterval(poll, 3000)
   }, [engagementId])
 
   const stopPolling = useCallback(() => {
