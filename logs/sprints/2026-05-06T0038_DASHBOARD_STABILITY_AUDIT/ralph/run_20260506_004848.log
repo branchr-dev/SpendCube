@@ -325,3 +325,65 @@ STORY_COMPLETE: US-005
 [2026-05-06 00:52:48] [OK] Marked US-005 as passed
 [2026-05-06 00:52:48] [INFO] Logged progress for US-005: PASSED
 [2026-05-06 00:52:48] [STEP] Committing changes...
+[2026-05-06 00:52:50] [INFO] Starting iteration 6
+[2026-05-06 00:52:50] [INFO] Processing story: US-006
+[2026-05-06 00:52:50] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Build Ingestion Audit page and add to navigation
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Create frontend/src/pages/ingest/AuditPage.tsx listing all ingestion batches for the engagement. Clicking a batch row fetches its detail and shows a pipeline status breakdown and sample rows. Register the page as a route in App.tsx and add a nav link in Layout.tsx below Upload Data.
+
+## Acceptance Criteria
+- Create file: frontend/src/pages/ingest/AuditPage.tsx — heading 'Ingestion Audit', subheading text 'Verify your uploaded data was ingested and processed correctly'. useQuery with queryKey ['ingest-batches', engagementId] and queryFn calling GET /api/engagements/{engagementId}/ingest/batches, staleTime: 5 * 60 * 1000. Show <Skeleton className='h-64' /> while loading.
+- Batch list: shadcn/ui Table with columns: Filename, Uploaded (format as date string), Total Rows, Promoted (new_rows), Review Required (row_count - new_rows - duplicate_rows if available, else show — ), Duplicates, Status Badge (complete→green, processing→blue, failed→red, default→slate). No data state: <p className='text-muted-foreground text-center py-8'>No uploads yet</p>.
+- Clicking a batch row sets selectedBatchId state and fetches GET /api/engagements/{engagementId}/ingest/batches/{batch_id} (useQuery enabled: !!selectedBatchId). Show detail below or in a Sheet (right drawer, w-[560px]). Detail shows: stat tiles for each pipeline_status count (Promoted, Review Required, Failed, Queued — use coloured Badge chips), then a Table of sample_rows with columns: Invoice #, Date, Supplier, Amount (formatted currency), Status.
+- Edit file: frontend/src/App.tsx — add <Route path='audit' element={<ErrorBoundary><AuditPage /></ErrorBoundary>} /> inside the engagement/:id Layout routes. Import AuditPage.
+- Edit file: frontend/src/components/Layout.tsx — read the file first to check existing nav items and imports. Add { label: 'Ingestion Audit', to: 'audit', icon: ClipboardList } after the Upload Data nav item. ClipboardList is likely already imported (used by Review Workstation) — if so, do not add a duplicate import.
+- Run: cd frontend && npx tsc --noEmit — exits with code 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Build Ingestion Audit page and add to navigation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-06 00:54:40] [OK] Story US-006 completed!
+[2026-05-06 00:54:40] [OK] Marked US-006 as passed
+[2026-05-06 00:54:40] [INFO] Logged progress for US-006: PASSED
+[2026-05-06 00:54:40] [STEP] Committing changes...

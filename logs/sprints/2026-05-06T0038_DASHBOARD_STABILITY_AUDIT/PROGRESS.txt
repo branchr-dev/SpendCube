@@ -65,3 +65,19 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+
+## US-006 — Build Ingestion Audit page and add to navigation
+- Created frontend/src/pages/ingest/AuditPage.tsx — heading 'Ingestion Audit', subheading, useQuery ['ingest-batches'], Skeleton while loading, shadcn/ui Table with all required columns, status Badge colour-coding, no-data empty state
+- Batch detail: Sheet drawer (w-[560px]), pipeline_status_breakdown tiles with coloured Badge chips, sample rows Table with Invoice #/Date/Supplier/Amount/Status columns
+- App.tsx: added `import AuditPage` and `<Route path='audit' element={<ErrorBoundary><AuditPage /></ErrorBoundary>} />`
+- Layout.tsx: added `{ to: 'audit', label: 'Ingestion Audit', icon: ClipboardList }` after Upload Data (ClipboardList was already imported — no duplicate)
+- TypeScript check: npx tsc --noEmit exits 0
+- Committed: 4de4df3
+
+
+---
+
+### [US-006] - 2026-05-06 00:54:40
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
