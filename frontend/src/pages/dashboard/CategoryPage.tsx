@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -163,7 +165,7 @@ export default function CategoryPage() {
     ? selectedL1Entry.l2Map.get(selectedL2)
     : null
 
-  const l3Rows = selectedL2Entry
+  const l3Rows = (selectedL1Entry && selectedL2Entry)
     ? [...selectedL2Entry.l3s].sort((a, b) => (b.total_spend ?? 0) - (a.total_spend ?? 0))
     : []
 
@@ -194,6 +196,17 @@ export default function CategoryPage() {
         drillTo={handleBreadcrumbDrillTo}
         reset={handleBreadcrumbReset}
       />
+
+      {selectedL1 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-4"
+          onClick={() => { setSelectedL1(null); setSelectedL2(null) }}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />All Categories
+        </Button>
+      )}
 
       {selectedL1Entry && (
         <div className="grid grid-cols-4 gap-4">
