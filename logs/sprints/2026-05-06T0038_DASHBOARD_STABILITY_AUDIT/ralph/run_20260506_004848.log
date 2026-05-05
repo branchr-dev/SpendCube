@@ -387,3 +387,64 @@ STORY_COMPLETE: US-006
 [2026-05-06 00:54:40] [OK] Marked US-006 as passed
 [2026-05-06 00:54:40] [INFO] Logged progress for US-006: PASSED
 [2026-05-06 00:54:40] [STEP] Committing changes...
+[2026-05-06 00:54:42] [INFO] Starting iteration 7
+[2026-05-06 00:54:42] [INFO] Processing story: US-007
+[2026-05-06 00:54:42] [STEP] Spawning Claude with prompt for US-007
+--- PROMPT FOR US-007 ---
+You are working on story US-007: Update CLAUDE.md with stability conventions and audit page documentation
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Update CLAUDE.md to document the ErrorBoundary pattern, the staleTime:5min convention, the by-supplier response shape, and the new Ingestion Audit page. Future Claude sessions must follow these patterns consistently.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — add section '## Frontend Stability Conventions' after the last 'Dashboard UX Conventions' section. Document: (1) ErrorBoundary wraps every route in App.tsx — class component at frontend/src/components/ErrorBoundary.tsx; (2) all dashboard useQuery calls use staleTime: 5 * 60 * 1000; (3) /cube/by-supplier returns {data: SupplierRow[], total_count: N} — always extract with .then(r => r.data?.data ?? []).
+- Edit file: CLAUDE.md — add 'Ingestion Audit Page' subsection documenting: route /engagements/:id/audit, component frontend/src/pages/ingest/AuditPage.tsx, backend endpoints GET /api/engagements/{id}/ingest/batches and GET /api/engagements/{id}/ingest/batches/{batch_id}.
+- Verify the CLAUDE.md file is valid (no broken markdown, sections are coherent)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-007
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-007: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-007 - Update CLAUDE.md with stability conventions and audit page documentation`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-007 ---
+CLAUDE.md updated with a new `## Frontend Stability Conventions` section documenting all three patterns (ErrorBoundary, staleTime, by-supplier extraction) and the Ingestion Audit Page subsection. Committed as `6548e25`.
+
+STORY_COMPLETE: US-007
+--- END OUTPUT ---
+[2026-05-06 00:55:55] [OK] Story US-007 completed!
+[2026-05-06 00:55:55] [OK] Marked US-007 as passed
+[2026-05-06 00:55:55] [INFO] Logged progress for US-007: PASSED
+[2026-05-06 00:55:55] [STEP] Committing changes...

@@ -81,3 +81,19 @@ Story completed successfully by Ralph loop iteration 5
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 6
 
+
+## US-007 — CLAUDE.md Stability Conventions Update (2026-05-05T23:55:50Z)
+- Added '## Frontend Stability Conventions' section at end of CLAUDE.md
+- Documents ErrorBoundary pattern (class component, every route wrapped in App.tsx)
+- Documents staleTime: 5 * 60 * 1000 convention for all dashboard useQuery calls
+- Documents /cube/by-supplier paginated envelope shape and correct .then(r => r.data?.data ?? []) extraction
+- Added 'Ingestion Audit Page' subsection: route, component, and both backend endpoints
+- Committed: 6548e25
+
+
+---
+
+### [US-007] - 2026-05-06 00:55:55
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 7
+
