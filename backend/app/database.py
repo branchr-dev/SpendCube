@@ -8,6 +8,7 @@ if _repo_root not in sys.path:
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import NullPool
 
 
 def get_db_url() -> str:
@@ -18,4 +19,11 @@ def get_db_url() -> str:
 
 
 def get_engine() -> Engine:
-    return create_engine(get_db_url(), pool_pre_ping=True)
+    # Small pool for the FastAPI request handlers — never hold more than 3 live connections.
+    return create_engine(get_db_url(), pool_pre_ping=True, pool_size=2, max_overflow=1)
+
+
+def get_pipeline_engine() -> Engine:
+    # NullPool for background pipeline tasks — connects fresh, releases immediately.
+    # Avoids holding connections open across the long-running pipeline stages.
+    return create_engine(get_db_url(), poolclass=NullPool)

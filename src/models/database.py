@@ -190,15 +190,16 @@ transactions_raw_table = Table(
 # Engine
 # ---------------------------------------------------------------------------
 
-def get_engine(db_url: str) -> Engine:
+def get_engine(db_url: str, **kwargs) -> Engine:
     if db_url.startswith("postgresql://") or db_url.startswith("postgresql+psycopg2://"):
-        return create_engine(db_url, pool_pre_ping=True)
+        return create_engine(db_url, pool_pre_ping=True, **kwargs)
     elif db_url.startswith("sqlite://"):
-        return create_engine(db_url, connect_args={"check_same_thread": False})
+        return create_engine(db_url, connect_args={"check_same_thread": False}, **kwargs)
     else:
         return create_engine(
             f"sqlite:///{db_url}",
             connect_args={"check_same_thread": False},
+            **kwargs,
         )
 
 

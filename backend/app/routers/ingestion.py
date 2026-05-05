@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from app.database import get_engine
+from app.database import get_engine, get_pipeline_engine
 from app.dependencies import get_current_user_email, verify_engagement_ownership
 
 router = APIRouter(
@@ -166,10 +166,10 @@ def _run_pipeline(
 
     logger = logging.getLogger(__name__)
 
-    # bg_engine must be created before the try block so we can always write failure status.
-    # If we can't get an engine at all, there's nothing we can do.
+    # NullPool engines for the pipeline — connects fresh and releases immediately after each
+    # statement, so we never hold open connections across the long-running pipeline stages.
     try:
-        bg_engine = get_engine()
+        bg_engine = get_pipeline_engine()
     except Exception as eng_exc:
         logger.error("_run_pipeline: cannot get engine for job %s: %s", job_id, eng_exc)
         return
@@ -181,6 +181,7 @@ def _run_pipeline(
         db_url = os.environ.get("SUPABASE_DATABASE_URL") or os.environ.get("DATABASE_URL")
         if not db_url:
             raise RuntimeError("No database URL configured (SUPABASE_DATABASE_URL is not set)")
+        from sqlalchemy.pool import NullPool as _NullPool
         from src.models.database import get_engine as src_get_engine, init_db
         from src.ingestion.ingest import Ingestor
         from src.ingestion.promoter import IncrementalPromoter
@@ -190,7 +191,9 @@ def _run_pipeline(
         _update_job(bg_engine, job_id, status="running", stage="ingesting")
 
         config = load_config(config_path)
-        src_engine = src_get_engine(db_url)
+        # Use NullPool for the src engine too — prevents double-counting against
+        # Supabase's session-mode connection limit (15 max).
+        src_engine = src_get_engine(db_url, poolclass=_NullPool)
         init_db(src_engine)
 
         ingestor = Ingestor(config)
