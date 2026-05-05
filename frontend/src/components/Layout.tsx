@@ -25,6 +25,7 @@ const navItems = [
   { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard },
   { to: 'quality', label: 'Data Quality', icon: ShieldCheck },
   { to: 'upload', label: 'Upload Data', icon: UploadCloud },
+  { to: 'audit', label: 'Ingestion Audit', icon: ClipboardList },
 ]
 
 export default function Layout() {
