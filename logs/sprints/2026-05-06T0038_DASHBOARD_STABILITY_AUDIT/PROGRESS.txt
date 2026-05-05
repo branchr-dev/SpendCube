@@ -20,3 +20,11 @@ TypeScript check: npx tsc --noEmit exits 0.
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+2026-05-05T23:50:16Z US-002 complete: Fixed by-supplier envelope extraction in SupplierPage (line 75) and PaymentTermsPage (line 66) — changed .then(r => r.data) to .then(r => r.data?.data ?? []) for by-supplier queries only. Added staleTime:5min to all 5 useQuery calls across both files. tsc --noEmit passed.
+
+---
+
+### [US-002] - 2026-05-06 00:50:18
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+

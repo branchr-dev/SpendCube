@@ -70,7 +70,8 @@
         "Verify: the useQuery<SupplierRow[]> type annotation at SupplierPage line 72 still matches after the fix — the return type of .then(r => r.data?.data ?? []) is SupplierRow[] | never[] which is compatible",
         "Run: cd frontend && npx tsc --noEmit — exits with code 0"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-05T23:50:18Z"
     },
     {
       "id": "US-003",

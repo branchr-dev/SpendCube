@@ -69,3 +69,63 @@ STORY_COMPLETE: US-001
 [2026-05-06 00:49:39] [OK] Marked US-001 as passed
 [2026-05-06 00:49:39] [INFO] Logged progress for US-001: PASSED
 [2026-05-06 00:49:39] [STEP] Committing changes...
+[2026-05-06 00:49:41] [INFO] Starting iteration 2
+[2026-05-06 00:49:41] [INFO] Processing story: US-002
+[2026-05-06 00:49:41] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Fix by-supplier response extraction bug in SupplierPage and PaymentTermsPage
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The /cube/by-supplier endpoint returns {data: SupplierRow[], total_count: N}. SupplierPage (line 75) and PaymentTermsPage (line 66) both do .then(r => r.data) and store the whole envelope as SupplierRow[], causing TypeError when .filter()/.sort()/.find()/.reduce() are called on a plain object — this is the root cause of the white page on both pages. Fix both files to extract the nested array and add staleTime:5min to all queries.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — in the all-suppliers useQuery (line ~75), change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to all three useQuery calls in this file (all-suppliers, by-month-detail, by-category-detail)
+- Edit file: frontend/src/pages/dashboard/PaymentTermsPage.tsx — in the all-suppliers-pt useQuery (line ~66), change .then(r => r.data) to .then(r => r.data?.data ?? []); add staleTime: 5 * 60 * 1000 to both useQuery calls. The by-payment-terms query (line ~59) returns a plain array — its .then(r => r.data) is correct, do not change it.
+- Verify: the useQuery<SupplierRow[]> type annotation at SupplierPage line 72 still matches after the fix — the return type of .then(r => r.data?.data ?? []) is SupplierRow[] | never[] which is compatible
+- Run: cd frontend && npx tsc --noEmit — exits with code 0
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Fix by-supplier response extraction bug in SupplierPage and PaymentTermsPage`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-06 00:50:18] [OK] Story US-002 completed!
+[2026-05-06 00:50:18] [OK] Marked US-002 as passed
+[2026-05-06 00:50:18] [INFO] Logged progress for US-002: PASSED
+[2026-05-06 00:50:18] [STEP] Committing changes...
