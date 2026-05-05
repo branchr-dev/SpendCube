@@ -1188,3 +1188,70 @@ Backend `pipeline_jobs.stage` values and their frontend display mapping:
 ### DiagnosticsCheckCard CHECK_GUIDANCE
 
 `frontend/src/components/dashboard/DiagnosticsCheckCard.tsx` has a `CHECK_GUIDANCE` constant keyed on the **actual** `run_all()` output names listed above. A `DISPLAY_NAMES` constant provides human-readable titles; `humanize()` checks `DISPLAY_NAMES[s]` first before falling back to snake_case conversion.
+
+## Frontend Stability Conventions
+
+### ErrorBoundary
+
+Every route element in `frontend/src/App.tsx` is wrapped with `<ErrorBoundary>`. The `ErrorBoundary` class component lives at `frontend/src/components/ErrorBoundary.tsx`.
+
+**Implementation:** React class component with `getDerivedStateFromError` (sets `hasError: true, error`) and `componentDidCatch` (calls `console.error`). Fallback UI: `max-w-md mx-auto mt-16` centred div with a shadcn/ui Card containing an `AlertCircle` icon (`h-8 w-8 text-destructive`), `'Something went wrong'` heading, the `error.message` in `text-xs font-mono break-all`, and a `'Reload page'` Button (`onClick={() => window.location.reload()}`).
+
+**Rule:** Every new route added to `App.tsx` must be wrapped:
+
+```tsx
+<Route path='...' element={<ErrorBoundary><NewPage /></ErrorBoundary>} />
+```
+
+Never leave a route element unwrapped — a single render crash produces a white screen with no recovery path.
+
+### TanStack Query `staleTime` Convention
+
+All `useQuery` calls on dashboard pages use `staleTime: 5 * 60 * 1000` (5 minutes). Dashboard data changes only when a new file is uploaded, so a 5-minute client-side cache eliminates redundant API refetches on every tab switch and makes navigation feel instant.
+
+```ts
+const { data } = useQuery({
+  queryKey: ['...', engagementId],
+  queryFn: () => api.get(...).then(r => r.data),
+  staleTime: 5 * 60 * 1000,
+})
+```
+
+Apply to every `useQuery` in `OverviewPage`, `CategoryPage`, `SupplierPage`, `PaymentTermsPage`, `RecommendationsPage`, `DataQualityPage`, and `AuditPage`. The Layout sidebar uses this pattern as the reference implementation.
+
+### `/cube/by-supplier` Response Shape
+
+`GET /cube/by-supplier` returns a **paginated envelope**, not a plain array:
+
+```ts
+{ data: SupplierRow[], total_count: number }
+```
+
+Always extract the inner array with `.then(r => r.data?.data ?? [])`. Never use `.then(r => r.data)` — that stores the envelope object as `SupplierRow[]` and causes `TypeError` when `.filter()`/`.sort()` are called on a plain object, crashing the page with no visible error.
+
+```ts
+// Correct
+queryFn: () => api.get('/cube/by-supplier', { params }).then(r => r.data?.data ?? [])
+
+// Wrong — causes white-page crash
+queryFn: () => api.get('/cube/by-supplier', { params }).then(r => r.data)
+```
+
+Affected pages: `SupplierPage`, `PaymentTermsPage`, `CategoryPage` (suppliers-by-category query).
+
+### Ingestion Audit Page
+
+Allows clients to verify that uploaded data was ingested and processed correctly.
+
+- **Route:** `/engagements/:id/audit`
+- **Component:** `frontend/src/pages/ingest/AuditPage.tsx`
+- **Nav:** `'Ingestion Audit'` link in `Layout.tsx`, positioned after the Upload Data nav item, using the `ClipboardList` icon
+
+**Backend endpoints** (registered under `/api/engagements/{engagement_id}/ingest/`):
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /batches` | Lists all ingestion batches for the engagement, newest-first. Returns `id, filename, row_count, new_rows, duplicate_rows, status, uploaded_at, completed_at`. |
+| `GET /batches/{batch_id}` | Returns full batch metadata, a `pipeline_status_breakdown` (count per status from `transactions_raw`), and up to 25 `sample_rows` (invoice #, date, supplier, amount, pipeline_status). Raises 404 if batch not found, 403 if batch belongs to a different engagement. |
+
+Both endpoints follow the `text()` + `conn.execute()` + `verify_engagement_ownership()` pattern used throughout `backend/app/routers/ingestion.py`.
