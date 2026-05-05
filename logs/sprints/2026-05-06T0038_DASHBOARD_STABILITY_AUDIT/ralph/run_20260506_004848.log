@@ -264,3 +264,64 @@ STORY_COMPLETE: US-004
 [2026-05-06 00:52:11] [OK] Marked US-004 as passed
 [2026-05-06 00:52:11] [INFO] Logged progress for US-004: PASSED
 [2026-05-06 00:52:11] [STEP] Committing changes...
+[2026-05-06 00:52:13] [INFO] Starting iteration 5
+[2026-05-06 00:52:13] [INFO] Processing story: US-005
+[2026-05-06 00:52:13] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Add backend ingestion batch audit endpoints
+
+## Project Context
+**Project:** Dashboard Stability & Audit
+**Project ID:** DASHBOARD-STABILITY-AUDIT-2026-05
+**PRD:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Add two GET endpoints to backend/app/routers/ingestion.py. GET /batches returns all ingestion batches for the engagement ordered newest-first. GET /batches/{batch_id} returns batch metadata plus a pipeline_status breakdown from transactions_raw and the first 25 raw rows. Both follow the existing text()/conn.execute()/verify_engagement_ownership() pattern in the same file.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/ingestion.py — add GET endpoint at path /batches (full path: /api/engagements/{engagement_id}/ingest/batches). Query: SELECT id, filename, row_count, new_rows, duplicate_rows, status, uploaded_at, completed_at FROM ingestion_batches WHERE engagement_id = :eid ORDER BY uploaded_at DESC NULLS LAST. Returns list of dicts. Uses verify_engagement_ownership() and engine = Depends(_engine).
+- Edit file: backend/app/routers/ingestion.py — add GET endpoint at path /batches/{batch_id}. First verify the batch belongs to the engagement (SELECT engagement_id FROM ingestion_batches WHERE id = :bid; raise 404 if not found, 403 if wrong engagement). Return dict with: batch (all columns from ingestion_batches), pipeline_status_breakdown (SELECT pipeline_status, COUNT(*) as count FROM transactions_raw WHERE batch_id=:bid GROUP BY pipeline_status), sample_rows (SELECT id, invoice_number, invoice_date, raw_supplier_name, base_amount, pipeline_status FROM transactions_raw WHERE batch_id=:bid ORDER BY created_at ASC LIMIT 25).
+- Run: cd backend && python -c "from app.routers.ingestion import router; routes=[r.path for r in router.routes]; print(routes)" — output should contain strings ending in '/batches' and '/batches/{batch_id}'
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/PRD.json
+   - Session: logs/sprints/2026-05-06T0038_DASHBOARD_STABILITY_AUDIT/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Add backend ingestion batch audit endpoints`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+Both endpoints are live and the commit is done.
+
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-06 00:52:48] [OK] Story US-005 completed!
+[2026-05-06 00:52:48] [OK] Marked US-005 as passed
+[2026-05-06 00:52:48] [INFO] Logged progress for US-005: PASSED
+[2026-05-06 00:52:48] [STEP] Committing changes...

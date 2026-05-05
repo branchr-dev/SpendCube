@@ -109,7 +109,8 @@
         "Edit file: backend/app/routers/ingestion.py — add GET endpoint at path /batches/{batch_id}. First verify the batch belongs to the engagement (SELECT engagement_id FROM ingestion_batches WHERE id = :bid; raise 404 if not found, 403 if wrong engagement). Return dict with: batch (all columns from ingestion_batches), pipeline_status_breakdown (SELECT pipeline_status, COUNT(*) as count FROM transactions_raw WHERE batch_id=:bid GROUP BY pipeline_status), sample_rows (SELECT id, invoice_number, invoice_date, raw_supplier_name, base_amount, pipeline_status FROM transactions_raw WHERE batch_id=:bid ORDER BY created_at ASC LIMIT 25).",
         "Run: cd backend && python -c \"from app.routers.ingestion import router; routes=[r.path for r in router.routes]; print(routes)\" — output should contain strings ending in '/batches' and '/batches/{batch_id}'"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-05T23:52:48Z"
     },
     {
       "id": "US-006",

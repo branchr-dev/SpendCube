@@ -50,3 +50,18 @@ Story completed successfully.
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005 — Add backend ingestion batch audit endpoints
+- Added GET /batches endpoint listing all ingestion_batches for an engagement (ordered by uploaded_at DESC NULLS LAST)
+- Added GET /batches/{batch_id} endpoint returning batch metadata, pipeline_status breakdown, and first 25 raw rows
+- Both endpoints use verify_engagement_ownership() and engine=Depends(_engine) pattern consistent with the rest of the router
+- Route verification passed: both paths confirmed in router.routes
+- Committed: c503cda
+
+
+---
+
+### [US-005] - 2026-05-06 00:52:48
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
