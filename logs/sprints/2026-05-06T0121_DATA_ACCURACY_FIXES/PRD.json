@@ -1,0 +1,145 @@
+{
+  "project": {
+    "id": "DATA-ACCURACY-FIXES-2026-05",
+    "name": "Data Accuracy Fixes",
+    "created": "2026-05-06",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES",
+    "track": "code"
+  },
+  "summary": "Fix three silent data bugs that produce wrong output rather than crashing: (1) abc_segment is never included in the by-supplier SQL SELECT so ABC badges always render empty even though the column exists on transactions; (2) the supplier detail Sheet in SupplierPage passes supplier_id to /cube/by-month and /cube/by-category but those endpoints ignore it, so the Sheet always shows engagement-wide totals rather than per-supplier data; (3) the upload UI collects a user-defined column_mapping and passes it to the backend, but _run_pipeline never hands it to ingest_to_raw(), so the mapping is silently discarded and unit_price only populates if the CSV column is literally named unit_price. Also adds backend pytest coverage for the two audit endpoints (GET /batches and GET /batches/{batch_id}) added in the Dashboard Stability Audit sprint.",
+  "decisions": {
+    "abc_segment_aggregation": "Use MAX(abc_segment) in the GROUP BY query. After run_cube_pipeline, all transactions for a canonical_supplier_id share the same abc_segment value so MAX is deterministic and correct.",
+    "supplier_id_filter_backwards_compatible": "Add supplier_id as an Optional[str] Query param to by-month and by-category endpoints. No existing callers pass it so this is fully backwards-compatible — omitting it returns the current engagement-wide result.",
+    "column_mapping_injection": "Add column_mapping: dict | None = None to ingest_to_raw(). If provided and non-empty, inject it as self.mapper.mappings['__ADHOC__'] and call ingest_file(file_path, '__ADHOC__'). The Ingestor is constructed fresh per pipeline run so mutating mappings is safe. The source_row_hash is computed from the raw CSV dict before any mapping, so hashes remain stable regardless of the mapping used.",
+    "audit_test_mock_pattern": "For GET /batches/{batch_id} which makes 4 execute() calls in one connection block, use side_effect on mock_conn.execute to return different MagicMock objects for each sequential call."
+  },
+  "context": {
+    "existing_tables": {
+      "transactions": "Main analytical fact table. Has abc_segment TEXT column (added in analytics foundation sprint, populated by _compute_abc_segments in src/cube/pipeline.py). Also has canonical_supplier_id used for per-supplier filtering.",
+      "transactions_raw": "Staging table. Has pipeline_status and batch_id columns used by the audit endpoints.",
+      "ingestion_batches": "Tracks each file upload. Columns: id, engagement_id, filename, row_count, new_rows, duplicate_rows, status, uploaded_at, completed_at."
+    },
+    "key_files": [
+      "backend/app/routers/cube.py - get_by_supplier() at line 117 (add abc_segment to SELECT), get_by_month() at line 263 (add supplier_id param), get_by_category() at line 204 (add supplier_id param)",
+      "src/ingestion/ingest.py - Ingestor.ingest_to_raw() at line 157 — add column_mapping: dict | None = None param, inject as __ADHOC__ mapper key if provided",
+      "backend/app/routers/ingestion.py - _run_pipeline() at line 240 — pass column_mapping to ingest_to_raw(); the column_mapping param is already received by _run_pipeline but not forwarded",
+      "backend/tests/test_ingestion_api.py - existing ingestion tests; add TestBatches class with 4 new test methods",
+      "frontend/src/pages/dashboard/SupplierPage.tsx - already passes supplier_id correctly to by-month (line 84) and by-category (line 96); NO frontend changes needed"
+    ],
+    "patterns_to_follow": [
+      "backend/app/routers/cube.py get_by_supplier() lines 138-172 — the where_clauses list + params dict pattern for building dynamic WHERE clauses; follow exactly for by-month and by-category",
+      "backend/tests/test_ingestion_api.py TestStatus._engine_with_job() — the connect().side_effect = [conn1, conn2] pattern for multi-connection mocks",
+      "backend/tests/test_ingestion_api.py _patch_auth_and_engine() helper — use for patching jwt.decode and get_engine in new tests",
+      "backend/app/routers/ingestion.py _run_pipeline() — existing ingest_to_raw() call is at approximately line 283; add column_mapping= kwarg only, do not restructure"
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add abc_segment to GET /cube/by-supplier response",
+      "description": "The get_by_supplier() endpoint in backend/app/routers/cube.py builds a SQL SELECT that includes canonical_supplier_id, canonical_supplier_name, parent_company_name, COUNT(*), SUM(base_amount), AVG(payment_terms_days) — but not abc_segment. The transactions table has an abc_segment TEXT column populated by the cube pipeline via _compute_abc_segments(). After a pipeline run, all transactions rows for a given canonical_supplier_id share the same abc_segment value. Adding MAX(abc_segment) AS abc_segment to the SELECT (compatible with the GROUP BY) will surface it in the API response. The frontend SupplierPage AbcBadge component already references row.abc_segment and renders nothing when it is undefined.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/cube.py — in get_by_supplier(), change the data_sql f-string SELECT clause to include MAX(abc_segment) AS abc_segment after AVG(payment_terms_days). The full SELECT list should be: canonical_supplier_id, canonical_supplier_name, parent_company_name, COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend, AVG(payment_terms_days) AS avg_payment_days, MAX(abc_segment) AS abc_segment",
+        "Edit file: backend/app/routers/cube.py — in the list comprehension that builds the data list (the block starting 'data = [' after the conn.execute calls), add 'abc_segment': (r['abc_segment'] if r['abc_segment'] is not None else None) to each row dict",
+        "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass",
+        "Verify: the keys of each dict in the 'data' list returned by get_by_supplier() now include 'abc_segment'"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-06T00:25:48Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Add supplier_id filter to GET /cube/by-month",
+      "description": "The get_by_month() endpoint in backend/app/routers/cube.py at line 263 accepts no query params beyond engagement_id — it has no Optional imports or Query() params. SupplierPage.tsx already passes supplier_id as a query param when fetching per-supplier monthly data for the detail Sheet (line 84-86), but the server ignores it and always returns engagement-wide totals. The fix is to add supplier_id as an optional Query param, then build the SQL WHERE clause dynamically using the same where_clauses list + params dict pattern used in get_by_supplier(). When supplier_id is None, behaviour is identical to today. When set, add AND canonical_supplier_id = :supplier_id.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/cube.py — confirm 'from typing import Optional' is already imported at the top of the file (it is used by other endpoints); if not, add it",
+        "Edit file: backend/app/routers/cube.py — in get_by_month() function signature, add supplier_id: Optional[str] = Query(default=None) as a new parameter after engine: Engine = Depends(_engine). Keep the existing user_email and engine dependencies.",
+        "Edit file: backend/app/routers/cube.py — in get_by_month(), replace the hardcoded SQL string passed to conn.execute() with a dynamic WHERE clause builder. Build where_clauses = ['engagement_id = :eid', 'COALESCE(is_intercompany, 0) = 0', 'COALESCE(is_tax_line, 0) = 0', 'invoice_date IS NOT NULL'] and params = {'eid': engagement_id}. If supplier_id is not None, append 'canonical_supplier_id = :supplier_id' and set params['supplier_id'] = supplier_id. Build where_sql = ' AND '.join(where_clauses). Use where_sql in the SQL text.",
+        "Edit file: backend/app/routers/cube.py — pass params to conn.execute(text(...), params) instead of the hardcoded {'eid': engagement_id}",
+        "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Add supplier_id filter to GET /cube/by-category",
+      "description": "The get_by_category() endpoint in backend/app/routers/cube.py at line 204 already uses the where_clauses list + params dict pattern for l1, date_from, date_to filters. SupplierPage.tsx passes supplier_id as a query param when fetching the category breakdown for the supplier detail Sheet (lines 94-99), but the endpoint has no supplier_id parameter and ignores it. Adding supplier_id: Optional[str] = Query(default=None) and the corresponding WHERE clause addition is a minimal, pattern-consistent change. The existing l1 param must still work; supplier_id and l1 can be combined.",
+      "acceptanceCriteria": [
+        "Edit file: backend/app/routers/cube.py — in get_by_category() function signature, add supplier_id: Optional[str] = Query(default=None) after the existing date_to: Optional[str] = Query(default=None) parameter",
+        "Edit file: backend/app/routers/cube.py — in get_by_category(), after the existing 'if date_to:' block, add: if supplier_id: where_clauses.append('canonical_supplier_id = :supplier_id') and params['supplier_id'] = supplier_id",
+        "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass",
+        "Verify: the where_sql used in get_by_category() includes 'canonical_supplier_id = :supplier_id' when the param is provided, and omits it when absent"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Wire column_mapping through ingest_to_raw so user column selections are applied",
+      "description": "The upload flow collects a user-defined column_mapping dict (e.g. {'Invoice Date': 'invoice_date', 'Supplier Name': 'raw_supplier_name'}) in the RunRequest body. _run_pipeline() in backend/app/routers/ingestion.py already receives column_mapping as a parameter (it is the 4th positional arg, passed from background_tasks.add_task at line 100-102). However, the call to ingestor.ingest_to_raw() at approximately line 283 does not forward it: it passes source_system=None only. Ingestor.ingest_to_raw() in src/ingestion/ingest.py at line 157 needs a new column_mapping: dict | None = None keyword argument. When provided, inject as self.mapper.mappings['__ADHOC__'] = column_mapping and set source_system = '__ADHOC__' so that ingest_file() uses the user-provided mapping. The source_row_hash is computed from raw_row_dicts (the raw CSV before mapping) so hashes are unaffected by this change.",
+      "acceptanceCriteria": [
+        "Edit file: src/ingestion/ingest.py — change the signature of ingest_to_raw() from (self, file_path: str, engine, engagement_id: str, source_system: str = None) to (self, file_path: str, engine, engagement_id: str, source_system: str = None, column_mapping: dict | None = None)",
+        "Edit file: src/ingestion/ingest.py — inside ingest_to_raw(), after the line 'batch_id = create_batch(...)' and before the call to 'self.ingest_file(file_path, source_system)', add: if column_mapping: self.mapper.mappings['__ADHOC__'] = column_mapping; source_system = '__ADHOC__'",
+        "Edit file: backend/app/routers/ingestion.py — in _run_pipeline(), find the call to ingestor.ingest_to_raw() (it passes file_path, src_engine, engagement_id, source_system=None) and add column_mapping=column_mapping as an additional keyword argument. The column_mapping variable is already in scope as a parameter of _run_pipeline().",
+        "Run: cd backend && python -m pytest tests/ -v — all existing tests must pass. The existing call signature ingest_to_raw(file_path, engine, engagement_id, source_system=None) is unchanged (column_mapping defaults to None).",
+        "Verify: in src/ingestion/ingest.py, the if column_mapping: block appears before the self.ingest_file() call so that the __ADHOC__ mapping is set before column mapping is applied"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Add backend tests for GET /batches and GET /batches/{batch_id} audit endpoints",
+      "description": "The GET /batches and GET /batches/{batch_id} endpoints were added in the Dashboard Stability Audit sprint (backend/app/routers/ingestion.py lines 147-223) but have no pytest coverage. The existing test_ingestion_api.py has all the patterns needed: _make_mock_engine(), _patch_auth_and_engine(), and the connect().side_effect approach from TestStatus. GET /batches needs a mock where engine.connect().execute().mappings().all() returns a batch list. GET /batches/{batch_id} makes 4 execute() calls in a single with engine.connect() as conn block: (1) SELECT engagement_id check — .mappings().first(); (2) SELECT full batch — .mappings().first(); (3) SELECT pipeline_status breakdown — .mappings().all(); (4) SELECT sample_rows — .mappings().all(). Use mock_conn.execute.side_effect to return a different MagicMock per call.",
+      "acceptanceCriteria": [
+        "Edit file: backend/tests/test_ingestion_api.py — add BATCH_ID = str(uuid.uuid4()) constant at the top alongside JOB_ID",
+        "Edit file: backend/tests/test_ingestion_api.py — add _MOCK_BATCH dict constant with keys: id (= BATCH_ID), engagement_id (= ENGAGEMENT_ID), filename ('test_data.csv'), row_count (100), new_rows (95), duplicate_rows (5), status ('done'), uploaded_at ('2026-05-06T00:00:00+00:00'), completed_at ('2026-05-06T00:01:00+00:00')",
+        "Edit file: backend/tests/test_ingestion_api.py — add class TestBatches. Add test_list_batches_returns_list: create a mock engine where verify_engagement_ownership uses one connect() that returns _MOCK_ENGAGEMENT on .first(), and the batches query uses a second connect() that returns [_MOCK_BATCH] on .all(). Use engine.connect.side_effect = [mock_conn_engagement, mock_conn_batches]. Assert response status 200 and isinstance(response.json(), list) and len(response.json()) == 1.",
+        "Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_returns_detail to TestBatches: create mock_conn_engagement (for verify_engagement_ownership) and mock_conn_batch (for the 4 execute calls). For mock_conn_batch, set execute.side_effect to a list of 4 mock result objects: [mock_check, mock_full, mock_status, mock_sample] where mock_check.mappings().first() = {'engagement_id': ENGAGEMENT_ID}, mock_full.mappings().first() = _MOCK_BATCH, mock_status.mappings().all() = [{'pipeline_status': 'processed', 'count': 5}], mock_sample.mappings().all() = []. Use engine.connect.side_effect = [mock_conn_engagement, mock_conn_batch]. Assert response status 200 and response.json() has keys 'batch', 'pipeline_status_breakdown', 'sample_rows'.",
+        "Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_not_found_returns_404 to TestBatches: mock_conn_batch where execute().mappings().first() returns None on the first call. Assert response status 404.",
+        "Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_cross_engagement_returns_403 to TestBatches: mock_conn_batch where execute().mappings().first() returns {'engagement_id': 'other-engagement-id'} on the first call. Assert response status 403.",
+        "Run: cd backend && python -m pytest tests/test_ingestion_api.py -v — all tests including the 4 new TestBatches tests must pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "Update CLAUDE.md to reflect fixed known limitations and new API params",
+      "description": "Three items in CLAUDE.md are now stale: (1) the 'Known limitation' paragraph in the Unit Price Fields section states that column_mapping is silently ignored and that fixing it is a separate sprint — this is now fixed; (2) there is no documentation that /cube/by-month and /cube/by-category accept supplier_id; (3) there is no note that /cube/by-supplier now returns abc_segment. CLAUDE.md is the authoritative reference for future Ralph sessions so these entries must be accurate.",
+      "acceptanceCriteria": [
+        "Edit file: CLAUDE.md — in the 'Unit Price Fields' section under Phase 6, find the paragraph that begins 'Known limitation: The frontend UploadPage column mapping UI sends a column_mapping dict to the backend' and delete it entirely (it is 3-4 sentences ending with 'Fixing this is a separate sprint.')",
+        "Edit file: CLAUDE.md — in the 'Unit Price Fields' section, add a new sentence after the existing unit_price/unit_of_measure column description: 'Column mapping is now applied in the pipeline: ingest_to_raw() accepts an optional column_mapping: dict parameter; if provided, it is injected as self.mapper.mappings[\"__ADHOC__\"] and ingest_file() is called with source_system=\"__ADHOC__\" so the user-supplied source→canonical mapping is applied.'",
+        "Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, find the cube.py router description table or list and update the /by-supplier entry to note it returns abc_segment in each row",
+        "Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, update the /by-month and /by-category descriptions to note they accept an optional supplier_id query param that filters to a single canonical_supplier_id",
+        "Verify: running grep -n 'Fixing this is a separate sprint' CLAUDE.md returns no results"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "abc_segment_present": "grep -n 'abc_segment' backend/app/routers/cube.py — should appear in the SELECT string and in the data list comprehension",
+      "supplier_id_in_by_month": "grep -n 'supplier_id' backend/app/routers/cube.py — should appear in get_by_month signature and WHERE clause builder",
+      "column_mapping_wired": "grep -n 'column_mapping' src/ingestion/ingest.py — should appear in ingest_to_raw signature and the __ADHOC__ injection block",
+      "known_limitation_removed": "grep -n 'Fixing this is a separate sprint' CLAUDE.md — should return no results"
+    },
+    "expected_counts": {},
+    "checks": [
+      "cd backend && python -m pytest tests/ -v — all tests pass including new TestBatches",
+      "cd backend && python -m pytest tests/test_ingestion_api.py -v -k 'Batch' — 4 new batch tests pass",
+      "cd frontend && npm run build — TypeScript build succeeds"
+    ]
+  },
+  "risks": [
+    "US-004 column_mapping mutation: self.mapper.mappings['__ADHOC__'] is set on the Ingestor instance. Since Ingestor is constructed fresh at the start of each _run_pipeline() call, this mutation does not persist across pipeline runs.",
+    "US-005 mock complexity: GET /batches/{batch_id} makes 4 execute() calls in one connection context manager. The side_effect list order must exactly match the endpoint's call order: check → full_batch → status_breakdown → sample_rows. Read the endpoint code in backend/app/routers/ingestion.py lines 173-223 before writing the mock.",
+    "US-002 by-month rolling average: the rolling_3m_avg computation uses df['total_spend'].rolling(3).mean() on the rows returned. If supplier_id filters to a supplier with only 1-2 months of data, the rolling avg will be NaN for those rows (already handled by the pd.isna() check in the return)."
+  ],
+  "outOfScope": [
+    "Server-side pagination for SupplierPage (currently loads default 50 suppliers) — separate sprint",
+    "Adding date_from/date_to params to GET /cube/by-month — separate sprint",
+    "Sensitivity/what-if panel for recommendations — separate sprint",
+    "Frontend changes to SupplierPage — the page already sends supplier_id correctly, only backend support was missing",
+    "Frontend TypeScript interface updates for abc_segment on SupplierRow — abc_segment is already optional in the type definition"
+  ]
+}
