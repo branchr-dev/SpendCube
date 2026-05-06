@@ -4,13 +4,15 @@ import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import jwt as _jwt
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 TEST_EMAIL = "test@example.com"
-VALID_TOKEN = "valid.jwt.token"
+_JWT_SECRET = "test-secret"
+VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")
 ENGAGEMENT_ID = str(uuid.uuid4())
 
 _MOCK_ENGAGEMENT = {
@@ -57,7 +59,7 @@ def _execute_result(rows=None, row=None, rowcount=1):
 
 class TestSupplierQueue:
     def test_supplier_queue_returns_list(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -87,7 +89,7 @@ class TestSupplierQueue:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = supplier_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -112,12 +114,12 @@ class TestSupplierQueue:
         assert data[1]["evidence"] is None
 
     def test_supplier_queue_returns_empty_list_when_no_pending(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value.mappings.return_value.all.return_value = []
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -140,12 +142,12 @@ class TestSupplierQueue:
 
 class TestApproveSupplier:
     def test_approve_updates_review_status(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value = _execute_result(rowcount=1)
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -170,12 +172,12 @@ class TestApproveSupplier:
         assert "UPDATE" in first_call_sql or "update" in first_call_sql.lower()
 
     def test_approve_returns_404_for_unknown_match(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value = _execute_result(rowcount=0)
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -197,12 +199,12 @@ class TestApproveSupplier:
 
 class TestRejectSupplier:
     def test_reject_returns_rejected_status(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value = _execute_result(rowcount=1)
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -225,7 +227,7 @@ class TestRejectSupplier:
 
 class TestCategoryOverride:
     def test_category_override_inserts_row_and_audit_entry(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -250,7 +252,7 @@ class TestCategoryOverride:
             _execute_result(row=created_row),
         ]
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -281,11 +283,11 @@ class TestCategoryOverride:
         assert mock_conn.execute.call_count == 3
 
     def test_category_override_requires_supplier_or_gl(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, _ = _make_mock_engine()
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -313,7 +315,7 @@ class TestCategoryOverride:
 
 class TestCategoryQueue:
     def test_category_queue_returns_list(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -331,7 +333,7 @@ class TestCategoryQueue:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = txn_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -358,7 +360,7 @@ class TestCategoryQueue:
 
 class TestAuditLog:
     def test_audit_log_returns_list(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -377,7 +379,7 @@ class TestAuditLog:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = audit_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.review.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.review.verify_engagement_ownership",
@@ -403,14 +405,14 @@ class TestAuditLog:
 
 class TestGetRecommendations:
     def test_get_recommendations_returns_404_when_null(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value.mappings.return_value.first.return_value = {
             "recommendations_json": None,
         }
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.recommendations.get_engine", return_value=mock_engine):
             client = TestClient(app, raise_server_exceptions=True)
             resp = client.get(
@@ -422,7 +424,7 @@ class TestGetRecommendations:
         assert "not yet generated" in resp.json()["detail"].lower()
 
     def test_get_recommendations_returns_parsed_json(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -434,7 +436,7 @@ class TestGetRecommendations:
             "recommendations_json": json.dumps(payload),
         }
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.recommendations.get_engine", return_value=mock_engine):
             client = TestClient(app, raise_server_exceptions=True)
             resp = client.get(
