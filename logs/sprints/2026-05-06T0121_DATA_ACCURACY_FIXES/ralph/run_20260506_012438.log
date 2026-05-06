@@ -334,3 +334,64 @@ STORY_COMPLETE: US-005
 [2026-05-06 01:32:33] [OK] Marked US-005 as passed
 [2026-05-06 01:32:33] [INFO] Logged progress for US-005: PASSED
 [2026-05-06 01:32:33] [STEP] Committing changes...
+[2026-05-06 01:32:35] [INFO] Starting iteration 6
+[2026-05-06 01:32:35] [INFO] Processing story: US-006
+[2026-05-06 01:32:35] [STEP] Spawning Claude with prompt for US-006
+--- PROMPT FOR US-006 ---
+You are working on story US-006: Update CLAUDE.md to reflect fixed known limitations and new API params
+
+## Project Context
+**Project:** Data Accuracy Fixes
+**Project ID:** DATA-ACCURACY-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+Three items in CLAUDE.md are now stale: (1) the 'Known limitation' paragraph in the Unit Price Fields section states that column_mapping is silently ignored and that fixing it is a separate sprint — this is now fixed; (2) there is no documentation that /cube/by-month and /cube/by-category accept supplier_id; (3) there is no note that /cube/by-supplier now returns abc_segment. CLAUDE.md is the authoritative reference for future Ralph sessions so these entries must be accurate.
+
+## Acceptance Criteria
+- Edit file: CLAUDE.md — in the 'Unit Price Fields' section under Phase 6, find the paragraph that begins 'Known limitation: The frontend UploadPage column mapping UI sends a column_mapping dict to the backend' and delete it entirely (it is 3-4 sentences ending with 'Fixing this is a separate sprint.')
+- Edit file: CLAUDE.md — in the 'Unit Price Fields' section, add a new sentence after the existing unit_price/unit_of_measure column description: 'Column mapping is now applied in the pipeline: ingest_to_raw() accepts an optional column_mapping: dict parameter; if provided, it is injected as self.mapper.mappings["__ADHOC__"] and ingest_file() is called with source_system="__ADHOC__" so the user-supplied source→canonical mapping is applied.'
+- Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, find the cube.py router description table or list and update the /by-supplier entry to note it returns abc_segment in each row
+- Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, update the /by-month and /by-category descriptions to note they accept an optional supplier_id query param that filters to a single canonical_supplier_id
+- Verify: running grep -n 'Fixing this is a separate sprint' CLAUDE.md returns no results
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-006
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-006: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-006 - Update CLAUDE.md to reflect fixed known limitations and new API params`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-006 ---
+STORY_COMPLETE: US-006
+--- END OUTPUT ---
+[2026-05-06 01:36:22] [OK] Story US-006 completed!
+[2026-05-06 01:36:22] [OK] Marked US-006 as passed
+[2026-05-06 01:36:22] [INFO] Logged progress for US-006: PASSED
+[2026-05-06 01:36:22] [STEP] Committing changes...

@@ -117,7 +117,8 @@
         "Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, update the /by-month and /by-category descriptions to note they accept an optional supplier_id query param that filters to a single canonical_supplier_id",
         "Verify: running grep -n 'Fixing this is a separate sprint' CLAUDE.md returns no results"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T00:36:22Z"
     }
   ],
   "verification": {

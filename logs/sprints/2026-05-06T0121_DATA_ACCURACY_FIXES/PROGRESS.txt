@@ -58,3 +58,23 @@ Story completed successfully by Ralph loop iteration 4
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 5
 
+## US-006 — Update CLAUDE.md (COMPLETE)
+- Deleted stale "Known limitation" paragraph from Unit Price Fields section (column_mapping bug now fixed)
+- Added sentence describing the new column_mapping injection pattern in ingest_to_raw()
+- Added "Cube Endpoint Notes" subsection in SpendCube v2 Architecture section documenting abc_segment on /by-supplier, and supplier_id filter on /by-category and /by-month
+- Added abc_segment note to the /cube/by-supplier Response Shape section in Frontend Stability Conventions
+- Verified: grep for 'Fixing this is a separate sprint' returns no results
+
+---
+
+### [US-006] - 2026-05-06
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
+
+---
+
+### [US-006] - 2026-05-06 01:36:22
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 6
+
