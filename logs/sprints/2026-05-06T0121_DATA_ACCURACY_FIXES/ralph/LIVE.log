@@ -194,3 +194,17 @@ PRD: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
 [01:36:22] [OK] Marked US-006 as passed
 [01:36:22] [INFO] Logged progress for US-006: PASSED
 [01:36:22] [STEP] Committing changes...
+[01:36:22] Committed: US-006
+[01:36:22] Sleeping 2s before next iteration...
+[01:36:24] [INFO] Starting iteration 7
+[01:36:24] [OK] All stories complete! Ralph is done.
+
+=== STATUS: 6/6 (0 remaining) ===
+  ✓ US-001: Add abc_segment to GET /cube/by-supplier response
+  ✓ US-002: Add supplier_id filter to GET /cube/by-month
+  ✓ US-003: Add supplier_id filter to GET /cube/by-category
+  ✓ US-004: Wire column_mapping through ingest_to_raw so user column selections are applied
+  ✓ US-005: Add backend tests for GET /batches and GET /batches/{batch_id} audit endpoints
+  ✓ US-006: Update CLAUDE.md to reflect fixed known limitations and new API params
+
+🎉 ALL STORIES COMPLETE! Wed  6 May 2026 01:36:24 BST

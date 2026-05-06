@@ -1,0 +1,21 @@
+# Ralph Loop Progress Log
+# PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+# Created: Wed  6 May 2026 06:37:19 BST
+#
+# This file tracks all story completions, blockers, and learnings.
+
+
+## US-001 Complete — 2026-05-06
+- Added `import jwt as _jwt` and `_JWT_SECRET = "test-secret"` constant
+- Changed VALID_TOKEN to a real HS256-signed JWT using _jwt.encode()
+- Replaced all 9 `monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")` → _JWT_SECRET
+- Replaced all 9 `patch("app.middleware.auth.jwt.decode"` → `pyjwt.decode`
+- Added `"abc_segment": None` to _make_supplier_rows() dicts
+- All 9 tests in test_cube_api.py now pass
+
+---
+
+### [US-001] - 2026-05-06 06:38:13
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 1
+

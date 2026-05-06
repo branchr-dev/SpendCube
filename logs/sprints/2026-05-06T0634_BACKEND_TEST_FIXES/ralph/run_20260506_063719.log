@@ -1,0 +1,76 @@
+[2026-05-06 06:37:19] [INFO] Ralph loop starting
+[2026-05-06 06:37:19] [INFO] Created progress file: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PROGRESS.txt
+
+================================================================================
+RALPH LOOP SESSION STARTED
+================================================================================
+Time: Wed  6 May 2026 06:37:19 BST
+PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+Max Iterations: 20
+================================================================================
+
+[2026-05-06 06:37:19] [INFO] Starting iteration 1
+[2026-05-06 06:37:19] [INFO] Processing story: US-001
+[2026-05-06 06:37:19] [STEP] Spawning Claude with prompt for US-001
+--- PROMPT FOR US-001 ---
+You are working on story US-001: Fix JWT mock pattern in test_cube_api.py and add abc_segment to supplier mock rows
+
+## Project Context
+**Project:** Backend Test Fixes
+**Project ID:** BACKEND-TEST-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+backend/tests/test_cube_api.py has 9 failing tests. All fail because VALID_TOKEN = 'valid.jwt.token' is not a real JWT so middleware's pyjwt.get_unverified_header() raises an exception, token_alg becomes 'unreadable', the JWKS path is taken, SUPABASE_URL is not set, and a 401 is returned before any test logic runs. The patch target 'app.middleware.auth.jwt.decode' is also wrong — the middleware imports 'import jwt as pyjwt' so the name to patch is 'app.middleware.auth.pyjwt.decode'. Additionally, _make_supplier_rows() builds dicts without 'abc_segment', but the endpoint now accesses r['abc_segment'] (added in DATA_ACCURACY_FIXES sprint), which would KeyError after the JWT fix is applied. The reference fix pattern is in backend/tests/test_ingestion_api.py.
+
+## Acceptance Criteria
+- Edit file: backend/tests/test_cube_api.py — add 'import jwt as _jwt' to the imports section (after 'import uuid')
+- Edit file: backend/tests/test_cube_api.py — add '_JWT_SECRET = "test-secret"' constant after the imports block
+- Edit file: backend/tests/test_cube_api.py — change 'VALID_TOKEN = "valid.jwt.token"' to 'VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")'
+- Edit file: backend/tests/test_cube_api.py — change every occurrence of 'monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")' to 'monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)' (there are 9 such lines, one per test method)
+- Edit file: backend/tests/test_cube_api.py — change every occurrence of 'patch("app.middleware.auth.jwt.decode"' to 'patch("app.middleware.auth.pyjwt.decode"' (there are 9 such lines)
+- Edit file: backend/tests/test_cube_api.py — in _make_supplier_rows(), add '"abc_segment": None' to each dict in the list comprehension, after 'avg_payment_days'
+- Run: cd backend && python -m pytest tests/test_cube_api.py -v — all 9 tests must pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-001
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-001: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-001 - Fix JWT mock pattern in test_cube_api.py and add abc_segment to supplier mock rows`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-001 ---
+All 9 tests in `backend/tests/test_cube_api.py` now pass. The three fixes applied were: real JWT token generation with a known secret, correct patch target (`pyjwt.decode` not `jwt.decode`), and `abc_segment` added to mock supplier rows.
+
+STORY_COMPLETE: US-001
+--- END OUTPUT ---
+[2026-05-06 06:38:13] [OK] Story US-001 completed!
+[2026-05-06 06:38:13] [OK] Marked US-001 as passed
+[2026-05-06 06:38:13] [INFO] Logged progress for US-001: PASSED
+[2026-05-06 06:38:13] [STEP] Committing changes...

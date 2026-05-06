@@ -1,0 +1,134 @@
+{
+  "project": {
+    "id": "BACKEND-TEST-FIXES-2026-05",
+    "name": "Backend Test Fixes",
+    "created": "2026-05-06",
+    "status": "in_progress",
+    "owner": "tom",
+    "sprint_folder": "logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES",
+    "track": "code"
+  },
+  "summary": "Fix 23 pre-existing backend test failures caused by two related bugs: (1) the tests use VALID_TOKEN = 'valid.jwt.token' which is not a real JWT, so pyjwt.get_unverified_header() fails in the middleware and the request takes the JWKS path which returns 401; (2) the tests patch 'app.middleware.auth.jwt.decode' but the middleware uses 'import jwt as pyjwt' so the module-level name is pyjwt, not jwt — the patch silently does nothing and the real decode runs on the invalid token. The reference fix was applied to test_ingestion_api.py in the DATA_ACCURACY_FIXES sprint: generate a real HS256 JWT with jwt.encode({'email': TEST_EMAIL}, _JWT_SECRET, algorithm='HS256') and patch 'app.middleware.auth.pyjwt.decode' instead. Apply the same fix to test_cube_api.py (9 tests), test_engagements.py (3 tests), and test_review_api.py (11 tests). Also fix test_cube_api.py TestBySupplier mock rows to include abc_segment (now required by the get_by_supplier endpoint after DATA_ACCURACY_FIXES US-001). Additionally raise the SupplierPage supplier fetch limit from the server default of 50 to 500 so all suppliers appear in the table.",
+  "decisions": {
+    "jwt_token_generation": "Generate a real HS256 JWT at module level using jwt.encode({'email': TEST_EMAIL}, _JWT_SECRET, algorithm='HS256') with _JWT_SECRET = 'test-secret-key-32-chars-minimum'. The reference implementation is in backend/tests/test_ingestion_api.py lines 7-15.",
+    "patch_target": "Patch 'app.middleware.auth.pyjwt.decode' not 'app.middleware.auth.jwt.decode'. The middleware does 'import jwt as pyjwt' (auth.py line 4), so the name in the module namespace is pyjwt. Python's unittest.mock.patch requires the name as it appears in the target module.",
+    "supplier_page_limit": "Request limit=500 on the SupplierPage by-supplier API call. The endpoint cap is le=1000 so 500 is safe. Full server-side pagination is out of scope for this sprint.",
+    "abc_segment_in_mocks": "Add 'abc_segment': None to _make_supplier_rows() in test_cube_api.py. The endpoint now does r['abc_segment'] which KeyErrors on plain dicts lacking the key. Adding it as None is correct for mock data where the pipeline hasn't run."
+  },
+  "context": {
+    "existing_tables": {},
+    "key_files": [
+      "backend/tests/test_ingestion_api.py - REFERENCE: has the correct JWT pattern already applied. Lines 7-15: import jwt as _jwt, _JWT_SECRET = 'test-secret', VALID_TOKEN = _jwt.encode(...). Line 79: patches 'app.middleware.auth.pyjwt.decode'. This is the exact pattern to replicate.",
+      "backend/tests/test_cube_api.py - 9 failing tests. Line 12: VALID_TOKEN = 'valid.jwt.token'. Lines 77,128,165,206,252,283,336,372,411: all patch 'app.middleware.auth.jwt.decode'. Lines 228-239: _make_supplier_rows() missing abc_segment.",
+      "backend/tests/test_engagements.py - 3 failing CRUD tests. Line 12: VALID_TOKEN = 'valid.jwt.token'. Lines 41,85,112,134: patch 'app.middleware.auth.jwt.decode'. Lines 34-43: _make_client() uses wrong patch path and imports jose.JWTError (jose is not installed).",
+      "backend/tests/test_review_api.py - 11 failing tests. Line 13: VALID_TOKEN = 'valid.jwt.token'. Lines 90,120,148,178,205,253,288,334,380,413,437: all patch 'app.middleware.auth.jwt.decode'.",
+      "backend/app/middleware/auth.py - Line 4: 'import jwt as pyjwt'. Line 41: pyjwt.get_unverified_header(token). Lines 47,49,64: pyjwt.decode(). This is why the patch target must be pyjwt not jwt.",
+      "frontend/src/pages/dashboard/SupplierPage.tsx - Line 75: api.get('/cube/by-supplier') with no limit param, gets server default 50. Need to add params: { limit: 500 }."
+    ],
+    "patterns_to_follow": [
+      "backend/tests/test_ingestion_api.py lines 7-15 and 77-80 — the exact JWT fix pattern. Copy verbatim: import jwt as _jwt; _JWT_SECRET = 'test-secret'; VALID_TOKEN = _jwt.encode({'email': TEST_EMAIL}, _JWT_SECRET, algorithm='HS256'); monkeypatch.setenv('SUPABASE_JWT_SECRET', _JWT_SECRET); patch('app.middleware.auth.pyjwt.decode', return_value={'email': TEST_EMAIL})."
+    ]
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Fix JWT mock pattern in test_cube_api.py and add abc_segment to supplier mock rows",
+      "description": "backend/tests/test_cube_api.py has 9 failing tests. All fail because VALID_TOKEN = 'valid.jwt.token' is not a real JWT so middleware's pyjwt.get_unverified_header() raises an exception, token_alg becomes 'unreadable', the JWKS path is taken, SUPABASE_URL is not set, and a 401 is returned before any test logic runs. The patch target 'app.middleware.auth.jwt.decode' is also wrong — the middleware imports 'import jwt as pyjwt' so the name to patch is 'app.middleware.auth.pyjwt.decode'. Additionally, _make_supplier_rows() builds dicts without 'abc_segment', but the endpoint now accesses r['abc_segment'] (added in DATA_ACCURACY_FIXES sprint), which would KeyError after the JWT fix is applied. The reference fix pattern is in backend/tests/test_ingestion_api.py.",
+      "acceptanceCriteria": [
+        "Edit file: backend/tests/test_cube_api.py — add 'import jwt as _jwt' to the imports section (after 'import uuid')",
+        "Edit file: backend/tests/test_cube_api.py — add '_JWT_SECRET = \"test-secret\"' constant after the imports block",
+        "Edit file: backend/tests/test_cube_api.py — change 'VALID_TOKEN = \"valid.jwt.token\"' to 'VALID_TOKEN = _jwt.encode({\"email\": TEST_EMAIL}, _JWT_SECRET, algorithm=\"HS256\")'",
+        "Edit file: backend/tests/test_cube_api.py — change every occurrence of 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", \"secret\")' to 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", _JWT_SECRET)' (there are 9 such lines, one per test method)",
+        "Edit file: backend/tests/test_cube_api.py — change every occurrence of 'patch(\"app.middleware.auth.jwt.decode\"' to 'patch(\"app.middleware.auth.pyjwt.decode\"' (there are 9 such lines)",
+        "Edit file: backend/tests/test_cube_api.py — in _make_supplier_rows(), add '\"abc_segment\": None' to each dict in the list comprehension, after 'avg_payment_days'",
+        "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all 9 tests must pass"
+      ],
+      "passes": true,
+      "completed_at": "2026-05-06T05:38:13Z"
+    },
+    {
+      "id": "US-002",
+      "title": "Fix JWT mock pattern in test_engagements.py",
+      "description": "backend/tests/test_engagements.py has 3 failing tests in TestEngagementsCRUD. The same root cause applies: VALID_TOKEN is not a real JWT and the patch target is wrong. Additionally, _make_client() (a helper defined but not used by the failing tests) patches 'app.middleware.auth.jwt.decode' with a side_effect that imports jose.JWTError — jose is not installed in this project and the function references VALID_TOKEN which must also be updated. The TestAuth class (2 tests) already passes because those tests don't send an Authorization header or don't need the mock to succeed. Only TestEngagementsCRUD tests are failing.",
+      "acceptanceCriteria": [
+        "Edit file: backend/tests/test_engagements.py — add 'import jwt as _jwt' to the imports section",
+        "Edit file: backend/tests/test_engagements.py — add '_JWT_SECRET = \"test-secret\"' constant after the imports block",
+        "Edit file: backend/tests/test_engagements.py — change 'VALID_TOKEN = \"valid.jwt.token\"' to 'VALID_TOKEN = _jwt.encode({\"email\": TEST_EMAIL}, _JWT_SECRET, algorithm=\"HS256\")'",
+        "Edit file: backend/tests/test_engagements.py — fix the _make_client() helper: change 'patch(\"app.middleware.auth.jwt.decode\", side_effect=fake_decode)' to 'patch(\"app.middleware.auth.pyjwt.decode\", return_value={\"email\": TEST_EMAIL})' and remove the fake_decode inner function and the 'from jose import JWTError' line (simplify to a direct return_value patch matching the pattern in test_ingestion_api.py)",
+        "Edit file: backend/tests/test_engagements.py — change every occurrence of 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", \"secret\")' to 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", _JWT_SECRET)'",
+        "Edit file: backend/tests/test_engagements.py — change every occurrence of 'patch(\"app.middleware.auth.jwt.decode\"' to 'patch(\"app.middleware.auth.pyjwt.decode\"'",
+        "Run: cd backend && python -m pytest tests/test_engagements.py -v — all 5 tests must pass (2 TestAuth + 3 TestEngagementsCRUD)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "Fix JWT mock pattern in test_review_api.py",
+      "description": "backend/tests/test_review_api.py has 11 failing tests across TestSupplierQueue, TestApproveSupplier, TestRejectSupplier, TestCategoryOverride, TestCategoryQueue, TestAuditLog, and TestGetRecommendations. The same root cause applies: VALID_TOKEN = 'valid.jwt.token' is not a real JWT and all 11 tests patch 'app.middleware.auth.jwt.decode' (wrong name — should be pyjwt.decode). The fix is identical to the other test files.",
+      "acceptanceCriteria": [
+        "Edit file: backend/tests/test_review_api.py — add 'import jwt as _jwt' to the imports section",
+        "Edit file: backend/tests/test_review_api.py — add '_JWT_SECRET = \"test-secret\"' constant after the imports block",
+        "Edit file: backend/tests/test_review_api.py — change 'VALID_TOKEN = \"valid.jwt.token\"' to 'VALID_TOKEN = _jwt.encode({\"email\": TEST_EMAIL}, _JWT_SECRET, algorithm=\"HS256\")'",
+        "Edit file: backend/tests/test_review_api.py — change every occurrence of 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", \"secret\")' to 'monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", _JWT_SECRET)'",
+        "Edit file: backend/tests/test_review_api.py — change every occurrence of 'patch(\"app.middleware.auth.jwt.decode\"' to 'patch(\"app.middleware.auth.pyjwt.decode\"'",
+        "Run: cd backend && python -m pytest tests/test_review_api.py -v — all 11 tests must pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "Fix SupplierPage loading only 50 suppliers by requesting limit=500",
+      "description": "frontend/src/pages/dashboard/SupplierPage.tsx fetches all suppliers at line 75 with no limit param, so the server default of 50 applies. Engagements with more than 50 suppliers only show 50 in the table — the rest are silently missing with no indication to the user. The fix is to add { limit: 500 } to the API call params. The backend by-supplier endpoint accepts limit up to le=1000, so 500 is within bounds. Full server-side pagination with load-more is out of scope for this sprint.",
+      "acceptanceCriteria": [
+        "Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — on line 75, change 'api.get(`/api/engagements/${engagementId}/cube/by-supplier`)' to 'api.get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { limit: 500 } })' so the full list is fetched",
+        "Run: cd frontend && npm run build — TypeScript build must succeed with no errors",
+        "Verify: the queryFn on line 74-76 in SupplierPage.tsx now includes { params: { limit: 500 } } in the axios call"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "Full test suite green check and CLAUDE.md update",
+      "description": "After US-001 through US-004, run the full backend test suite to confirm all tests pass. Then update CLAUDE.md to document the correct JWT mock pattern so future Ralph sessions and test additions use the right approach from the start.",
+      "acceptanceCriteria": [
+        "Run: cd backend && python -m pytest tests/ -v 2>&1 | tail -10 — output must show '0 failed' (all tests passing)",
+        "Run: cd frontend && npm run build — must succeed",
+        "Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, find or add a 'Backend Testing Conventions' subsection and add: 'JWT mock pattern: import jwt as _jwt; _JWT_SECRET = \"test-secret\"; VALID_TOKEN = _jwt.encode({\"email\": TEST_EMAIL}, _JWT_SECRET, algorithm=\"HS256\"). Patch target is app.middleware.auth.pyjwt.decode (not app.middleware.auth.jwt.decode) because the middleware uses import jwt as pyjwt. Set monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", _JWT_SECRET) in each test. Reference implementation: backend/tests/test_ingestion_api.py.'",
+        "Verify: grep -c 'pyjwt.decode' backend/tests/test_cube_api.py backend/tests/test_engagements.py backend/tests/test_review_api.py backend/tests/test_ingestion_api.py — should show counts > 0 for all four files"
+      ],
+      "passes": false
+    }
+  ],
+  "verification": {
+    "queries": {
+      "all_tests_pass": "cd backend && python -m pytest tests/ -v 2>&1 | tail -5",
+      "pyjwt_patch_applied": "grep -c 'pyjwt.decode' backend/tests/test_cube_api.py backend/tests/test_engagements.py backend/tests/test_review_api.py",
+      "valid_token_real_jwt": "grep 'VALID_TOKEN' backend/tests/test_cube_api.py backend/tests/test_engagements.py backend/tests/test_review_api.py | grep -v 'valid.jwt.token'",
+      "supplier_limit_raised": "grep 'limit: 500' frontend/src/pages/dashboard/SupplierPage.tsx"
+    },
+    "expected_counts": {
+      "total_backend_tests_passing": "34 (all tests in tests/ directory)",
+      "test_cube_api_passing": "9",
+      "test_engagements_passing": "5",
+      "test_review_api_passing": "11",
+      "test_ingestion_api_passing": "9"
+    },
+    "checks": [
+      "cd backend && python -m pytest tests/ -v — 0 failed",
+      "cd frontend && npm run build — succeeds",
+      "grep -n 'valid.jwt.token' backend/tests/test_cube_api.py backend/tests/test_engagements.py backend/tests/test_review_api.py — returns no results",
+      "grep -n 'pyjwt.decode' backend/tests/test_cube_api.py — returns 9+ matches"
+    ]
+  },
+  "risks": [
+    "The _JWT_SECRET string must be at least 32 characters for HS256 (RFC 7518). Use 'test-secret-key-32-chars-minimum' or similar. The test_ingestion_api.py uses 'test-secret' which triggers an InsecureKeyLengthWarning but still works — match that for consistency.",
+    "test_engagements.py _make_client() is defined but may not be called by any test. Simplify it rather than trying to make it work with the fake_decode approach — the jose library is not in requirements.",
+    "After fixing JWT, test_cube_api.py TestBySupplier will fail with KeyError on abc_segment if US-001 doesn't also fix _make_supplier_rows(). US-001 covers both fixes in one story."
+  ],
+  "outOfScope": [
+    "Server-side pagination for SupplierPage (proper load-more / infinite scroll) — separate sprint",
+    "Adding new test cases beyond fixing existing ones — separate sprint",
+    "Fixing the git gc.log warning (run git prune manually if desired)",
+    "Frontend E2E or integration tests"
+  ]
+}
