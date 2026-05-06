@@ -76,3 +76,64 @@ STORY_COMPLETE: US-001
 [2026-05-06 01:25:48] [OK] Marked US-001 as passed
 [2026-05-06 01:25:48] [INFO] Logged progress for US-001: PASSED
 [2026-05-06 01:25:48] [STEP] Committing changes...
+[2026-05-06 01:25:50] [INFO] Starting iteration 2
+[2026-05-06 01:25:50] [INFO] Processing story: US-002
+[2026-05-06 01:25:50] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Add supplier_id filter to GET /cube/by-month
+
+## Project Context
+**Project:** Data Accuracy Fixes
+**Project ID:** DATA-ACCURACY-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The get_by_month() endpoint in backend/app/routers/cube.py at line 263 accepts no query params beyond engagement_id — it has no Optional imports or Query() params. SupplierPage.tsx already passes supplier_id as a query param when fetching per-supplier monthly data for the detail Sheet (line 84-86), but the server ignores it and always returns engagement-wide totals. The fix is to add supplier_id as an optional Query param, then build the SQL WHERE clause dynamically using the same where_clauses list + params dict pattern used in get_by_supplier(). When supplier_id is None, behaviour is identical to today. When set, add AND canonical_supplier_id = :supplier_id.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/cube.py — confirm 'from typing import Optional' is already imported at the top of the file (it is used by other endpoints); if not, add it
+- Edit file: backend/app/routers/cube.py — in get_by_month() function signature, add supplier_id: Optional[str] = Query(default=None) as a new parameter after engine: Engine = Depends(_engine). Keep the existing user_email and engine dependencies.
+- Edit file: backend/app/routers/cube.py — in get_by_month(), replace the hardcoded SQL string passed to conn.execute() with a dynamic WHERE clause builder. Build where_clauses = ['engagement_id = :eid', 'COALESCE(is_intercompany, 0) = 0', 'COALESCE(is_tax_line, 0) = 0', 'invoice_date IS NOT NULL'] and params = {'eid': engagement_id}. If supplier_id is not None, append 'canonical_supplier_id = :supplier_id' and set params['supplier_id'] = supplier_id. Build where_sql = ' AND '.join(where_clauses). Use where_sql in the SQL text.
+- Edit file: backend/app/routers/cube.py — pass params to conn.execute(text(...), params) instead of the hardcoded {'eid': engagement_id}
+- Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Add supplier_id filter to GET /cube/by-month`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-06 01:26:41] [OK] Story US-002 completed!
+[2026-05-06 01:26:41] [OK] Marked US-002 as passed
+[2026-05-06 01:26:41] [INFO] Logged progress for US-002: PASSED
+[2026-05-06 01:26:41] [STEP] Committing changes...

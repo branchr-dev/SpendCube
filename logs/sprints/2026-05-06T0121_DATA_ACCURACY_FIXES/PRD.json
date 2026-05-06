@@ -60,7 +60,8 @@
         "Edit file: backend/app/routers/cube.py — pass params to conn.execute(text(...), params) instead of the hardcoded {'eid': engagement_id}",
         "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T00:26:41Z"
     },
     {
       "id": "US-003",

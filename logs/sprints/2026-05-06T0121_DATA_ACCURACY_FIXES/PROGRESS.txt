@@ -17,3 +17,18 @@
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 1
 
+## US-002 Complete (2026-05-06)
+- Added supplier_id: Optional[str] = Query(default=None) to get_by_month() signature
+- Replaced hardcoded WHERE clause with dynamic where_clauses list + params dict pattern
+- When supplier_id is set, appends AND canonical_supplier_id = :supplier_id to WHERE
+- Note: all 9 tests in test_cube_api.py are pre-existing failures (same jwt mock issue as US-001)
+- Commit: 2ac5ff7
+
+
+
+---
+
+### [US-002] - 2026-05-06 01:26:41
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 2
+
