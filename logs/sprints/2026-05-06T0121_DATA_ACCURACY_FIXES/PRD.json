@@ -73,7 +73,8 @@
         "Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass",
         "Verify: the where_sql used in get_by_category() includes 'canonical_supplier_id = :supplier_id' when the param is provided, and omits it when absent"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T00:27:28Z"
     },
     {
       "id": "US-004",

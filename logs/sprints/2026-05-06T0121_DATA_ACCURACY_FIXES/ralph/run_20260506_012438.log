@@ -137,3 +137,63 @@ STORY_COMPLETE: US-002
 [2026-05-06 01:26:41] [OK] Marked US-002 as passed
 [2026-05-06 01:26:41] [INFO] Logged progress for US-002: PASSED
 [2026-05-06 01:26:41] [STEP] Committing changes...
+[2026-05-06 01:26:43] [INFO] Starting iteration 3
+[2026-05-06 01:26:43] [INFO] Processing story: US-003
+[2026-05-06 01:26:43] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Add supplier_id filter to GET /cube/by-category
+
+## Project Context
+**Project:** Data Accuracy Fixes
+**Project ID:** DATA-ACCURACY-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The get_by_category() endpoint in backend/app/routers/cube.py at line 204 already uses the where_clauses list + params dict pattern for l1, date_from, date_to filters. SupplierPage.tsx passes supplier_id as a query param when fetching the category breakdown for the supplier detail Sheet (lines 94-99), but the endpoint has no supplier_id parameter and ignores it. Adding supplier_id: Optional[str] = Query(default=None) and the corresponding WHERE clause addition is a minimal, pattern-consistent change. The existing l1 param must still work; supplier_id and l1 can be combined.
+
+## Acceptance Criteria
+- Edit file: backend/app/routers/cube.py — in get_by_category() function signature, add supplier_id: Optional[str] = Query(default=None) after the existing date_to: Optional[str] = Query(default=None) parameter
+- Edit file: backend/app/routers/cube.py — in get_by_category(), after the existing 'if date_to:' block, add: if supplier_id: where_clauses.append('canonical_supplier_id = :supplier_id') and params['supplier_id'] = supplier_id
+- Run: cd backend && python -m pytest tests/test_cube_api.py -v — all existing tests must pass
+- Verify: the where_sql used in get_by_category() includes 'canonical_supplier_id = :supplier_id' when the param is provided, and omits it when absent
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Add supplier_id filter to GET /cube/by-category`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-06 01:27:28] [OK] Story US-003 completed!
+[2026-05-06 01:27:28] [OK] Marked US-003 as passed
+[2026-05-06 01:27:28] [INFO] Logged progress for US-003: PASSED
+[2026-05-06 01:27:28] [STEP] Committing changes...
