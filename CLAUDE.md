@@ -637,6 +637,26 @@ pytest backend/tests/ -v
 cd frontend && npm run build
 ```
 
+### Backend Testing Conventions
+
+**JWT mock pattern:** The backend auth middleware (`backend/app/middleware/auth.py`) imports PyJWT with `import jwt as pyjwt`. Tests must patch `app.middleware.auth.pyjwt.decode` (not `app.middleware.auth.jwt.decode`).
+
+Standard pattern used across all backend test files:
+
+```python
+import jwt as _jwt
+
+_JWT_SECRET = "test-secret"
+TEST_EMAIL = "test@example.com"
+VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")
+
+# In each test:
+monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
+monkeypatch.setattr("app.middleware.auth.pyjwt.decode", lambda token, secret, algorithms: {"email": TEST_EMAIL})
+```
+
+Reference implementation: `backend/tests/test_ingestion_api.py`. All four backend API test files (`test_cube_api.py`, `test_engagements.py`, `test_review_api.py`, `test_ingestion_api.py`) use this pattern — verify with `grep -c 'pyjwt.decode' backend/tests/*.py`.
+
 ## Data Model Hardening — Incremental Ingestion
 
 Sprint `DATA-MODEL-HARDENING-2026-05` added incremental ingestion with batch tracking and deduplication, pgvector-based embedding storage, and an `IncrementalPromoter` that processes only new rows. All changes are additive and fully backwards compatible with local dev and existing tests.
