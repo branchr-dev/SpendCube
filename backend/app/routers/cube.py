@@ -208,6 +208,7 @@ async def get_by_category(
     l1: Optional[str] = Query(default=None),
     date_from: Optional[str] = Query(default=None),
     date_to: Optional[str] = Query(default=None),
+    supplier_id: Optional[str] = Query(default=None),
     user_email: str = Depends(get_current_user_email),
     engine: Engine = Depends(_engine),
 ):
@@ -229,6 +230,9 @@ async def get_by_category(
     if date_to:
         where_clauses.append("invoice_date <= :date_to")
         params["date_to"] = date_to
+    if supplier_id:
+        where_clauses.append("canonical_supplier_id = :supplier_id")
+        params["supplier_id"] = supplier_id
 
     where_sql = " AND ".join(where_clauses)
     sql = (
