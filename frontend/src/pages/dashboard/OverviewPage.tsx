@@ -46,7 +46,7 @@ export default function OverviewPage() {
     queryFn: () =>
       api
         .get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { ...qp, limit: 10 } })
-        .then(r => r.data),
+        .then(r => r.data?.data ?? []),
     enabled: !!engagementId,
     staleTime: 5 * 60 * 1000,
   })
