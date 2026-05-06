@@ -3,13 +3,15 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import jwt as _jwt
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 TEST_EMAIL = "test@example.com"
-VALID_TOKEN = "valid.jwt.token"
+_JWT_SECRET = "test-secret"
+VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")
 ENGAGEMENT_ID = str(uuid.uuid4())
 
 _MOCK_ENGAGEMENT = {
@@ -55,7 +57,7 @@ def _execute_result(rows=None, row=None):
 
 class TestOverview:
     def test_overview_returns_expected_keys(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -74,7 +76,7 @@ class TestOverview:
             _execute_result(rows=supplier_rows),
         ]
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -108,7 +110,7 @@ class TestOverview:
         assert 0.0 <= data["tail_spend_pct"] <= 1.0
 
     def test_overview_handles_zero_spend(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -125,7 +127,7 @@ class TestOverview:
             _execute_result(rows=[]),
         ]
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -150,7 +152,7 @@ class TestOverview:
 
 class TestByMonth:
     def test_by_month_returns_sorted_list_with_rolling_avg(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
 
@@ -162,7 +164,7 @@ class TestByMonth:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = month_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -198,12 +200,12 @@ class TestByMonth:
         assert data[3]["rolling_3m_avg"] is not None
 
     def test_by_month_returns_empty_list_when_no_data(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         mock_conn.execute.return_value.mappings.return_value.all.return_value = []
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -234,12 +236,13 @@ class TestBySupplier:
                 "transaction_count": 10,
                 "total_spend": float(1000 * (n - i)),
                 "avg_payment_days": 30.0,
+                "abc_segment": None,
             }
             for i in range(n)
         ]
 
     def test_by_supplier_respects_limit_param(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         supplier_rows = self._make_supplier_rows(5)
@@ -249,7 +252,7 @@ class TestBySupplier:
             _execute_result(row={"total_count": 100}),
         ]
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -270,7 +273,7 @@ class TestBySupplier:
         assert data["total_count"] == 100
 
     def test_by_supplier_returns_expected_row_shape(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         supplier_rows = self._make_supplier_rows(2)
@@ -280,7 +283,7 @@ class TestBySupplier:
             _execute_result(row={"total_count": 2}),
         ]
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -308,7 +311,7 @@ class TestBySupplier:
 
 class TestByCategory:
     def test_by_category_returns_list_sorted_by_spend(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         category_rows = [
@@ -333,7 +336,7 @@ class TestByCategory:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = category_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -360,7 +363,7 @@ class TestByCategory:
 
 class TestByBu:
     def test_by_bu_returns_list(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         bu_rows = [
@@ -369,7 +372,7 @@ class TestByBu:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = bu_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch(
                  "app.routers.cube.verify_engagement_ownership",
@@ -397,7 +400,7 @@ class TestByBu:
 
 class TestByPaymentTerms:
     def test_by_payment_terms_returns_wc_opportunity(self, monkeypatch):
-        monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")
+        monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)
 
         mock_engine, mock_conn = _make_mock_engine()
         pt_rows = [
@@ -408,7 +411,7 @@ class TestByPaymentTerms:
         ]
         mock_conn.execute.return_value.mappings.return_value.all.return_value = pt_rows
 
-        with patch("app.middleware.auth.jwt.decode", return_value={"email": TEST_EMAIL}), \
+        with patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL}), \
              patch("app.routers.cube.get_engine", return_value=mock_engine), \
              patch("app.routers.cube._load_config", return_value=None), \
              patch(
