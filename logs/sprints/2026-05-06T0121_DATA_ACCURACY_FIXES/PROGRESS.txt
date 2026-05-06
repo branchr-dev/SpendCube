@@ -46,3 +46,15 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005 — Backend tests for audit endpoints (COMPLETE)
+- Added BATCH_ID constant, _MOCK_BATCH dict, and TestBatches class (4 tests) to backend/tests/test_ingestion_api.py
+- Fixed pre-existing test breakage: existing tests used `"valid.jwt.token"` (not a real JWT) so `pyjwt.get_unverified_header` would fail, causing middleware to take JWKS path and return 401. Fix: generate a real HS256 JWT at module level using `jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")`. Also fixed patch path from `app.middleware.auth.jwt.decode` to `app.middleware.auth.pyjwt.decode` (middleware aliases `import jwt as pyjwt`).
+- All 9 tests pass (5 existing + 4 new TestBatches tests).
+
+---
+
+### [US-005] - 2026-05-06 01:32:33
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+

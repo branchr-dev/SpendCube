@@ -103,7 +103,8 @@
         "Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_cross_engagement_returns_403 to TestBatches: mock_conn_batch where execute().mappings().first() returns {'engagement_id': 'other-engagement-id'} on the first call. Assert response status 403.",
         "Run: cd backend && python -m pytest tests/test_ingestion_api.py -v — all tests including the 4 new TestBatches tests must pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T00:32:33Z"
     },
     {
       "id": "US-006",

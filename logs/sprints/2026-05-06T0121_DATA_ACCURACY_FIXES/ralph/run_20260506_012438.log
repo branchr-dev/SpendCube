@@ -266,3 +266,71 @@ STORY_COMPLETE: US-004
 [2026-05-06 01:28:39] [OK] Marked US-004 as passed
 [2026-05-06 01:28:39] [INFO] Logged progress for US-004: PASSED
 [2026-05-06 01:28:39] [STEP] Committing changes...
+[2026-05-06 01:28:41] [INFO] Starting iteration 5
+[2026-05-06 01:28:41] [INFO] Processing story: US-005
+[2026-05-06 01:28:41] [STEP] Spawning Claude with prompt for US-005
+--- PROMPT FOR US-005 ---
+You are working on story US-005: Add backend tests for GET /batches and GET /batches/{batch_id} audit endpoints
+
+## Project Context
+**Project:** Data Accuracy Fixes
+**Project ID:** DATA-ACCURACY-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+The GET /batches and GET /batches/{batch_id} endpoints were added in the Dashboard Stability Audit sprint (backend/app/routers/ingestion.py lines 147-223) but have no pytest coverage. The existing test_ingestion_api.py has all the patterns needed: _make_mock_engine(), _patch_auth_and_engine(), and the connect().side_effect approach from TestStatus. GET /batches needs a mock where engine.connect().execute().mappings().all() returns a batch list. GET /batches/{batch_id} makes 4 execute() calls in a single with engine.connect() as conn block: (1) SELECT engagement_id check — .mappings().first(); (2) SELECT full batch — .mappings().first(); (3) SELECT pipeline_status breakdown — .mappings().all(); (4) SELECT sample_rows — .mappings().all(). Use mock_conn.execute.side_effect to return a different MagicMock per call.
+
+## Acceptance Criteria
+- Edit file: backend/tests/test_ingestion_api.py — add BATCH_ID = str(uuid.uuid4()) constant at the top alongside JOB_ID
+- Edit file: backend/tests/test_ingestion_api.py — add _MOCK_BATCH dict constant with keys: id (= BATCH_ID), engagement_id (= ENGAGEMENT_ID), filename ('test_data.csv'), row_count (100), new_rows (95), duplicate_rows (5), status ('done'), uploaded_at ('2026-05-06T00:00:00+00:00'), completed_at ('2026-05-06T00:01:00+00:00')
+- Edit file: backend/tests/test_ingestion_api.py — add class TestBatches. Add test_list_batches_returns_list: create a mock engine where verify_engagement_ownership uses one connect() that returns _MOCK_ENGAGEMENT on .first(), and the batches query uses a second connect() that returns [_MOCK_BATCH] on .all(). Use engine.connect.side_effect = [mock_conn_engagement, mock_conn_batches]. Assert response status 200 and isinstance(response.json(), list) and len(response.json()) == 1.
+- Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_returns_detail to TestBatches: create mock_conn_engagement (for verify_engagement_ownership) and mock_conn_batch (for the 4 execute calls). For mock_conn_batch, set execute.side_effect to a list of 4 mock result objects: [mock_check, mock_full, mock_status, mock_sample] where mock_check.mappings().first() = {'engagement_id': ENGAGEMENT_ID}, mock_full.mappings().first() = _MOCK_BATCH, mock_status.mappings().all() = [{'pipeline_status': 'processed', 'count': 5}], mock_sample.mappings().all() = []. Use engine.connect.side_effect = [mock_conn_engagement, mock_conn_batch]. Assert response status 200 and response.json() has keys 'batch', 'pipeline_status_breakdown', 'sample_rows'.
+- Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_not_found_returns_404 to TestBatches: mock_conn_batch where execute().mappings().first() returns None on the first call. Assert response status 404.
+- Edit file: backend/tests/test_ingestion_api.py — add test_get_batch_cross_engagement_returns_403 to TestBatches: mock_conn_batch where execute().mappings().first() returns {'engagement_id': 'other-engagement-id'} on the first call. Assert response status 403.
+- Run: cd backend && python -m pytest tests/test_ingestion_api.py -v — all tests including the 4 new TestBatches tests must pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0121_DATA_ACCURACY_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-005
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-005: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-005 - Add backend tests for GET /batches and GET /batches/{batch_id} audit endpoints`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-005 ---
+All 9 tests pass. The two key fixes needed alongside the new tests:
+
+1. **Patch path**: The middleware uses `import jwt as pyjwt`, so the correct patch target is `app.middleware.auth.pyjwt.decode` (not `app.middleware.auth.jwt.decode`).
+2. **Real JWT token**: `"valid.jwt.token"` isn't a real JWT, so `get_unverified_header` failed and the middleware fell through to the JWKS path (returning 401). Fixed by generating a real HS256 token at module level.
+
+STORY_COMPLETE: US-005
+--- END OUTPUT ---
+[2026-05-06 01:32:33] [OK] Story US-005 completed!
+[2026-05-06 01:32:33] [OK] Marked US-005 as passed
+[2026-05-06 01:32:33] [INFO] Logged progress for US-005: PASSED
+[2026-05-06 01:32:33] [STEP] Committing changes...
