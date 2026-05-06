@@ -74,7 +74,8 @@
         "Edit file: backend/tests/test_review_api.py — change every occurrence of 'patch(\"app.middleware.auth.jwt.decode\"' to 'patch(\"app.middleware.auth.pyjwt.decode\"'",
         "Run: cd backend && python -m pytest tests/test_review_api.py -v — all 11 tests must pass"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T05:39:37Z"
     },
     {
       "id": "US-004",

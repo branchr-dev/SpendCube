@@ -144,3 +144,65 @@ STORY_COMPLETE: US-002
 [2026-05-06 06:38:57] [OK] Marked US-002 as passed
 [2026-05-06 06:38:57] [INFO] Logged progress for US-002: PASSED
 [2026-05-06 06:38:57] [STEP] Committing changes...
+[2026-05-06 06:38:59] [INFO] Starting iteration 3
+[2026-05-06 06:38:59] [INFO] Processing story: US-003
+[2026-05-06 06:38:59] [STEP] Spawning Claude with prompt for US-003
+--- PROMPT FOR US-003 ---
+You are working on story US-003: Fix JWT mock pattern in test_review_api.py
+
+## Project Context
+**Project:** Backend Test Fixes
+**Project ID:** BACKEND-TEST-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+backend/tests/test_review_api.py has 11 failing tests across TestSupplierQueue, TestApproveSupplier, TestRejectSupplier, TestCategoryOverride, TestCategoryQueue, TestAuditLog, and TestGetRecommendations. The same root cause applies: VALID_TOKEN = 'valid.jwt.token' is not a real JWT and all 11 tests patch 'app.middleware.auth.jwt.decode' (wrong name — should be pyjwt.decode). The fix is identical to the other test files.
+
+## Acceptance Criteria
+- Edit file: backend/tests/test_review_api.py — add 'import jwt as _jwt' to the imports section
+- Edit file: backend/tests/test_review_api.py — add '_JWT_SECRET = "test-secret"' constant after the imports block
+- Edit file: backend/tests/test_review_api.py — change 'VALID_TOKEN = "valid.jwt.token"' to 'VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")'
+- Edit file: backend/tests/test_review_api.py — change every occurrence of 'monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")' to 'monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)'
+- Edit file: backend/tests/test_review_api.py — change every occurrence of 'patch("app.middleware.auth.jwt.decode"' to 'patch("app.middleware.auth.pyjwt.decode"'
+- Run: cd backend && python -m pytest tests/test_review_api.py -v — all 11 tests must pass
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-003
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-003: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-003 - Fix JWT mock pattern in test_review_api.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-003 ---
+STORY_COMPLETE: US-003
+--- END OUTPUT ---
+[2026-05-06 06:39:37] [OK] Story US-003 completed!
+[2026-05-06 06:39:37] [OK] Marked US-003 as passed
+[2026-05-06 06:39:37] [INFO] Logged progress for US-003: PASSED
+[2026-05-06 06:39:37] [STEP] Committing changes...
