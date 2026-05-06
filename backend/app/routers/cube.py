@@ -164,7 +164,7 @@ async def get_by_supplier(
     data_sql = (
         f"SELECT canonical_supplier_id, canonical_supplier_name, parent_company_name,"
         f" COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend,"
-        f" AVG(payment_terms_days) AS avg_payment_days"
+        f" AVG(payment_terms_days) AS avg_payment_days, MAX(abc_segment) AS abc_segment"
         f" FROM transactions WHERE {where_sql}"
         f" GROUP BY canonical_supplier_id, canonical_supplier_name, parent_company_name"
         f" ORDER BY {sort_by} {order_dir}"
@@ -190,6 +190,7 @@ async def get_by_supplier(
             "avg_payment_days": (
                 float(r["avg_payment_days"]) if r["avg_payment_days"] is not None else None
             ),
+            "abc_segment": (r["abc_segment"] if r["abc_segment"] is not None else None),
         }
         for r in rows
     ]
