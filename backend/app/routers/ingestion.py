@@ -281,7 +281,8 @@ def _run_pipeline(
 
         ingestor = Ingestor(config)
         ingest_result = ingestor.ingest_to_raw(
-            file_path, src_engine, engagement_id, source_system=None
+            file_path, src_engine, engagement_id, source_system=None,
+            column_mapping=column_mapping,
         )
         batch_id = ingest_result["batch_id"]
         logger.info(

@@ -160,6 +160,7 @@ class Ingestor:
         engine,
         engagement_id: str,
         source_system: str = None,
+        column_mapping: dict | None = None,
     ) -> dict:
         from src.models.database import create_batch, insert_raw_transactions, update_batch_status
 
@@ -172,6 +173,10 @@ class Ingestor:
         raw_row_dicts = [row.to_dict() for _, row in df_raw.iterrows()]
 
         batch_id = create_batch(engine, engagement_id, path.name, len(raw_row_dicts))
+
+        if column_mapping:
+            self.mapper.mappings['__ADHOC__'] = column_mapping
+            source_system = '__ADHOC__'
 
         df = self.ingest_file(file_path, source_system)
 
