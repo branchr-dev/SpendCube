@@ -74,3 +74,73 @@ STORY_COMPLETE: US-001
 [2026-05-06 06:38:13] [OK] Marked US-001 as passed
 [2026-05-06 06:38:13] [INFO] Logged progress for US-001: PASSED
 [2026-05-06 06:38:13] [STEP] Committing changes...
+[2026-05-06 06:38:15] [INFO] Starting iteration 2
+[2026-05-06 06:38:15] [INFO] Processing story: US-002
+[2026-05-06 06:38:15] [STEP] Spawning Claude with prompt for US-002
+--- PROMPT FOR US-002 ---
+You are working on story US-002: Fix JWT mock pattern in test_engagements.py
+
+## Project Context
+**Project:** Backend Test Fixes
+**Project ID:** BACKEND-TEST-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+backend/tests/test_engagements.py has 3 failing tests in TestEngagementsCRUD. The same root cause applies: VALID_TOKEN is not a real JWT and the patch target is wrong. Additionally, _make_client() (a helper defined but not used by the failing tests) patches 'app.middleware.auth.jwt.decode' with a side_effect that imports jose.JWTError — jose is not installed in this project and the function references VALID_TOKEN which must also be updated. The TestAuth class (2 tests) already passes because those tests don't send an Authorization header or don't need the mock to succeed. Only TestEngagementsCRUD tests are failing.
+
+## Acceptance Criteria
+- Edit file: backend/tests/test_engagements.py — add 'import jwt as _jwt' to the imports section
+- Edit file: backend/tests/test_engagements.py — add '_JWT_SECRET = "test-secret"' constant after the imports block
+- Edit file: backend/tests/test_engagements.py — change 'VALID_TOKEN = "valid.jwt.token"' to 'VALID_TOKEN = _jwt.encode({"email": TEST_EMAIL}, _JWT_SECRET, algorithm="HS256")'
+- Edit file: backend/tests/test_engagements.py — fix the _make_client() helper: change 'patch("app.middleware.auth.jwt.decode", side_effect=fake_decode)' to 'patch("app.middleware.auth.pyjwt.decode", return_value={"email": TEST_EMAIL})' and remove the fake_decode inner function and the 'from jose import JWTError' line (simplify to a direct return_value patch matching the pattern in test_ingestion_api.py)
+- Edit file: backend/tests/test_engagements.py — change every occurrence of 'monkeypatch.setenv("SUPABASE_JWT_SECRET", "secret")' to 'monkeypatch.setenv("SUPABASE_JWT_SECRET", _JWT_SECRET)'
+- Edit file: backend/tests/test_engagements.py — change every occurrence of 'patch("app.middleware.auth.jwt.decode"' to 'patch("app.middleware.auth.pyjwt.decode"'
+- Run: cd backend && python -m pytest tests/test_engagements.py -v — all 5 tests must pass (2 TestAuth + 3 TestEngagementsCRUD)
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-002
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-002: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-002 - Fix JWT mock pattern in test_engagements.py`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-002 ---
+All 5 tests pass (2 TestAuth + 3 TestEngagementsCRUD). The changes applied:
+- Added `import jwt as _jwt` and `_JWT_SECRET = "test-secret"` 
+- Changed `VALID_TOKEN` to a real JWT signed with `_JWT_SECRET`
+- Simplified `_make_client()` to use `pyjwt.decode` with `return_value` (removed `fake_decode` and `jose` dependency)
+- Updated all `SUPABASE_JWT_SECRET` env setups to use `_JWT_SECRET`
+- Updated all patch targets from `app.middleware.auth.jwt.decode` to `app.middleware.auth.pyjwt.decode`
+
+STORY_COMPLETE: US-002
+--- END OUTPUT ---
+[2026-05-06 06:38:57] [OK] Story US-002 completed!
+[2026-05-06 06:38:57] [OK] Marked US-002 as passed
+[2026-05-06 06:38:57] [INFO] Logged progress for US-002: PASSED
+[2026-05-06 06:38:57] [STEP] Committing changes...
