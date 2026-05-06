@@ -111,6 +111,156 @@ async def get_overview(
 
 
 # ---------------------------------------------------------------------------
+# GET /summary  — all overview-page data in one connection
+# ---------------------------------------------------------------------------
+
+@router.get("/summary")
+async def get_dashboard_summary(
+    engagement_id: str,
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user_email: str = Depends(get_current_user_email),
+    engine: Engine = Depends(_engine),
+):
+    engagement = await verify_engagement_ownership(engagement_id, user_email, engine)
+    config = _load_config()
+    target_days: int = config.recommendations.target_payment_days if config else 45
+    wacc: float = config.recommendations.wacc if config else 0.08
+
+    base_where = ["engagement_id = :eid", "COALESCE(is_intercompany, 0) = 0", "COALESCE(is_tax_line, 0) = 0"]
+    params: dict = {"eid": engagement_id}
+    if date_from:
+        base_where.append("invoice_date >= :date_from")
+        params["date_from"] = date_from
+    if date_to:
+        base_where.append("invoice_date <= :date_to")
+        params["date_to"] = date_to
+    where = " AND ".join(base_where)
+
+    with engine.connect() as conn:
+        # 1. Overview KPIs
+        agg = conn.execute(text(
+            f"SELECT COALESCE(SUM(base_amount),0) AS total_spend,"
+            f" COUNT(*) AS invoice_count,"
+            f" COUNT(DISTINCT canonical_supplier_id) AS supplier_count,"
+            f" COUNT(DISTINCT category_l1) AS category_count,"
+            f" MAX(invoice_date) AS data_freshness,"
+            f" COALESCE(SUM(CASE WHEN po_number IS NULL THEN base_amount ELSE 0 END),0) AS maverick_spend"
+            f" FROM transactions WHERE {where}"
+        ), params).mappings().first()
+
+        supplier_spends_rows = conn.execute(text(
+            f"SELECT SUM(base_amount) AS s FROM transactions WHERE {where} GROUP BY canonical_supplier_id"
+        ), params).mappings().all()
+
+        # 2. By-month
+        month_where = where + " AND invoice_date IS NOT NULL"
+        month_rows = conn.execute(text(
+            f"SELECT SUBSTR(invoice_date,1,7) AS month, SUM(base_amount) AS total_spend,"
+            f" COUNT(*) AS transaction_count"
+            f" FROM transactions WHERE {month_where}"
+            f" GROUP BY month ORDER BY month ASC"
+        ), params).mappings().all()
+
+        # 3. Top 10 suppliers
+        sup_rows = conn.execute(text(
+            f"SELECT canonical_supplier_id, canonical_supplier_name,"
+            f" COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend,"
+            f" AVG(payment_terms_days) AS avg_payment_days, MAX(abc_segment) AS abc_segment"
+            f" FROM transactions WHERE {where}"
+            f" GROUP BY canonical_supplier_id, canonical_supplier_name"
+            f" ORDER BY total_spend DESC LIMIT 10"
+        ), params).mappings().all()
+
+        # 4. By-category (L1 rollup)
+        cat_rows = conn.execute(text(
+            f"SELECT category_l1, category_l2,"
+            f" COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend,"
+            f" COUNT(DISTINCT canonical_supplier_id) AS supplier_count"
+            f" FROM transactions WHERE {where} AND category_l1 IS NOT NULL"
+            f" GROUP BY category_l1, category_l2 ORDER BY total_spend DESC"
+        ), params).mappings().all()
+
+        # 5. By-payment-terms buckets
+        pt_rows = conn.execute(text(
+            f"SELECT CASE"
+            f"  WHEN payment_terms_days <= 30 THEN '0-30'"
+            f"  WHEN payment_terms_days <= 60 THEN '31-60'"
+            f"  WHEN payment_terms_days <= 90 THEN '61-90'"
+            f"  ELSE '90+' END AS bucket,"
+            f" COUNT(*) AS transaction_count, SUM(base_amount) AS total_spend"
+            f" FROM transactions WHERE {where} AND payment_terms_days IS NOT NULL"
+            f" GROUP BY bucket ORDER BY bucket"
+        ), params).mappings().all()
+
+    # ---- Compute derived values ----
+    total_spend = float(agg["total_spend"] or 0)
+    maverick_spend = float(agg["maverick_spend"] or 0)
+    supplier_spends = [float(r["s"] or 0) for r in supplier_spends_rows]
+    tail_pct = _compute_tail_spend_pct(supplier_spends, total_spend)
+
+    # Rolling 3-month average (pure Python, no pandas)
+    month_list = [
+        {"month": r["month"], "total_spend": float(r["total_spend"] or 0), "transaction_count": int(r["transaction_count"] or 0)}
+        for r in month_rows
+    ]
+    spends = [m["total_spend"] for m in month_list]
+    for i, m in enumerate(month_list):
+        m["rolling_3m_avg"] = round((spends[i-2] + spends[i-1] + spends[i]) / 3, 2) if i >= 2 else None
+
+    # Payment terms with WC opportunity
+    pt_total = sum(float(r["total_spend"] or 0) for r in pt_rows)
+    pt_list = []
+    for r in pt_rows:
+        s = float(r["total_spend"] or 0)
+        midpoint = _BUCKET_MIDPOINTS.get(r["bucket"], 45)
+        wc = max(0.0, (target_days - midpoint) / 365 * s * wacc) if midpoint < target_days else 0.0
+        pt_list.append({
+            "bucket": r["bucket"],
+            "transaction_count": int(r["transaction_count"] or 0),
+            "total_spend": s,
+            "spend_pct": round(s / pt_total, 4) if pt_total else 0.0,
+            "wc_opportunity_aud": round(wc, 2),
+        })
+
+    return {
+        "overview": {
+            "total_spend": total_spend,
+            "invoice_count": int(agg["invoice_count"] or 0),
+            "supplier_count": int(agg["supplier_count"] or 0),
+            "category_count": int(agg["category_count"] or 0),
+            "currency_label": engagement.get("currency_label", "AUD"),
+            "maverick_spend_pct": round(maverick_spend / total_spend, 4) if total_spend else 0.0,
+            "tail_spend_pct": round(tail_pct, 4),
+            "data_freshness": agg["data_freshness"],
+        },
+        "by_month": month_list,
+        "top_suppliers": [
+            {
+                "canonical_supplier_id": r["canonical_supplier_id"],
+                "canonical_supplier_name": r["canonical_supplier_name"],
+                "transaction_count": int(r["transaction_count"] or 0),
+                "total_spend": float(r["total_spend"] or 0),
+                "avg_payment_days": float(r["avg_payment_days"]) if r["avg_payment_days"] is not None else None,
+                "abc_segment": r["abc_segment"],
+            }
+            for r in sup_rows
+        ],
+        "by_category": [
+            {
+                "category_l1": r["category_l1"],
+                "category_l2": r["category_l2"],
+                "transaction_count": int(r["transaction_count"] or 0),
+                "total_spend": float(r["total_spend"] or 0),
+                "supplier_count": int(r["supplier_count"] or 0),
+            }
+            for r in cat_rows
+        ],
+        "by_payment_terms": pt_list,
+    }
+
+
+# ---------------------------------------------------------------------------
 # GET /by-supplier
 # ---------------------------------------------------------------------------
 

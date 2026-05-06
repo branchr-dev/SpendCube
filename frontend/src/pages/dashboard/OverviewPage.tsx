@@ -12,11 +12,23 @@ import { CHART_COLORS } from '@/components/charts/constants'
 import { useFilters } from '@/hooks/useFilters'
 import { api } from '@/lib/api'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import type { OverviewData, MonthRow, SupplierRow, CategoryRow, PaymentTermsRow } from '@/types'
 import type { FilterState, FilterOptions } from '@/types/filters'
 
-interface RecommendationsResponse {
-  recommendations?: unknown[]
+interface SummaryResponse {
+  overview: {
+    total_spend: number
+    invoice_count: number
+    supplier_count: number
+    category_count: number
+    currency_label: string
+    maverick_spend_pct: number
+    tail_spend_pct: number
+    data_freshness: string | null
+  }
+  by_month: { month: string; total_spend: number; transaction_count: number; rolling_3m_avg?: number }[]
+  top_suppliers: { canonical_supplier_id: string; canonical_supplier_name: string; total_spend: number; avg_payment_days: number | null }[]
+  by_category: { category_l1: string; category_l2: string | null; total_spend: number; transaction_count: number }[]
+  by_payment_terms: { bucket: string; total_spend: number; transaction_count: number; wc_opportunity_aud: number }[]
 }
 
 export default function OverviewPage() {
@@ -25,71 +37,31 @@ export default function OverviewPage() {
   const { filters, updateFilter, toQueryParams } = useFilters()
   const qp = toQueryParams()
 
-  const { data: overview, isLoading: loadingOverview } = useQuery<OverviewData>({
-    queryKey: ['overview', engagementId, qp],
+  const { data: summary, isLoading } = useQuery<SummaryResponse>({
+    queryKey: ['summary', engagementId, qp],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/overview`, { params: qp }).then(r => r.data),
+      api.get(`/api/engagements/${engagementId}/cube/summary`, { params: qp }).then(r => r.data),
     enabled: !!engagementId,
     staleTime: 5 * 60 * 1000,
   })
 
-  const { data: monthData = [], isLoading: loadingMonths } = useQuery<MonthRow[]>({
-    queryKey: ['by-month', engagementId, qp],
+  const { data: recData } = useQuery<{ recommendations?: unknown[] } | null>({
+    queryKey: ['recommendations', engagementId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-month`, { params: qp }).then(r => r.data),
-    enabled: !!engagementId,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
-    queryKey: ['top-suppliers', engagementId, qp],
-    queryFn: () =>
-      api
-        .get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { ...qp, limit: 10 } })
-        .then(r => r.data?.data ?? []),
-    enabled: !!engagementId,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: categoryData = [], isLoading: loadingCategories } = useQuery<CategoryRow[]>({
-    queryKey: ['by-category-overview', engagementId, qp],
-    queryFn: () =>
-      api
-        .get(`/api/engagements/${engagementId}/cube/by-category`, { params: qp })
-        .then(r => r.data),
-    enabled: !!engagementId,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: ptData = [] } = useQuery<PaymentTermsRow[]>({
-    queryKey: ['pt-overview', engagementId],
-    queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-payment-terms`).then(r => r.data),
-    enabled: !!engagementId,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: recData } = useQuery<RecommendationsResponse | null>({
-    queryKey: ['rec-overview', engagementId],
-    queryFn: () =>
-      api
-        .get(`/api/engagements/${engagementId}/recommendations`)
+      api.get(`/api/engagements/${engagementId}/recommendations`)
         .then(r => r.data)
-        .catch((err: { response?: { status?: number } }) => {
-          if (err?.response?.status === 404) return null
-          throw err
-        }),
+        .catch((e: { response?: { status?: number } }) => e?.response?.status === 404 ? null : Promise.reject(e)),
     retry: false,
     enabled: !!engagementId,
     staleTime: 5 * 60 * 1000,
   })
 
   const { data: diagRaw = {} } = useQuery<Record<string, { status?: string }>>({
-    queryKey: ['diag-overview', engagementId],
+    queryKey: ['diagnostics', engagementId],
     queryFn: () =>
       api.get(`/api/engagements/${engagementId}/cube/diagnostics`).then(r => r.data).catch(() => ({})),
-    enabled: !!engagementId,
     retry: false,
+    enabled: !!engagementId,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -100,6 +72,12 @@ export default function OverviewPage() {
     updateFilter('category_l1s', newFilters.category_l1s)
     updateFilter('supplier_search', newFilters.supplier_search)
   }
+
+  const overview = summary?.overview
+  const monthData = summary?.by_month ?? []
+  const supplierData = summary?.top_suppliers ?? []
+  const categoryData = summary?.by_category ?? []
+  const ptData = summary?.by_payment_terms ?? []
 
   const filterOptions: FilterOptions = {
     business_units: [],
@@ -119,15 +97,10 @@ export default function OverviewPage() {
     const l1 = c.category_l1 ?? 'Unknown'
     categoryL1Map.set(l1, (categoryL1Map.get(l1) ?? 0) + (c.total_spend ?? 0))
   })
-  const categoryPieData = [...categoryL1Map.entries()]
-    .map(([name, value]) => ({ name, value }))
+  const treemapData = [...categoryL1Map.entries()]
+    .map(([name, value], i) => ({ name, value, color: CHART_COLORS[i % CHART_COLORS.length] }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
-
-  const treemapData = categoryPieData.map((d, i) => ({
-    ...d,
-    color: CHART_COLORS[i % CHART_COLORS.length],
-  }))
 
   const totalWcOpportunity = ptData.reduce((s, r) => s + (r.wc_opportunity_aud ?? 0), 0)
   const recCount = recData?.recommendations?.length ?? 0
@@ -140,83 +113,63 @@ export default function OverviewPage() {
   const top10Spend = supplierData.slice(0, 10).reduce((s, r) => s + (r.total_spend ?? 0), 0)
   const allSpend = supplierData.reduce((s, r) => s + (r.total_spend ?? 0), 0)
 
+  const noData = !isLoading && (overview?.total_spend ?? 0) === 0 && monthData.length === 0
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Spend Overview</h1>
-      {overview?.data_freshness && <p className="text-sm text-muted-foreground -mt-4">{formatDate(overview.data_freshness)}</p>}
+      {overview?.data_freshness && (
+        <p className="text-sm text-muted-foreground -mt-4">{formatDate(overview.data_freshness)}</p>
+      )}
 
       <FilterBar filters={filters} onChange={handleFilterChange} options={filterOptions} />
 
-      {!loadingOverview && !loadingMonths && (overview?.total_spend ?? 0) === 0 && monthData.length === 0 && (
-        <div className='border rounded-xl p-8 bg-card text-center mb-4'>
-          <div className='flex flex-col items-center gap-3'>
-            <UploadCloud className='h-10 w-10 text-muted-foreground' />
-            <h3 className='text-lg font-semibold'>No spend data yet</h3>
-            <p className='text-sm text-muted-foreground'>Upload a CSV file to run the pipeline and generate insights.</p>
+      {noData && (
+        <div className="border rounded-xl p-8 bg-card text-center">
+          <div className="flex flex-col items-center gap-3">
+            <UploadCloud className="h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-semibold">No spend data yet</h3>
+            <p className="text-sm text-muted-foreground">Upload a CSV file to run the pipeline and generate insights.</p>
             <Button asChild><Link to={`/engagements/${engagementId}/upload`}>Upload Data</Link></Button>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-4 gap-4">
-        {loadingOverview ? (
+        {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)
         ) : (
           <>
-            <KpiCard
-              label="Total Spend"
-              value={overview?.total_spend ?? 0}
-              valueType="currency"
-              currency={currency}
-              accentColor="neutral"
-            />
-            <KpiCard
-              label="Supplier Count"
-              value={overview?.supplier_count ?? 0}
-              valueType="number"
-            />
+            <KpiCard label="Total Spend" value={overview?.total_spend ?? 0} valueType="currency" currency={currency} accentColor="neutral" />
+            <KpiCard label="Supplier Count" value={overview?.supplier_count ?? 0} valueType="number" />
             <KpiCard
               label="Tail Spend"
               value={overview?.tail_spend_pct ?? 0}
               valueType="pct"
-              accentColor={overview?.tail_spend_pct != null && overview.tail_spend_pct > 30 ? 'risk' : overview?.tail_spend_pct != null && overview.tail_spend_pct > 15 ? 'amber' : 'green'}
+              accentColor={(overview?.tail_spend_pct ?? 0) > 30 ? 'risk' : (overview?.tail_spend_pct ?? 0) > 15 ? 'amber' : 'green'}
               benchmarkLabel="% of spend in tail suppliers"
             />
-            <KpiCard
-              label="Maverick Spend"
-              value={maverickPct}
-              valueType="pct"
-              accentColor={maverickAccent}
-            />
+            <KpiCard label="Maverick Spend" value={maverickPct} valueType="pct" accentColor={maverickAccent} />
           </>
         )}
       </div>
 
       <div className="flex gap-3">
-        <Link
-          to="payment-terms"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-        >
+        <Link to="payment-terms" className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
           <DollarSign className="h-5 w-5 text-emerald-600 shrink-0" />
           <div>
             <div className="text-xs text-muted-foreground">WC Opportunity</div>
             <div className="font-semibold text-sm">{formatCurrency(totalWcOpportunity, currency)}</div>
           </div>
         </Link>
-        <Link
-          to="recommendations"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-        >
+        <Link to="recommendations" className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
           <Lightbulb className="h-5 w-5 text-blue-600 shrink-0" />
           <div>
             <div className="text-xs text-muted-foreground">Recommendations</div>
             <div className="font-semibold text-sm">{recCount || '—'}</div>
           </div>
         </Link>
-        <Link
-          to="quality"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-        >
+        <Link to="quality" className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
           <AlertTriangle className={`h-5 w-5 shrink-0 ${redCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
           <div>
             <div className="text-xs text-muted-foreground">Data Issues</div>
@@ -226,7 +179,7 @@ export default function OverviewPage() {
       </div>
 
       <div className="border rounded-xl p-5 bg-card shadow-sm">
-        {loadingMonths ? (
+        {isLoading ? (
           <Skeleton className="h-80" />
         ) : (
           <SpendAreaChart data={monthData} title="Monthly Spend Trend" currency={currency} showReferenceLine={true} />
@@ -235,7 +188,7 @@ export default function OverviewPage() {
 
       <div className="grid grid-cols-5 gap-4">
         <div className="col-span-3 border rounded-xl p-5 bg-card shadow-sm">
-          {loadingSuppliers ? (
+          {isLoading ? (
             <Skeleton className="h-80" />
           ) : (
             <>
@@ -257,7 +210,7 @@ export default function OverviewPage() {
           )}
         </div>
         <div className="col-span-2 border rounded-xl p-5 bg-card shadow-sm">
-          {loadingCategories ? (
+          {isLoading ? (
             <Skeleton className="h-80" />
           ) : (
             <SpendTreemap

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { Plus } from 'lucide-react'
@@ -10,10 +10,31 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function EngagementListPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const { data: engagements, isLoading } = useQuery<Engagement[]>({
     queryKey: ['engagements'],
     queryFn: () => api.get('/api/engagements').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
+
+  function prefetchEngagement(id: string) {
+    queryClient.prefetchQuery({
+      queryKey: ['summary', id, {}],
+      queryFn: () => api.get(`/api/engagements/${id}/cube/summary`).then(r => r.data),
+      staleTime: 5 * 60 * 1000,
+    })
+    queryClient.prefetchQuery({
+      queryKey: ['overview', id],
+      queryFn: () => api.get(`/api/engagements/${id}/cube/overview`).then(r => r.data),
+      staleTime: 10 * 60 * 1000,
+    })
+  }
+
+  function openEngagement(id: string) {
+    prefetchEngagement(id)
+    navigate(`/engagements/${id}/overview`)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,12 +58,8 @@ export default function EngagementListPage() {
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="h-4 w-1/2 mt-1" />
                 </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-4 w-1/3" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-9 w-20" />
-                </CardFooter>
+                <CardContent><Skeleton className="h-4 w-1/3" /></CardContent>
+                <CardFooter><Skeleton className="h-9 w-20" /></CardFooter>
               </Card>
             ))}
           </div>
@@ -58,7 +75,11 @@ export default function EngagementListPage() {
         {!isLoading && engagements && engagements.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {engagements.map(eng => (
-              <Card key={eng.id} className="flex flex-col">
+              <Card
+                key={eng.id}
+                className="flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                onMouseEnter={() => eng.id && prefetchEngagement(eng.id)}
+              >
                 <CardHeader>
                   <CardTitle className="text-base">{eng.client_name}</CardTitle>
                   <CardDescription>{eng.engagement_title}</CardDescription>
@@ -71,10 +92,7 @@ export default function EngagementListPage() {
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/engagements/${eng.id}/overview`)}
-                  >
+                  <Button size="sm" onClick={() => eng.id && openEngagement(eng.id)}>
                     Open
                   </Button>
                 </CardFooter>
