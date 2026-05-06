@@ -206,3 +206,62 @@ STORY_COMPLETE: US-003
 [2026-05-06 06:39:37] [OK] Marked US-003 as passed
 [2026-05-06 06:39:37] [INFO] Logged progress for US-003: PASSED
 [2026-05-06 06:39:37] [STEP] Committing changes...
+[2026-05-06 06:39:39] [INFO] Starting iteration 4
+[2026-05-06 06:39:39] [INFO] Processing story: US-004
+[2026-05-06 06:39:39] [STEP] Spawning Claude with prompt for US-004
+--- PROMPT FOR US-004 ---
+You are working on story US-004: Fix SupplierPage loading only 50 suppliers by requesting limit=500
+
+## Project Context
+**Project:** Backend Test Fixes
+**Project ID:** BACKEND-TEST-FIXES-2026-05
+**PRD:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+**Progress Log:** logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PROGRESS.txt
+
+This is part of a Ralph Wiggum Loop execution. Each story runs in a FRESH context window.
+Memory persists through: git commits, progress log, PRD passes flags.
+
+## Story Description
+frontend/src/pages/dashboard/SupplierPage.tsx fetches all suppliers at line 75 with no limit param, so the server default of 50 applies. Engagements with more than 50 suppliers only show 50 in the table — the rest are silently missing with no indication to the user. The fix is to add { limit: 500 } to the API call params. The backend by-supplier endpoint accepts limit up to le=1000, so 500 is within bounds. Full server-side pagination with load-more is out of scope for this sprint.
+
+## Acceptance Criteria
+- Edit file: frontend/src/pages/dashboard/SupplierPage.tsx — on line 75, change 'api.get(`/api/engagements/${engagementId}/cube/by-supplier`)' to 'api.get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { limit: 500 } })' so the full list is fetched
+- Run: cd frontend && npm run build — TypeScript build must succeed with no errors
+- Verify: the queryFn on line 74-76 in SupplierPage.tsx now includes { params: { limit: 500 } } in the axios call
+
+## CRITICAL Instructions
+
+1. **Focus:** Complete ONLY this story. Do not work on other stories.
+
+2. **Context First:** Read the PRD and session log for full context:
+   - PRD: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/PRD.json
+   - Session: logs/sprints/2026-05-06T0634_BACKEND_TEST_FIXES/SESSION.md
+
+3. **Completion Signal:** When done, output EXACTLY on its own line:
+   ```
+   STORY_COMPLETE: US-004
+   ```
+
+4. **Blocker Signal:** If you cannot complete, output EXACTLY:
+   ```
+   STORY_BLOCKED: US-004: <reason>
+   ```
+
+5. **Commit:** After making changes, commit with message:
+   `feat: complete US-004 - Fix SupplierPage loading only 50 suppliers by requesting limit=500`
+
+6. **Log Discoveries:** Append any learnings to the progress log.
+
+## Repository
+Working directory: /Users/tompurnell/Documents/Claude/SpendCube
+
+BEGIN STORY EXECUTION
+--- END PROMPT ---
+
+--- OUTPUT FROM CLAUDE FOR US-004 ---
+STORY_COMPLETE: US-004
+--- END OUTPUT ---
+[2026-05-06 06:40:00] [OK] Story US-004 completed!
+[2026-05-06 06:40:00] [OK] Marked US-004 as passed
+[2026-05-06 06:40:00] [INFO] Logged progress for US-004: PASSED
+[2026-05-06 06:40:00] [STEP] Committing changes...
