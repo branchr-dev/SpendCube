@@ -87,7 +87,8 @@
         "Run: cd backend && python -m pytest tests/ -v — all existing tests must pass. The existing call signature ingest_to_raw(file_path, engine, engagement_id, source_system=None) is unchanged (column_mapping defaults to None).",
         "Verify: in src/ingestion/ingest.py, the if column_mapping: block appears before the self.ingest_file() call so that the __ADHOC__ mapping is set before column mapping is applied"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T00:28:39Z"
     },
     {
       "id": "US-005",
