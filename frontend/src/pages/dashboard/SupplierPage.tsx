@@ -72,7 +72,7 @@ export default function SupplierPage() {
   const { data: supplierData = [], isLoading: loadingSuppliers } = useQuery<SupplierRow[]>({
     queryKey: ['all-suppliers', engagementId],
     queryFn: () =>
-      api.get(`/api/engagements/${engagementId}/cube/by-supplier`).then(r => r.data?.data ?? []),
+      api.get(`/api/engagements/${engagementId}/cube/by-supplier`, { params: { limit: 500 } }).then(r => r.data?.data ?? []),
     enabled: !!engagementId,
     staleTime: 5 * 60 * 1000,
   })
