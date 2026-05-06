@@ -361,7 +361,7 @@ Note: `SPEND_CONCENTRATION_RISK` reuses `competitive_tender_min_spend` as its ca
 
 `BEST_PRICE_EXTRAPOLATION` no-ops immediately (`return []`) when `unit_price` is not present in the transactions columns or is entirely null — so existing datasets without unit prices are unaffected.
 
-**Known limitation:** The frontend `UploadPage` column mapping UI sends a `column_mapping` dict to the backend, but `_run_pipeline` in `backend/app/routers/ingestion.py` does not pass it to `ingest_to_raw()`. This means the user's column mapping for `unit_price` is silently ignored. `unit_price` only populates in the DB if the source CSV column is **literally named `unit_price`**. Fixing this is a separate sprint.
+Column mapping is now applied in the pipeline: `ingest_to_raw()` accepts an optional `column_mapping: dict` parameter; if provided, it is injected as `self.mapper.mappings["__ADHOC__"]` and `ingest_file()` is called with `source_system="__ADHOC__"` so the user-supplied source→canonical mapping is applied.
 
 ### Review Workstation
 
@@ -534,6 +534,13 @@ SpendCube/
 ├── DEPLOYMENT.md               # Step-by-step deploy guide (Supabase + Railway + Vercel)
 └── HANDOVER.md                 # Primary client-facing setup document — architecture, local dev, migrations, first engagement walkthrough
 ```
+
+### Cube Endpoint Notes
+
+Key capabilities of `cube.py` endpoints:
+- `GET /cube/by-supplier` — each row includes `abc_segment` (`'A'`, `'B'`, `'C'`, or `null`), populated by `_compute_abc_segments()` in `src/cube/pipeline.py`
+- `GET /cube/by-category` — accepts optional `supplier_id` query param; when provided, filters to transactions where `canonical_supplier_id = supplier_id`
+- `GET /cube/by-month` — accepts optional `supplier_id` query param; when provided, filters to transactions where `canonical_supplier_id = supplier_id`
 
 ### Tech Stack
 
@@ -1226,6 +1233,8 @@ Apply to every `useQuery` in `OverviewPage`, `CategoryPage`, `SupplierPage`, `Pa
 ```ts
 { data: SupplierRow[], total_count: number }
 ```
+
+Each `SupplierRow` includes `abc_segment` (`'A'`, `'B'`, `'C'`, or `null` when ABC segments have not been computed yet for the engagement).
 
 Always extract the inner array with `.then(r => r.data?.data ?? [])`. Never use `.then(r => r.data)` — that stores the envelope object as `SupplierRow[]` and causes `TypeError` when `.filter()`/`.sort()` are called on a plain object, crashing the page with no visible error.
 
