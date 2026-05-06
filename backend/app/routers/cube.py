@@ -266,8 +266,21 @@ async def get_by_month(
     engagement_id: str,
     user_email: str = Depends(get_current_user_email),
     engine: Engine = Depends(_engine),
+    supplier_id: Optional[str] = Query(default=None),
 ):
     await verify_engagement_ownership(engagement_id, user_email, engine)
+
+    where_clauses = [
+        "engagement_id = :eid",
+        "COALESCE(is_intercompany, 0) = 0",
+        "COALESCE(is_tax_line, 0) = 0",
+        "invoice_date IS NOT NULL",
+    ]
+    params: dict = {"eid": engagement_id}
+    if supplier_id is not None:
+        where_clauses.append("canonical_supplier_id = :supplier_id")
+        params["supplier_id"] = supplier_id
+    where_sql = " AND ".join(where_clauses)
 
     with engine.connect() as conn:
         rows = conn.execute(
@@ -277,14 +290,11 @@ async def get_by_month(
                 " SUM(base_amount) AS total_spend,"
                 " COUNT(*) AS transaction_count"
                 " FROM transactions"
-                " WHERE engagement_id = :eid"
-                " AND COALESCE(is_intercompany, 0) = 0"
-                " AND COALESCE(is_tax_line, 0) = 0"
-                " AND invoice_date IS NOT NULL"
+                f" WHERE {where_sql}"
                 " GROUP BY month"
                 " ORDER BY month ASC"
             ),
-            {"eid": engagement_id},
+            params,
         ).mappings().all()
 
     if not rows:
