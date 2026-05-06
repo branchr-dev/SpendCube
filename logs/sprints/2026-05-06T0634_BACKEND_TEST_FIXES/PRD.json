@@ -99,7 +99,8 @@
         "Edit file: CLAUDE.md — in the SpendCube v2 Architecture section, find or add a 'Backend Testing Conventions' subsection and add: 'JWT mock pattern: import jwt as _jwt; _JWT_SECRET = \"test-secret\"; VALID_TOKEN = _jwt.encode({\"email\": TEST_EMAIL}, _JWT_SECRET, algorithm=\"HS256\"). Patch target is app.middleware.auth.pyjwt.decode (not app.middleware.auth.jwt.decode) because the middleware uses import jwt as pyjwt. Set monkeypatch.setenv(\"SUPABASE_JWT_SECRET\", _JWT_SECRET) in each test. Reference implementation: backend/tests/test_ingestion_api.py.'",
         "Verify: grep -c 'pyjwt.decode' backend/tests/test_cube_api.py backend/tests/test_engagements.py backend/tests/test_review_api.py backend/tests/test_ingestion_api.py — should show counts > 0 for all four files"
       ],
-      "passes": false
+      "passes": true,
+      "completed_at": "2026-05-06T05:41:12Z"
     }
   ],
   "verification": {

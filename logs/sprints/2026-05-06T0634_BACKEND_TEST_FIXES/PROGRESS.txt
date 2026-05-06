@@ -40,3 +40,17 @@ Story completed successfully by Ralph loop iteration 3
 **Status:** PASSED
 Story completed successfully by Ralph loop iteration 4
 
+
+## US-005: Full test suite green check and CLAUDE.md update
+- 34/34 backend tests passing (0 failed)
+- Frontend build succeeded (2993 modules, built in 2.03s)
+- pyjwt.decode grep counts: test_cube_api.py=9, test_engagements.py=4, test_review_api.py=11, test_ingestion_api.py=10
+- CLAUDE.md updated with Backend Testing Conventions subsection after Test Commands section
+- Documented: patch target is app.middleware.auth.pyjwt.decode, set SUPABASE_JWT_SECRET env var per test
+
+---
+
+### [US-005] - 2026-05-06 06:41:12
+**Status:** PASSED
+Story completed successfully by Ralph loop iteration 5
+
