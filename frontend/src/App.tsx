@@ -6,7 +6,6 @@ import LoginPage from '@/pages/auth/LoginPage'
 import EngagementListPage from '@/pages/engagements/EngagementListPage'
 import NewEngagementPage from '@/pages/engagements/NewEngagementPage'
 import UploadPage from '@/pages/ingest/UploadPage'
-import AuditPage from '@/pages/ingest/AuditPage'
 import OverviewPage from '@/pages/dashboard/OverviewPage'
 import CategoryPage from '@/pages/dashboard/CategoryPage'
 import SupplierPage from '@/pages/dashboard/SupplierPage'
@@ -33,7 +32,7 @@ export default function App() {
           <Route path="quality" element={<ErrorBoundary><DataQualityPage /></ErrorBoundary>} />
           <Route path="recommendations" element={<ErrorBoundary><RecommendationsPage /></ErrorBoundary>} />
           <Route path="upload" element={<ErrorBoundary><UploadPage /></ErrorBoundary>} />
-          <Route path="audit" element={<ErrorBoundary><AuditPage /></ErrorBoundary>} />
+          <Route path="audit" element={<Navigate to="quality" replace />} />
           <Route path="admin/review" element={<ErrorBoundary><ReviewWorkstationPage /></ErrorBoundary>} />
         </Route>
       </Route>

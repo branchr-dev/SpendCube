@@ -11,6 +11,7 @@ import {
   LogOut,
   UploadCloud,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
@@ -25,7 +26,6 @@ const navItems = [
   { to: 'payment-terms', label: 'Payment Terms', icon: CreditCard },
   { to: 'quality', label: 'Data Quality', icon: ShieldCheck },
   { to: 'upload', label: 'Upload Data', icon: UploadCloud },
-  { to: 'audit', label: 'Ingestion Audit', icon: ClipboardList },
 ]
 
 export default function Layout() {
@@ -40,10 +40,10 @@ export default function Layout() {
   })
 
   const { data: sidebarOverview } = useQuery<OverviewData>({
-    queryKey: ['sidebar-overview', id],
+    queryKey: ['overview', id],
     queryFn: () => api.get(`/api/engagements/${id}/cube/overview`).then(r => r.data),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   })
 
   return (

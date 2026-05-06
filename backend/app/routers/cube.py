@@ -441,19 +441,147 @@ async def get_diagnostics(
 ):
     await verify_engagement_ownership(engagement_id, user_email, engine)
 
-    from src.diagnostics.quality import DataQualityDiagnostics
-    from src.config import load_config
-    from src.models.database import get_transactions, get_engine as src_get_engine
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("""
+                WITH base AS (
+                    SELECT
+                        raw_supplier_name,
+                        canonical_supplier_id,
+                        category_l1,
+                        base_amount,
+                        payment_terms_days,
+                        invoice_number,
+                        raw_line_description,
+                        po_number,
+                        contract_id,
+                        business_unit,
+                        cost_centre
+                    FROM transactions
+                    WHERE engagement_id = :eid
+                ),
+                totals AS (
+                    SELECT
+                        COUNT(*)                              AS total_rows,
+                        COALESCE(SUM(ABS(base_amount)), 0)   AS total_spend
+                    FROM base
+                ),
+                dup_rows AS (
+                    SELECT COALESCE(SUM(cnt), 0) AS val
+                    FROM (
+                        SELECT COUNT(*) AS cnt
+                        FROM base
+                        WHERE invoice_number IS NOT NULL
+                        GROUP BY invoice_number, base_amount
+                        HAVING COUNT(*) > 1
+                    ) d
+                )
+                SELECT
+                    (SELECT total_rows FROM totals) AS total_rows,
+                    (SELECT total_spend FROM totals) AS total_spend,
+                    (SELECT COUNT(*) FROM base WHERE raw_supplier_name IS NULL) AS missing_supplier_rows,
+                    (SELECT COALESCE(SUM(CASE WHEN category_l1 IS NULL THEN ABS(base_amount) ELSE 0 END),0) FROM base) AS uncategorised_spend,
+                    (SELECT COUNT(DISTINCT raw_supplier_name) FROM base) AS total_unique_suppliers,
+                    (SELECT COUNT(DISTINCT CASE WHEN canonical_supplier_id IS NULL THEN raw_supplier_name END) FROM base) AS unresolved_suppliers,
+                    (SELECT COALESCE(SUM(CASE WHEN payment_terms_days IS NULL THEN ABS(base_amount) ELSE 0 END),0) FROM base) AS missing_terms_spend,
+                    (SELECT val FROM dup_rows) AS duplicate_rows,
+                    (SELECT COUNT(*) FROM base WHERE base_amount < 0) AS negative_rows,
+                    (SELECT COUNT(*) FROM base WHERE
+                        raw_line_description IS NULL
+                        OR LENGTH(TRIM(raw_line_description)) < 20
+                        OR LOWER(TRIM(raw_line_description)) IN ('misc','miscellaneous','services','payment','invoice','charges')
+                    ) AS weak_desc_rows,
+                    (SELECT COALESCE(SUM(CASE WHEN po_number IS NULL AND contract_id IS NULL THEN ABS(base_amount) ELSE 0 END),0) FROM base) AS no_linkage_spend,
+                    (SELECT COUNT(*) FROM base WHERE business_unit IS NULL AND cost_centre IS NULL) AS missing_bu_rows
+            """),
+            {"eid": engagement_id},
+        ).mappings().first()
 
-    config_path = os.getenv("SPENDCUBE_CONFIG_PATH", "config.yaml")
-    config = load_config(config_path)
+    if row is None or row["total_rows"] == 0:
+        return {}
 
-    db_url = os.getenv("SUPABASE_DATABASE_URL")
-    src_engine = src_get_engine(db_url) if db_url else engine
+    total_rows = int(row["total_rows"])
+    total_spend = float(row["total_spend"] or 0)
 
-    df = get_transactions(src_engine, {"engagement_id": engagement_id})
-    diag = DataQualityDiagnostics(df, config)
-    return diag.run_all()
+    def _pct_rows(val):
+        return round(float(val or 0) / total_rows * 100, 2) if total_rows else 0.0
+
+    def _pct_spend(val):
+        return round(float(val or 0) / total_spend * 100, 2) if total_spend else 0.0
+
+    def _status(pct, green, amber):
+        return "GREEN" if pct < green else "AMBER" if pct < amber else "RED"
+
+    def _info_status(pct, info, warn):
+        return "INFO" if pct < info else "WARN" if pct < warn else "ALERT"
+
+    missing_supplier_pct = _pct_rows(row["missing_supplier_rows"])
+    uncategorised_pct = _pct_spend(row["uncategorised_spend"])
+    total_unique = int(row["total_unique_suppliers"] or 0)
+    unresolved_pct = round(float(row["unresolved_suppliers"] or 0) / total_unique * 100, 2) if total_unique else 0.0
+    missing_terms_pct = _pct_spend(row["missing_terms_spend"])
+    duplicate_pct = _pct_rows(row["duplicate_rows"])
+    negative_pct = _pct_rows(row["negative_rows"])
+    weak_desc_pct = _pct_rows(row["weak_desc_rows"])
+    no_linkage_pct = _pct_spend(row["no_linkage_spend"])
+    missing_bu_pct = _pct_rows(row["missing_bu_rows"])
+
+    return {
+        "missing_supplier_name": {
+            "value": int(row["missing_supplier_rows"] or 0),
+            "pct": missing_supplier_pct,
+            "status": _status(missing_supplier_pct, 1.0, 5.0),
+            "description": "Rows missing raw_supplier_name",
+        },
+        "uncategorised_spend": {
+            "value": round(float(row["uncategorised_spend"] or 0), 2),
+            "pct": uncategorised_pct,
+            "status": _status(uncategorised_pct, 5.0, 15.0),
+            "description": "Spend with no category assignment",
+        },
+        "unresolved_suppliers": {
+            "value": int(row["unresolved_suppliers"] or 0),
+            "pct": unresolved_pct,
+            "status": _status(unresolved_pct, 10.0, 25.0),
+            "description": "Unique supplier names with no canonical ID resolved",
+        },
+        "missing_payment_terms": {
+            "value": round(float(row["missing_terms_spend"] or 0), 2),
+            "pct": missing_terms_pct,
+            "status": _status(missing_terms_pct, 10.0, 30.0),
+            "description": "Spend with no payment terms populated",
+        },
+        "duplicate_invoice_risk": {
+            "value": int(row["duplicate_rows"] or 0),
+            "pct": duplicate_pct,
+            "status": _status(duplicate_pct, 0.5, 2.0),
+            "description": "Rows sharing an (invoice #, amount) key — potential duplicates",
+        },
+        "negative_reversal_lines": {
+            "value": int(row["negative_rows"] or 0),
+            "pct": negative_pct,
+            "status": _info_status(negative_pct, 3.0, 8.0),
+            "description": "Rows with negative amount (credit notes / reversals)",
+        },
+        "weak_descriptions": {
+            "value": int(row["weak_desc_rows"] or 0),
+            "pct": weak_desc_pct,
+            "status": _status(weak_desc_pct, 15.0, 30.0),
+            "description": "Rows with null, short, or generic line description",
+        },
+        "missing_contract_linkage": {
+            "value": round(float(row["no_linkage_spend"] or 0), 2),
+            "pct": no_linkage_pct,
+            "status": _status(no_linkage_pct, 30.0, 60.0),
+            "description": "Spend with neither a PO number nor a contract ID",
+        },
+        "missing_bu_cost_centre": {
+            "value": int(row["missing_bu_rows"] or 0),
+            "pct": missing_bu_pct,
+            "status": _status(missing_bu_pct, 5.0, 15.0),
+            "description": "Rows with no business unit and no cost centre",
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
